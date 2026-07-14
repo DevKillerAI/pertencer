@@ -156,5 +156,11 @@ export const db = {
     }
     writeDb(data);
     return occurrence;
+  },
+  deleteOccurrence: (id) => {
+    const data = readDb();
+    data.occurrences = data.occurrences.filter(o => o.id !== id);
+    writeDb(data);
   }
 };
+

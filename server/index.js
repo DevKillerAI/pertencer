@@ -120,6 +120,13 @@ app.delete('/api/schools/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// DELETE Occurrence
+app.delete('/api/occurrences/:id', (req, res) => {
+  db.deleteOccurrence(req.params.id);
+  res.json({ success: true });
+});
+
+
 // Fallback route: serve index.html for all non-API paths (SPA routing)
 app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) {

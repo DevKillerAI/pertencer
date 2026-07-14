@@ -163,6 +163,7 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
   const [tutorialTab, setTutorialTab] = useState('welcome');
+  const [showTutorialModal, setShowTutorialModal] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -322,6 +323,9 @@ function App() {
     setShowDetailModal(false);
     setLoginData({ cpf: '', password: '' });
     setLoginError('');
+    
+    // Force clean navigation back to home page
+    window.location.href = '/';
   };
 
   // Handler: Save Occurrence
@@ -349,6 +353,21 @@ function App() {
       }
     } catch (err) {
       alert('Erro de conexão ao salvar ocorrência.');
+    }
+  };
+
+  // Handler: Delete Occurrence
+  const handleDeleteOccurrence = async (occId) => {
+    if (!confirm('Deseja realmente excluir esta ocorrência permanentemente?')) return;
+    try {
+      const res = await fetch(`/api/occurrences/${occId}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchOccurrences();
+      } else {
+        alert('Erro ao excluir ocorrência.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao excluir ocorrência.');
     }
   };
 
@@ -643,6 +662,13 @@ function App() {
                 >
                   Fluxo do App
                 </button>
+                <button 
+                  type="button"
+                  className={`tutorial-tab-btn ${tutorialTab === 'data_mgmt' ? 'active' : ''}`}
+                  onClick={() => setTutorialTab('data_mgmt')}
+                >
+                  Adicionar/Remover
+                </button>
               </div>
 
               <div className="tutorial-tab-content">
@@ -689,10 +715,25 @@ function App() {
 
                 {tutorialTab === 'features' && (
                   <ul style={{ paddingLeft: '1.2rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <li><strong>Pedagogo:</strong> Registra ocorrências em formulário progressivo por etapas. Visualiza apenas turmas designadas.</li>
+                    <li><strong>Pedagogo:</strong> Registra ocorrências em formulário progressivo por etapas. Visualiza apenas turmas designadas e pode excluir suas próprias ocorrências.</li>
                     <li><strong>Diretor:</strong> Analisa ocorrências da escola e insere o plano de ação / visto da diretoria.</li>
-                    <li><strong>Gestor:</strong> Cadastra escolas e usuários, acessa painel analítico consolidado e exporta dados no formato SPSS (Excel/CSV).</li>
+                    <li><strong>Gestor:</strong> Cadastra escolas e usuários, acessa painel analítico consolidado, exclui qualquer ocorrência e exporta dados no formato SPSS (Excel/CSV).</li>
                   </ul>
+                )}
+
+                {tutorialTab === 'data_mgmt' && (
+                  <div style={{ fontSize: '0.825rem' }}>
+                    <p style={{ marginBottom: '0.25rem' }}><strong>Como Adicionar Dados:</strong></p>
+                    <ul style={{ paddingLeft: '1.1rem', marginBottom: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                      <li>Entre como <strong>Pedagogo</strong> para adicionar **Ocorrências**.</li>
+                      <li>Entre como <strong>Gestor</strong> para adicionar **Escolas** e **Usuários**.</li>
+                    </ul>
+                    <p style={{ marginBottom: '0.25rem' }}><strong>Como Remover Dados:</strong></p>
+                    <ul style={{ paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                      <li>Entre como <strong>Gestor</strong> para remover **Escolas**, **Usuários** ou qualquer **Ocorrência** (botões "Excluir").</li>
+                      <li>Entre como <strong>Pedagogo</strong> para remover **Ocorrências** que foram criadas por você.</li>
+                    </ul>
+                  </div>
                 )}
               </div>
             </div>
@@ -808,6 +849,14 @@ function App() {
             title="Alternar Tema"
           >
             {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setShowTutorialModal(true)}
+            style={{ padding: '0.5rem 1rem', marginRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            💡 Tutorial
           </button>
 
           <button className="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.5rem 1rem' }}>
@@ -993,6 +1042,15 @@ function App() {
                                   >
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> PDF</span>
                                   </button>
+                                  {(user.role === 'gestor' || o.createdById === user.id) && (
+                                    <button 
+                                      className="btn btn-danger" 
+                                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                                      onClick={() => handleDeleteOccurrence(o.id)}
+                                    >
+                                      Excluir
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1128,6 +1186,15 @@ function App() {
                                   >
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> PDF</span>
                                   </button>
+                                  {(user.role === 'gestor' || o.createdById === user.id) && (
+                                    <button 
+                                      className="btn btn-danger" 
+                                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                                      onClick={() => handleDeleteOccurrence(o.id)}
+                                    >
+                                      Excluir
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -2039,6 +2106,74 @@ function App() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TUTORIAL MODAL FOR LOGGED-IN USERS */}
+      {showTutorialModal && (
+        <div className="modal-overlay" onClick={() => setShowTutorialModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>💡 Tutorial e Guia do Sistema</h3>
+              <button className="btn btn-secondary" onClick={() => setShowTutorialModal(false)}>
+                Fechar
+              </button>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', maxHeight: '75vh', padding: '1.5rem' }}>
+              <div>
+                <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Apresentação</h4>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  O sistema <strong>PERTENCER</strong> é uma ferramenta de avaliação e monitoramento de clima escolar. Ele centraliza o registro de ocorrências (bullying, homofobia, racismo, conflitos) e o acompanhamento pedagógico e diretivo.
+                </p>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Perfis de Acesso e Funcionalidades</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--accent-green)' }}>
+                    <strong>🛡️ Gestor (Elisabette Leo)</strong>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                      <li>Cadastrar novas escolas na aba "Gerenciar Escolas".</li>
+                      <li>Cadastrar e remover usuários na aba "Gerenciar Usuários".</li>
+                      <li>Visualizar estatísticas consolidadas e relatórios gráficos.</li>
+                      <li>Excluir qualquer ocorrência do sistema.</li>
+                      <li>Exportar todos os dados em formato SPSS (.csv estruturado para estatística).</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--accent-orange)' }}>
+                    <strong>💼 Diretor (Diretor Wancleber)</strong>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                      <li>Visualizar todas as ocorrências de sua escola.</li>
+                      <li>Inserir "Visto da Diretoria" e registrar planos de ação/observações no modal de detalhes.</li>
+                      <li>Exportar os dados específicos de sua escola em formato SPSS.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--primary)' }}>
+                    <strong>✏️ Pedagogo (Pedagoga Maria Silva / Ana Costa)</strong>
+                    <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                      <li>Registrar novas ocorrências através do formulário por etapas (Passos 1, 2 e 3).</li>
+                      <li>Visualizar e filtrar ocorrências das turmas designadas a você.</li>
+                      <li>Imprimir relatórios individuais em formato de folha A4 com campos de assinatura para pais e escola.</li>
+                      <li>Excluir ocorrências que foram criadas por você mesmo.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Remoção e Adição de Dados</h4>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Este app permite a manipulação em tempo real dos dados (salvos localmente no servidor):
+                </p>
+                <ul style={{ paddingLeft: '1.2rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                  <li>Para **adicionar** dados: utilize as opções "Nova Ocorrência", "Criar Escola" ou "Criar Usuário" em suas respectivas abas.</li>
+                  <li>Para **remover** dados: clique no botão "Excluir" correspondente a usuários (Gestor), escolas (Gestor) ou ocorrências (Gestor ou o Pedagogo criador).</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       )}
