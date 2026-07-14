@@ -161,6 +161,8 @@ const OCCURRENCE_TYPES = [
 function App() {
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [tutorialTab, setTutorialTab] = useState('welcome');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -309,6 +311,17 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    setActiveTab('dashboard');
+    setShowForm(false);
+    setFormStep(1);
+    setSearchQuery('');
+    setFilterType('');
+    setFilterSchool('');
+    setFilterClass('');
+    setSelectedOccurrence(null);
+    setShowDetailModal(false);
+    setLoginData({ cpf: '', password: '' });
+    setLoginError('');
   };
 
   // Handler: Save Occurrence
@@ -592,7 +605,100 @@ function App() {
   // Render Login page if not authenticated
   if (!user) {
     return (
-      <div className="login-wrapper">
+      <div className="login-wrapper" style={{ flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
+        
+        {/* Tutorial Bar */}
+        <div className="tutorial-container">
+          <div className="tutorial-header" onClick={() => setShowTutorial(!showTutorial)}>
+            <div className="tutorial-title">
+              <span>💡</span>
+              <span>Tutorial de Navegação e Contas de Teste</span>
+            </div>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              {showTutorial ? '▲ Recolher' : '▼ Expandir'}
+            </span>
+          </div>
+
+          {showTutorial && (
+            <div className="tutorial-content">
+              <div className="tutorial-tabs">
+                <button 
+                  type="button"
+                  className={`tutorial-tab-btn ${tutorialTab === 'welcome' ? 'active' : ''}`}
+                  onClick={() => setTutorialTab('welcome')}
+                >
+                  Boas-vindas
+                </button>
+                <button 
+                  type="button"
+                  className={`tutorial-tab-btn ${tutorialTab === 'roles' ? 'active' : ''}`}
+                  onClick={() => setTutorialTab('roles')}
+                >
+                  Contas de Acesso
+                </button>
+                <button 
+                  type="button"
+                  className={`tutorial-tab-btn ${tutorialTab === 'features' ? 'active' : ''}`}
+                  onClick={() => setTutorialTab('features')}
+                >
+                  Fluxo do App
+                </button>
+              </div>
+
+              <div className="tutorial-tab-content">
+                {tutorialTab === 'welcome' && (
+                  <p>
+                    O <strong>PERTENCER</strong> é o avaliador de clima escolar para registro e monitoramento de ocorrências escolares (bullying, racismo, conflitos, etc.) da rede municipal. Navegue usando as contas de teste na próxima aba.
+                  </p>
+                )}
+
+                {tutorialTab === 'roles' && (
+                  <div>
+                    <p style={{ marginBottom: '0.5rem' }}>Clique em um perfil para preencher os dados de login automaticamente:</p>
+                    <div className="quick-login-grid">
+                      <div 
+                        className="quick-login-card" 
+                        onClick={() => {
+                          setLoginData({ cpf: '000.000.000-00', password: 'admin' });
+                        }}
+                      >
+                        <span className="quick-login-role">🛡️ Gestor (Total)</span>
+                        <span className="quick-login-creds">CPF: 000.000.000-00 | Senha: admin</span>
+                      </div>
+                      <div 
+                        className="quick-login-card" 
+                        onClick={() => {
+                          setLoginData({ cpf: '111.111.111-11', password: 'senha' });
+                        }}
+                      >
+                        <span className="quick-login-role">💼 Diretor (Escola)</span>
+                        <span className="quick-login-creds">CPF: 111.111.111-11 | Senha: senha</span>
+                      </div>
+                      <div 
+                        className="quick-login-card" 
+                        onClick={() => {
+                          setLoginData({ cpf: '222.222.222-22', password: 'senha' });
+                        }}
+                      >
+                        <span className="quick-login-role">✏️ Pedagogo (Registro)</span>
+                        <span className="quick-login-creds">CPF: 222.222.222-22 | Senha: senha</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {tutorialTab === 'features' && (
+                  <ul style={{ paddingLeft: '1.2rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <li><strong>Pedagogo:</strong> Registra ocorrências em formulário progressivo por etapas. Visualiza apenas turmas designadas.</li>
+                    <li><strong>Diretor:</strong> Analisa ocorrências da escola e insere o plano de ação / visto da diretoria.</li>
+                    <li><strong>Gestor:</strong> Cadastra escolas e usuários, acessa painel analítico consolidado e exporta dados no formato SPSS (Excel/CSV).</li>
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <form className="login-card" onSubmit={handleLogin}>
           <div className="login-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '0.5rem' }}>
