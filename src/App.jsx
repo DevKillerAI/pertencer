@@ -611,7 +611,7 @@ function App() {
           <Logo style={{ width: '120px', height: '120px' }} />
           <div className="splash-text">
             <span className="splash-title">PERTENCER</span>
-            <span className="splash-subtitle">AVALIADOR DE CLIMA ESCOLAR</span>
+            <span className="splash-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
           </div>
           <div className="splash-progress-bar">
             <div className="splash-progress-fill"></div>
@@ -674,7 +674,7 @@ function App() {
               <div className="tutorial-tab-content">
                 {tutorialTab === 'welcome' && (
                   <p>
-                    O <strong>PERTENCER</strong> é o avaliador de clima escolar para registro e monitoramento de ocorrências escolares (bullying, racismo, conflitos, etc.) da rede municipal. Navegue usando as contas de teste na próxima aba.
+                    O <strong>PERTENCER</strong> é o monitoramento de clima escolar para registro e monitoramento de ocorrências escolares (bullying, racismo, conflitos, etc.) da rede municipal. Navegue usando as contas de teste na próxima aba.
                   </p>
                 )}
 
@@ -746,7 +746,7 @@ function App() {
               <Logo style={{ width: '60px', height: '60px' }} />
               <div className="login-logo-block" style={{ textAlign: 'left' }}>
                 <span className="login-logo-title">PERTENCER</span>
-                <span className="login-logo-subtitle">AVALIADOR DE CLIMA ESCOLAR</span>
+                <span className="login-logo-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
               </div>
             </div>
             <p className="login-subtitle">Sistema de Registro e Monitoramento de Ocorrências</p>
@@ -832,7 +832,7 @@ function App() {
           <Logo style={{ width: '48px', height: '48px' }} />
           <div className="navbar-logo-text">
             <span className="navbar-title">PERTENCER</span>
-            <span className="navbar-subtitle">AVALIADOR DE CLIMA ESCOLAR</span>
+            <span className="navbar-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
           </div>
         </a>
         <div className="navbar-user">
@@ -1969,7 +1969,7 @@ function App() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
                 <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>PERTENCER</span>
-                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>AVALIADOR DE CLIMA ESCOLAR</span>
+                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>MONITORAMENTO DE CLIMA ESCOLAR</span>
               </div>
               <div className="print-doc-title">REGISTRO DE ATENDIMENTO AOS PAIS</div>
             </div>
@@ -2047,7 +2047,7 @@ function App() {
               <div className="print-school-name">REDE MUNICIPAL DE ENSINO</div>
               <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
                 <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>PERTENCER</span>
-                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>AVALIADOR DE CLIMA ESCOLAR</span>
+                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>MONITORAMENTO DE CLIMA ESCOLAR</span>
               </div>
               <div className="print-doc-title">RELATÓRIO CONSOLIDADO DE GESTÃO</div>
             </div>
@@ -2124,7 +2124,7 @@ function App() {
               <div>
                 <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Apresentação</h4>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  O sistema <strong>PERTENCER</strong> é uma ferramenta de avaliação e monitoramento de clima escolar. Ele centraliza o registro de ocorrências (bullying, homofobia, racismo, conflitos) e o acompanhamento pedagógico e diretivo.
+                  O sistema <strong>PERTENCER</strong> é uma ferramenta de monitoramento de clima escolar. Ele centraliza o registro de ocorrências (bullying, homofobia, racismo, conflitos) e o acompanhamento pedagógico e diretivo.
                 </p>
               </div>
 
