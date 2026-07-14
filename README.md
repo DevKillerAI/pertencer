@@ -1,4 +1,11 @@
-# React + Vite
+# PERTENCER - Monitoramento de Clima Escolar
+
+Este é o repositório oficial do sistema **PERTENCER** (Monitoramento de Clima Escolar).
+
+- **URL do Repositório:** https://github.com/DevKillerAI/pertencer
+- **Clone SSH:** `git@github.com:DevKillerAI/pertencer.git`
+
+## Template Original (React + Vite)
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

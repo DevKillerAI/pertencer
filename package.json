@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/DevKillerAI/pertencer.git"
+  },
   "scripts": {
     "dev:frontend": "vite",
     "dev:backend": "node server/index.js",
