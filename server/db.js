@@ -1,12 +1,26 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE = path.join(__dirname, 'db.json');
 
-// Initialize database with seed data if it doesn't exist
+// Supabase Configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
+const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
+
+if (isSupabaseConfigured) {
+  console.log('Database: Connected using Supabase.');
+} else {
+  console.log('Database: Supabase keys not set. Falling back to local db.json file.');
+}
+
+// Initialize database with seed data if it doesn't exist (Local Fallback only)
 const initialData = {
   schools: [
     { id: 'esc-1', name: 'Escola Municipal Professor Wancleber Pacheco' },
@@ -104,11 +118,49 @@ function writeDb(data) {
 }
 
 export const db = {
-  getData: () => readDb(),
+  getData: async () => {
+    if (isSupabaseConfigured) {
+      const schools = await db.getSchools();
+      const users = await db.getUsers();
+      const occurrences = await db.getOccurrences();
+      return { schools, users, occurrences };
+    }
+    return readDb();
+  },
   
   // Schools
-  getSchools: () => readDb().schools,
-  saveSchool: (school) => {
+  getSchools: async () => {
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) {
+        console.error('Supabase Error (getSchools):', error);
+        throw error;
+      }
+      return data || [];
+    }
+    return readDb().schools;
+  },
+  
+  saveSchool: async (school) => {
+    if (isSupabaseConfigured) {
+      if (!school.id) {
+        school.id = 'esc-' + Date.now();
+      }
+      const { data, error } = await supabase
+        .from('schools')
+        .upsert(school)
+        .select();
+      if (error) {
+        console.error('Supabase Error (saveSchool):', error);
+        throw error;
+      }
+      return data[0];
+    }
+    
+    // Local Fallback
     const data = readDb();
     if (school.id) {
       data.schools = data.schools.map(s => s.id === school.id ? { ...s, ...school } : s);
@@ -119,15 +171,64 @@ export const db = {
     writeDb(data);
     return school;
   },
-  deleteSchool: (id) => {
+  
+  deleteSchool: async (id) => {
+    if (isSupabaseConfigured) {
+      const { error } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error('Supabase Error (deleteSchool):', error);
+        throw error;
+      }
+      return;
+    }
+    
+    // Local Fallback
     const data = readDb();
     data.schools = data.schools.filter(s => s.id !== id);
     writeDb(data);
   },
   
   // Users
-  getUsers: () => readDb().users,
-  saveUser: (user) => {
+  getUsers: async () => {
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) {
+        console.error('Supabase Error (getUsers):', error);
+        throw error;
+      }
+      return data || [];
+    }
+    return readDb().users;
+  },
+  
+  saveUser: async (user) => {
+    if (isSupabaseConfigured) {
+      if (!user.id) {
+        user.id = 'usr-' + Date.now();
+      }
+      // Ensure classes is stored as JSON array in Supabase JSONB
+      const payload = {
+        ...user,
+        classes: Array.isArray(user.classes) ? user.classes : []
+      };
+      const { data, error } = await supabase
+        .from('users')
+        .upsert(payload)
+        .select();
+      if (error) {
+        console.error('Supabase Error (saveUser):', error);
+        throw error;
+      }
+      return data[0];
+    }
+    
+    // Local Fallback
     const data = readDb();
     if (user.id) {
       data.users = data.users.map(u => u.id === user.id ? { ...u, ...user } : u);
@@ -138,15 +239,59 @@ export const db = {
     writeDb(data);
     return user;
   },
-  deleteUser: (id) => {
+  
+  deleteUser: async (id) => {
+    if (isSupabaseConfigured) {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error('Supabase Error (deleteUser):', error);
+        throw error;
+      }
+      return;
+    }
+    
+    // Local Fallback
     const data = readDb();
     data.users = data.users.filter(u => u.id !== id);
     writeDb(data);
   },
   
   // Occurrences
-  getOccurrences: () => readDb().occurrences,
-  saveOccurrence: (occurrence) => {
+  getOccurrences: async () => {
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('occurrences')
+        .select('*')
+        .order('date', { ascending: false });
+      if (error) {
+        console.error('Supabase Error (getOccurrences):', error);
+        throw error;
+      }
+      return data || [];
+    }
+    return readDb().occurrences;
+  },
+  
+  saveOccurrence: async (occurrence) => {
+    if (isSupabaseConfigured) {
+      if (!occurrence.id) {
+        occurrence.id = 'occ-' + Date.now();
+      }
+      const { data, error } = await supabase
+        .from('occurrences')
+        .upsert(occurrence)
+        .select();
+      if (error) {
+        console.error('Supabase Error (saveOccurrence):', error);
+        throw error;
+      }
+      return data[0];
+    }
+    
+    // Local Fallback
     const data = readDb();
     if (occurrence.id) {
       data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
@@ -157,10 +302,23 @@ export const db = {
     writeDb(data);
     return occurrence;
   },
-  deleteOccurrence: (id) => {
+  
+  deleteOccurrence: async (id) => {
+    if (isSupabaseConfigured) {
+      const { error } = await supabase
+        .from('occurrences')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error('Supabase Error (deleteOccurrence):', error);
+        throw error;
+      }
+      return;
+    }
+    
+    // Local Fallback
     const data = readDb();
     data.occurrences = data.occurrences.filter(o => o.id !== id);
     writeDb(data);
   }
 };
-

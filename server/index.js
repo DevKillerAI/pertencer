@@ -17,115 +17,167 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // API Login
-app.post('/api/login', (req, res) => {
-  const { cpf, password } = req.body;
-  if (!cpf || !password) {
-    return res.status(400).json({ error: 'CPF e senha são obrigatórios.' });
-  }
+app.post('/api/login', async (req, res) => {
+  try {
+    const { cpf, password } = req.body;
+    if (!cpf || !password) {
+      return res.status(400).json({ error: 'CPF e senha são obrigatórios.' });
+    }
 
-  // Clean CPF characters to compare
-  const cleanCpf = cpf.replace(/\D/g, '');
-  const users = db.getUsers();
-  
-  const user = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf && u.password === password);
-  
-  if (!user) {
-    return res.status(401).json({ error: 'CPF ou senha incorretos.' });
-  }
+    // Clean CPF characters to compare
+    const cleanCpf = cpf.replace(/\D/g, '');
+    const users = await db.getUsers();
+    
+    const user = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf && u.password === password);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'CPF ou senha incorretos.' });
+    }
 
-  // Find school name if user has a schoolId
-  let schoolName = null;
-  if (user.schoolId) {
-    const school = db.getSchools().find(s => s.id === user.schoolId);
-    if (school) schoolName = school.name;
-  }
+    // Find school name if user has a schoolId
+    let schoolName = null;
+    if (user.schoolId) {
+      const schools = await db.getSchools();
+      const school = schools.find(s => s.id === user.schoolId);
+      if (school) schoolName = school.name;
+    }
 
-  // Exclude password in response
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ ...userWithoutPassword, schoolName });
+    // Exclude password in response
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ ...userWithoutPassword, schoolName });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // GET Schools
-app.get('/api/schools', (req, res) => {
-  res.json(db.getSchools());
+app.get('/api/schools', async (req, res) => {
+  try {
+    const schools = await db.getSchools();
+    res.json(schools);
+  } catch (error) {
+    console.error('Error fetching schools:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // POST School (Gestor only)
-app.post('/api/schools', (req, res) => {
-  const { id, name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'Nome da escola é obrigatório.' });
+app.post('/api/schools', async (req, res) => {
+  try {
+    const { id, name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Nome da escola é obrigatório.' });
+    }
+    const saved = await db.saveSchool({ id, name });
+    res.json(saved);
+  } catch (error) {
+    console.error('Error saving school:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-  const saved = db.saveSchool({ id, name });
-  res.json(saved);
 });
 
 // GET Occurrences (Filtered by role and school)
-app.get('/api/occurrences', (req, res) => {
-  const { schoolId, role, userId } = req.query;
-  let occurrences = db.getOccurrences();
+app.get('/api/occurrences', async (req, res) => {
+  try {
+    const { schoolId, role, userId } = req.query;
+    let occurrences = await db.getOccurrences();
 
-  if (role === 'pedagogo') {
-    // Pedagogues only see their own school's occurrences, and we can filter by their classes on the frontend or here
-    occurrences = occurrences.filter(o => o.schoolId === schoolId);
-  } else if (role === 'diretor') {
-    // Directors see occurrences from their school
-    occurrences = occurrences.filter(o => o.schoolId === schoolId);
-  } else if (role === 'gestor') {
-    // Gestor sees everything
-    // No filter
+    if (role === 'pedagogo') {
+      // Pedagogues only see their own school's occurrences, and we can filter by their classes on the frontend or here
+      occurrences = occurrences.filter(o => o.schoolId === schoolId);
+    } else if (role === 'diretor') {
+      // Directors see occurrences from their school
+      occurrences = occurrences.filter(o => o.schoolId === schoolId);
+    } else if (role === 'gestor') {
+      // Gestor sees everything
+      // No filter
+    }
+
+    res.json(occurrences);
+  } catch (error) {
+    console.error('Error fetching occurrences:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-
-  res.json(occurrences);
 });
 
 // POST Occurrence (Create/Update)
-app.post('/api/occurrences', (req, res) => {
-  const occurrence = req.body;
-  
-  if (!occurrence.studentName || !occurrence.schoolId || !occurrence.type) {
-    return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
-  }
+app.post('/api/occurrences', async (req, res) => {
+  try {
+    const occurrence = req.body;
+    
+    if (!occurrence.studentName || !occurrence.schoolId || !occurrence.type) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+    }
 
-  const saved = db.saveOccurrence(occurrence);
-  res.json(saved);
+    const saved = await db.saveOccurrence(occurrence);
+    res.json(saved);
+  } catch (error) {
+    console.error('Error saving occurrence:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // GET Users (Gestor only)
-app.get('/api/users', (req, res) => {
-  const users = db.getUsers().map(({ password, ...u }) => u);
-  res.json(users);
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await db.getUsers();
+    const usersWithoutPassword = users.map(({ password, ...u }) => u);
+    res.json(usersWithoutPassword);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // POST User (Gestor only)
-app.post('/api/users', (req, res) => {
-  const user = req.body;
-  if (!user.name || !user.cpf || !user.password || !user.role) {
-    return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+app.post('/api/users', async (req, res) => {
+  try {
+    const user = req.body;
+    if (!user.name || !user.cpf || !user.password || !user.role) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+    }
+    const saved = await db.saveUser(user);
+    const { password, ...savedWithoutPassword } = saved;
+    res.json(savedWithoutPassword);
+  } catch (error) {
+    console.error('Error saving user:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-  const saved = db.saveUser(user);
-  const { password, ...savedWithoutPassword } = saved;
-  res.json(savedWithoutPassword);
 });
 
 // DELETE User (Gestor only)
-app.delete('/api/users/:id', (req, res) => {
-  db.deleteUser(req.params.id);
-  res.json({ success: true });
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    await db.deleteUser(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // DELETE School (Gestor only)
-app.delete('/api/schools/:id', (req, res) => {
-  db.deleteSchool(req.params.id);
-  res.json({ success: true });
+app.delete('/api/schools/:id', async (req, res) => {
+  try {
+    await db.deleteSchool(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting school:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
 
 // DELETE Occurrence
-app.delete('/api/occurrences/:id', (req, res) => {
-  db.deleteOccurrence(req.params.id);
-  res.json({ success: true });
+app.delete('/api/occurrences/:id', async (req, res) => {
+  try {
+    await db.deleteOccurrence(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting occurrence:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
 });
-
 
 // Fallback route: serve index.html for all non-API paths (SPA routing)
 app.get(/.*/, (req, res, next) => {

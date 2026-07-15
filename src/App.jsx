@@ -561,19 +561,24 @@ function App() {
 
   // Filter & Search Logic
   const filteredOccurrences = occurrences.filter(o => {
+    const studentName = o.studentName || '';
+    const guardianName = o.guardianName || '';
+    const subject = o.subject || '';
+    const className = o.className || '';
+
     const matchesSearch = 
-      o.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.guardianName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (o.subject && o.subject.toLowerCase().includes(searchQuery.toLowerCase()));
+      studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      guardianName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      subject.toLowerCase().includes(searchQuery.toLowerCase());
       
     const matchesType = filterType ? o.type === filterType : true;
     const matchesSchool = filterSchool ? o.schoolId === filterSchool : true;
-    const matchesClass = filterClass ? o.className === filterClass : true;
+    const matchesClass = filterClass ? className === filterClass : true;
     
     // In addition, if pedagogue, restrict list to their designated classes
     const matchesPedagogueClasses = 
       user && user.role === 'pedagogo' && user.classes && user.classes.length > 0
-        ? user.classes.includes(o.className)
+        ? user.classes.includes(className)
         : true;
 
     return matchesSearch && matchesType && matchesSchool && matchesClass && matchesPedagogueClasses;
