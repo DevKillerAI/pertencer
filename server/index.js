@@ -134,9 +134,26 @@ app.get('/api/users', async (req, res) => {
 app.post('/api/users', async (req, res) => {
   try {
     const user = req.body;
-    if (!user.name || !user.cpf || !user.password || !user.role) {
-      return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+    if (!user.name || !user.cpf || !user.password || !user.role || !user.email) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes (nome, cpf, e-mail, senha e perfil são necessários).' });
     }
+
+    // Clean CPF for validation
+    const cleanCpf = user.cpf.replace(/\D/g, '');
+    const users = await db.getUsers();
+    
+    // Check duplicate CPF
+    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf);
+    if (duplicateCpf) {
+      return res.status(400).json({ error: 'CPF já cadastrado.' });
+    }
+
+    // Check duplicate Email
+    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+    if (duplicateEmail) {
+      return res.status(400).json({ error: 'E-mail já cadastrado.' });
+    }
+
     const saved = await db.saveUser(user);
     const { password, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
@@ -168,9 +185,21 @@ app.delete('/api/schools/:id', async (req, res) => {
   }
 });
 
-// DELETE Occurrence
+// DELETE Occurrence (Protected)
 app.delete('/api/occurrences/:id', async (req, res) => {
   try {
+    const { role, userId } = req.query;
+    
+    if (role === 'pedagogo') {
+      const occurrences = await db.getOccurrences();
+      const occ = occurrences.find(o => o.id === req.params.id);
+      if (occ && occ.createdById !== userId) {
+        return res.status(403).json({ error: 'Não autorizado. O pedagogo só pode excluir ocorrências criadas por ele.' });
+      }
+    } else if (role === 'diretor') {
+      return res.status(403).json({ error: 'Não autorizado. Diretores não têm permissão para excluir ocorrências.' });
+    }
+
     await db.deleteOccurrence(req.params.id);
     res.json({ success: true });
   } catch (error) {

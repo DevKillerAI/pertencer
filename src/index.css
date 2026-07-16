@@ -175,19 +175,20 @@ button, input, select, textarea {
 
 .navbar-title {
   font-family: var(--font-heading);
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: 1.8rem;
+  font-weight: 900;
   color: var(--primary-dark);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .navbar-subtitle {
-  font-size: 0.65rem;
+  font-size: 0.52rem;
   font-weight: 700;
   color: var(--accent-green);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  margin-top: 1px;
 }
 
 .navbar-user {
@@ -640,18 +641,18 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 
 .login-logo-title {
   font-family: var(--font-heading);
-  font-size: 1.85rem;
-  font-weight: 800;
+  font-size: 2.2rem;
+  font-weight: 900;
   color: var(--primary);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .login-logo-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.52rem;
   font-weight: 700;
   color: var(--accent-green);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -723,7 +724,7 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
     font-family: 'Times New Roman', Times, serif;
   }
   
-  .app-container, .navbar, .main-content, .btn, .step-indicator, .filters-bar, .modal-overlay {
+  .navbar, .main-content, .btn, .step-indicator, .filters-bar, .modal-overlay, .theme-toggle, .splash-screen-wrapper {
     display: none !important;
   }
   
@@ -734,6 +735,28 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
     padding: 1.5cm 2cm;
     margin: 0;
     box-sizing: border-box;
+    position: relative;
+    background-color: #ffffff !important;
+  }
+
+  .print-watermark {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-family: 'Arial', sans-serif;
+    font-size: 70pt;
+    color: rgba(239, 68, 68, 0.12) !important;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 1000;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    white-space: nowrap;
+    text-align: center;
+    border: 10px solid rgba(239, 68, 68, 0.12);
+    padding: 10px 30px;
+    border-radius: 20px;
   }
   
   .print-header {
@@ -877,18 +900,18 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
 
 .splash-title {
   font-family: var(--font-heading);
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 3.2rem;
+  font-weight: 900;
   color: var(--primary);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .splash-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent-green);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 

@@ -1,68 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import logoVetor from './logo-vetor.svg';
 
 // SVG Logo Component (Circle of kids around a house with a heart)
-const Logo = (props) => (
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    {/* Center House (Navy Blue) */}
-    <path 
-      d="M 35,52 L 50,37 L 65,52 M 39.5,50.5 L 39.5,66 C 39.5,67 40,67.5 41,67.5 L 59,67.5 C 60,67.5 60.5,67 60.5,66 L 60.5,50.5" 
-      stroke="#1c355e" 
-      strokeWidth="4" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+const Logo = ({ iconOnly = false, ...props }) => {
+  if (iconOnly) {
+    return (
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        {/* Magnifying glass handle */}
+        <path 
+          d="M 62 62 L 78 78" 
+          stroke="#1c355e" 
+          strokeWidth="7.5" 
+          strokeLinecap="round" 
+        />
+        
+        {/* Blue Ring Segment */}
+        <path 
+          d="M 60 60 A 25 25 0 0 1 20 34" 
+          stroke="#1c355e" 
+          strokeWidth="5" 
+          strokeLinecap="round" 
+          fill="none" 
+        />
+        
+        {/* Teal Ring Segment */}
+        <path 
+          d="M 25 25 A 25 25 0 0 1 61 24" 
+          stroke="#20a894" 
+          strokeWidth="5" 
+          strokeLinecap="round" 
+          fill="none" 
+        />
+        
+        {/* Green Ring Segment */}
+        <path 
+          d="M 65 30 A 25 25 0 0 1 63 56" 
+          stroke="#3da35d" 
+          strokeWidth="5" 
+          strokeLinecap="round" 
+          fill="none" 
+        />
+        
+        {/* Left Person (Blue) */}
+        <circle cx="34" cy="42" r="3" fill="#2b5ba2" />
+        <rect x="31" y="47" width="6" height="12" rx="3" fill="#2b5ba2" />
+        
+        {/* Middle Person (Teal) */}
+        <circle cx="45" cy="35" r="3" fill="#20a894" />
+        <rect x="42" y="40" width="6" height="19" rx="3" fill="#20a894" />
+        
+        {/* Right Person (Green) */}
+        <circle cx="56" cy="28" r="3" fill="#3da35d" />
+        <rect x="53" y="33" width="6" height="26" rx="3" fill="#3da35d" />
+      </svg>
+    );
+  }
+
+  // Full Logomarca matching the official logo-vetor.svg
+  return (
+    <img 
+      src={logoVetor} 
+      alt="POME Logo" 
+      {...props} 
+      style={{ display: 'block', maxWidth: '100%', height: 'auto', ...props.style }} 
     />
-    
-    {/* Center Heart (Pink) */}
-    <path 
-      d="M 50,55.5 C 49.3,53.7 47.5,52.5 45.7,52.5 C 43,52.5 41.5,54.5 41.5,57.2 C 41.5,60.5 45.7,63.8 50,65.8 C 54.3,63.8 58.5,60.5 58.5,57.2 C 58.5,54.5 57,52.5 54.3,52.5 C 52.5,52.5 50.7,53.7 50,55.5 Z" 
-      fill="#e51c60" 
-    />
-    
-    {/* 6 Stylized Figures around the house */}
-    {/* Top: Blue */}
-    <g>
-      <circle cx="50" cy="15" r="5.5" fill="#005fa9" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#005fa9" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#005fa9" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-
-    {/* Top-Right: Teal */}
-    <g transform="rotate(60 50 50)">
-      <circle cx="50" cy="15" r="5.5" fill="#00a294" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#00a294" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#00a294" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-
-    {/* Bottom-Right: Green */}
-    <g transform="rotate(120 50 50)">
-      <circle cx="50" cy="15" r="5.5" fill="#70b135" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#70b135" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#70b135" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-
-    {/* Bottom: Yellow */}
-    <g transform="rotate(180 50 50)">
-      <circle cx="50" cy="15" r="5.5" fill="#f9bd15" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#f9bd15" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#f9bd15" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-
-    {/* Bottom-Left: Orange */}
-    <g transform="rotate(240 50 50)">
-      <circle cx="50" cy="15" r="5.5" fill="#f37022" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#f37022" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#f37022" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-
-    {/* Top-Left: Purple */}
-    <g transform="rotate(300 50 50)">
-      <circle cx="50" cy="15" r="5.5" fill="#85368a" />
-      <path d="M 46.5,21 L 44,32 C 43.8,33 44.5,34 45.5,34 C 46.2,34 46.8,33.5 47,32.8 L 48.5,28.5 C 49,27.5 51,27.5 51.5,28.5 L 53,32.8 C 53.2,33.5 53.8,34 54.5,34 C 55.5,34 56.2,33 56,32 L 53.5,21 Z" fill="#85368a" />
-      <path d="M 33.5,23 C 39,18.5 44,17 50,17 C 56,17 61,18.5 66.5,23" stroke="#85368a" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-    </g>
-  </svg>
-);
+  );
+};
 
 // Outline Icons
 const IconHome = (props) => (
@@ -158,6 +162,44 @@ const OCCURRENCE_TYPES = [
   { label: 'Outros', code: 5 }
 ];
 
+const CLASSIFICATIONS_TREE = {
+  'Violências interpessoais': [
+    'Agressão física',
+    'Agressão verbal',
+    'Ameaça',
+    'Bullying',
+    'Intimidação',
+    'Cyberagressão'
+  ],
+  'Discriminação e preconceito': [
+    'Racismo',
+    'Homofobia',
+    'Transfobia',
+    'Gordofobia',
+    'Capacitismo',
+    'Xenofobia',
+    'Preconceito religioso',
+    'Preconceito linguístico',
+    'Preconceito socioeconômico',
+    'Discriminação por aparência',
+    'Discriminação por gênero',
+    'Etarismo'
+  ],
+  'Violência sexual': [
+    'Assédio sexual',
+    'Abuso sexual'
+  ],
+  'Patrimônio escolar': [
+    'Vandalismo',
+    'Depredação'
+  ],
+  'Descumprimento de normas escolares': [
+    'Indisciplina recorrente',
+    'Saída injustificada da sala',
+    'Uso indevido de aparelhos eletrônicos'
+  ]
+};
+
 function App() {
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -206,7 +248,7 @@ function App() {
   // School/User Creation States (Gestor)
   const [newSchoolName, setNewSchoolName] = useState('');
   const [editingSchool, setEditingSchool] = useState(null);
-  const [newUserData, setNewUserData] = useState({ name: '', cpf: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
+  const [newUserData, setNewUserData] = useState({ name: '', cpf: '', email: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
 
   // Progressive Form State
   const initialFormState = {
@@ -215,14 +257,18 @@ function App() {
     gradeCycle: '',
     className: '',
     teacherName: '',
+    subject_matter: '',
+    attended_people: [{ name: '', bond: 'Pai/Mãe', contact: '' }],
     guardianName: '',
     contacts: '',
     date: new Date().toISOString().split('T')[0],
+    classifications: [],
     type: '',
     subject: '',
     referrals: '',
     observations: '',
-    directorNotes: ''
+    directorNotes: '',
+    status: 'rascunho'
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -329,12 +375,15 @@ function App() {
   };
 
   // Handler: Save Occurrence
-  const handleSaveOccurrence = async () => {
+  const handleSaveOccurrence = async (status = 'finalizado') => {
+    const typeValue = formData.classifications && formData.classifications.length > 0 ? formData.classifications[0] : '';
     const payload = {
       ...formData,
+      type: typeValue,
+      status: status,
       schoolId: user.schoolId || formData.schoolId || schools[0]?.id,
-      createdById: user.id,
-      createdByName: user.name
+      createdById: formData.createdById || user.id,
+      createdByName: formData.createdByName || user.name
     };
 
     try {
@@ -356,15 +405,47 @@ function App() {
     }
   };
 
+  // Handler: Load Occurrence for Editing
+  const handleEditOccurrence = (occ) => {
+    setFormData({
+      id: occ.id,
+      studentName: occ.studentName,
+      gradeCycle: occ.gradeCycle,
+      className: occ.className,
+      teacherName: occ.teacherName,
+      subject_matter: occ.subject_matter || '',
+      attended_people: Array.isArray(occ.attended_people) && occ.attended_people.length > 0
+        ? occ.attended_people
+        : [{ name: occ.guardianName || '', bond: 'Responsável', contact: occ.contacts || '' }],
+      guardianName: occ.guardianName || '',
+      contacts: occ.contacts || '',
+      date: occ.date,
+      classifications: Array.isArray(occ.classifications)
+        ? occ.classifications
+        : [occ.type].filter(Boolean),
+      type: occ.type || '',
+      subject: occ.subject,
+      referrals: occ.referrals,
+      observations: occ.observations || '',
+      directorNotes: occ.directorNotes || '',
+      status: occ.status || 'finalizado',
+      createdById: occ.createdById,
+      createdByName: occ.createdByName
+    });
+    setShowForm(true);
+    setFormStep(1);
+  };
+
   // Handler: Delete Occurrence
   const handleDeleteOccurrence = async (occId) => {
     if (!confirm('Deseja realmente excluir esta ocorrência permanentemente?')) return;
     try {
-      const res = await fetch(`/api/occurrences/${occId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/occurrences/${occId}?role=${user.role}&userId=${user.id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchOccurrences();
       } else {
-        alert('Erro ao excluir ocorrência.');
+        const err = await res.json();
+        alert(err.error || 'Erro ao excluir ocorrência.');
       }
     } catch (err) {
       alert('Erro de conexão ao excluir ocorrência.');
@@ -565,15 +646,29 @@ function App() {
     const guardianName = o.guardianName || '';
     const subject = o.subject || '';
     const className = o.className || '';
+    const createdByName = o.createdByName || '';
+    const gradeCycle = o.gradeCycle || '';
+    const type = o.type || '';
+    const status = o.status || 'finalizado';
+    const schoolName = schools.find(s => s.id === o.schoolId)?.name || '';
+
+    const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const normalizedQuery = normalize(searchQuery);
 
     const matchesSearch = 
-      studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      guardianName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      subject.toLowerCase().includes(searchQuery.toLowerCase());
+      normalize(studentName).includes(normalizedQuery) ||
+      normalize(guardianName).includes(normalizedQuery) ||
+      normalize(subject).includes(normalizedQuery) ||
+      normalize(className).includes(normalizedQuery) ||
+      normalize(createdByName).includes(normalizedQuery) ||
+      normalize(schoolName).includes(normalizedQuery) ||
+      normalize(gradeCycle).includes(normalizedQuery) ||
+      normalize(type).includes(normalizedQuery) ||
+      normalize(status).includes(normalizedQuery);
       
     const matchesType = filterType ? o.type === filterType : true;
     const matchesSchool = filterSchool ? o.schoolId === filterSchool : true;
-    const matchesClass = filterClass ? className === filterClass : true;
+    const matchesClass = filterClass ? className.toLowerCase().includes(filterClass.toLowerCase()) : true;
     
     // In addition, if pedagogue, restrict list to their designated classes
     const matchesPedagogueClasses = 
@@ -613,11 +708,7 @@ function App() {
     return (
       <div className="splash-screen-wrapper">
         <div className="splash-logo-container">
-          <Logo style={{ width: '120px', height: '120px' }} />
-          <div className="splash-text">
-            <span className="splash-title">PERTENCER</span>
-            <span className="splash-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
-          </div>
+          <Logo style={{ width: '670px', height: 'auto', marginBottom: '1.5rem' }} />
           <div className="splash-progress-bar">
             <div className="splash-progress-fill"></div>
           </div>
@@ -679,7 +770,7 @@ function App() {
               <div className="tutorial-tab-content">
                 {tutorialTab === 'welcome' && (
                   <p>
-                    O <strong>PERTENCER</strong> é o monitoramento de clima escolar para registro e monitoramento de ocorrências escolares (bullying, racismo, conflitos, etc.) da rede municipal. Navegue usando as contas de teste na próxima aba.
+                    A plataforma <strong>POME</strong> é um sistema de monitoramento de clima escolar para registro e acompanhamento de atendimentos e ocorrências da rede municipal. Navegue usando as contas de teste na próxima aba.
                   </p>
                 )}
 
@@ -747,12 +838,8 @@ function App() {
 
         <form className="login-card" onSubmit={handleLogin}>
           <div className="login-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '0.5rem' }}>
-              <Logo style={{ width: '60px', height: '60px' }} />
-              <div className="login-logo-block" style={{ textAlign: 'left' }}>
-                <span className="login-logo-title">PERTENCER</span>
-                <span className="login-logo-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', width: '100%' }}>
+              <Logo style={{ width: '220px', height: 'auto' }} />
             </div>
             <p className="login-subtitle">Sistema de Registro e Monitoramento de Ocorrências</p>
           </div>
@@ -821,12 +908,8 @@ function App() {
   // Helper values to display progressive fields in step 1
   const isNameFilled = formData.studentName.trim().length >= 3;
   const isClassFilled = isNameFilled && formData.gradeCycle.trim() && formData.className.trim();
-  const isTeacherGuardianFilled = isClassFilled && formData.teacherName.trim() && formData.guardianName.trim();
-
-  // Helper values for step 2
-  const isTypeSubjectFilled = formData.type && formData.subject.trim().length >= 10;
-
-  // Helper values for step 3
+  const isTeacherGuardianFilled = isClassFilled && formData.teacherName.trim() && formData.attended_people && formData.attended_people.length > 0 && formData.attended_people[0].name.trim();
+  const isTypeSubjectFilled = formData.classifications && formData.classifications.length > 0 && formData.subject.trim().length >= 10;
   const isActionsFilled = formData.referrals.trim().length >= 5;
 
   return (
@@ -834,11 +917,7 @@ function App() {
       {/* Navigation Bar */}
       <header className="navbar">
         <a href="#" className="navbar-brand" onClick={() => setActiveTab('dashboard')}>
-          <Logo style={{ width: '48px', height: '48px' }} />
-          <div className="navbar-logo-text">
-            <span className="navbar-title">PERTENCER</span>
-            <span className="navbar-subtitle">MONITORAMENTO DE CLIMA ESCOLAR</span>
-          </div>
+          <Logo style={{ height: '76px', width: 'auto' }} />
         </a>
         <div className="navbar-user">
           <div className="user-info">
@@ -923,12 +1002,10 @@ function App() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                {user.role === 'pedagogo' && (
-                  <button className="btn btn-primary" onClick={() => { setShowForm(true); setFormStep(1); }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconSchool /> Nova Ocorrência</span>
-                  </button>
-                )}
-                {(user.role === 'gestor' || user.role === 'diretor') && (
+                <button className="btn btn-primary" onClick={() => { setFormData(initialFormState); setShowForm(true); setFormStep(1); }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconSchool /> Novo Atendimento</span>
+                </button>
+                {user.role === 'gestor' && (
                   <button className="btn btn-success" onClick={handleExportSPSS}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
                   </button>
@@ -1047,6 +1124,17 @@ function App() {
                                   >
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> PDF</span>
                                   </button>
+                                  {(user.role === 'gestor' || 
+                                    (user.role === 'diretor' && o.schoolId === user.schoolId) || 
+                                    (user.role === 'pedagogo' && o.createdById === user.id)) && (
+                                    <button 
+                                      className="btn btn-warning" 
+                                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      onClick={() => handleEditOccurrence(o)}
+                                    >
+                                      Alterar
+                                    </button>
+                                  )}
                                   {(user.role === 'gestor' || o.createdById === user.id) && (
                                     <button 
                                       className="btn btn-danger" 
@@ -1191,6 +1279,17 @@ function App() {
                                   >
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> PDF</span>
                                   </button>
+                                  {(user.role === 'gestor' || 
+                                    (user.role === 'diretor' && o.schoolId === user.schoolId) || 
+                                    (user.role === 'pedagogo' && o.createdById === user.id)) && (
+                                    <button 
+                                      className="btn btn-warning" 
+                                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      onClick={() => handleEditOccurrence(o)}
+                                    >
+                                      Alterar
+                                    </button>
+                                  )}
                                   {(user.role === 'gestor' || o.createdById === user.id) && (
                                     <button 
                                       className="btn btn-danger" 
@@ -1218,7 +1317,7 @@ function App() {
         {showForm && (
           <div className="card fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
             <div className="card-header">
-              <h3>Registro de Atendimento aos Pais</h3>
+              <h3>Registro de Atendimento</h3>
               <button className="btn btn-secondary" onClick={() => setShowForm(false)}>
                 Cancelar
               </button>
@@ -1297,27 +1396,108 @@ function App() {
                     {/* Appears when Class fields are filled */}
                     {isClassFilled && (
                       <>
-                        <div className="form-group fade-in">
-                          <label className="form-label">Professora Regente</label>
-                          <input
-                            type="text"
-                            placeholder="Nome da professora..."
-                            className="form-control"
-                            value={formData.teacherName}
-                            onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
-                            required
-                          />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', gridColumn: 'span 2' }}>
+                          <div className="form-group fade-in">
+                            <label className="form-label">Professor(a)</label>
+                            <input
+                              type="text"
+                              placeholder="Nome do(a) professor(a)..."
+                              className="form-control"
+                              value={formData.teacherName}
+                              onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="form-group fade-in">
+                            <label className="form-label">Componente Curricular</label>
+                            <input
+                              type="text"
+                              placeholder="Ex: Matemática, História..."
+                              className="form-control"
+                              value={formData.subject_matter || ''}
+                              onChange={(e) => setFormData({ ...formData, subject_matter: e.target.value })}
+                              required
+                            />
+                          </div>
                         </div>
-                        <div className="form-group fade-in">
-                          <label className="form-label">Nome do Responsável Atendido</label>
-                          <input
-                            type="text"
-                            placeholder="Nome do pai, mãe ou tutor..."
-                            className="form-control"
-                            value={formData.guardianName}
-                            onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
-                            required
-                          />
+
+                        <div className="form-group fade-in" style={{ gridColumn: 'span 2' }}>
+                          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Pessoas Atendidas</span>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                              onClick={() => {
+                                const newPeople = [...(formData.attended_people || []), { name: '', bond: 'Pai/Mãe', contact: '' }];
+                                setFormData({ ...formData, attended_people: newPeople });
+                              }}
+                            >
+                              + Adicionar Pessoa
+                            </button>
+                          </label>
+                          {(formData.attended_people || [{ name: '', bond: 'Pai/Mãe', contact: '' }]).map((person, index) => (
+                            <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                placeholder="Nome..."
+                                className="form-control"
+                                value={person.name}
+                                onChange={(e) => {
+                                  const newPeople = [...formData.attended_people];
+                                  newPeople[index].name = e.target.value;
+                                  const updates = { attended_people: newPeople };
+                                  if (index === 0) updates.guardianName = e.target.value;
+                                  setFormData({ ...formData, ...updates });
+                                }}
+                                required
+                              />
+                              <input
+                                type="text"
+                                placeholder="Vínculo (ex: Mãe)..."
+                                className="form-control"
+                                value={person.bond}
+                                onChange={(e) => {
+                                  const newPeople = [...formData.attended_people];
+                                  newPeople[index].bond = e.target.value;
+                                  setFormData({ ...formData, attended_people: newPeople });
+                                }}
+                                required
+                              />
+                              <input
+                                type="text"
+                                placeholder="Contato..."
+                                className="form-control"
+                                value={person.contact}
+                                onChange={(e) => {
+                                  const newPeople = [...formData.attended_people];
+                                  newPeople[index].contact = e.target.value;
+                                  const updates = { attended_people: newPeople };
+                                  if (index === 0) updates.contacts = e.target.value;
+                                  setFormData({ ...formData, ...updates });
+                                }}
+                                required
+                              />
+                              {formData.attended_people.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="btn btn-danger"
+                                  style={{ padding: '0.375rem 0.5rem', backgroundColor: 'var(--danger)', color: 'white', border: 'none' }}
+                                  onClick={() => {
+                                    const newPeople = formData.attended_people.filter((_, i) => i !== index);
+                                    const updates = { attended_people: newPeople };
+                                    if (index === 0 && newPeople.length > 0) {
+                                      updates.guardianName = newPeople[0].name;
+                                      updates.contacts = newPeople[0].contact;
+                                    }
+                                    setFormData({ ...formData, ...updates });
+                                  }}
+                                >
+                                  Remover
+                                </button>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </>
                     )}
@@ -1325,7 +1505,7 @@ function App() {
                     {/* Appears when Teacher and Guardian names are filled */}
                     {isTeacherGuardianFilled && (
                       <>
-                        <div className="form-group fade-in">
+                        <div className="form-group fade-in" style={{ display: 'none' }}>
                           <label className="form-label">Contatos Telefônicos</label>
                           <input
                             type="text"
@@ -1369,38 +1549,60 @@ function App() {
                     Passo 2: Assunto e Classificação do Atendimento
                   </h4>
                   
-                  <div className="form-grid">
+                  <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
                     <div className="form-group full-width">
-                      <label className="form-label">Tipo Principal de Ocorrência (Classificação)</label>
-                      <select 
-                        className="form-select"
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        required
-                      >
-                        <option value="">Selecione a classificação...</option>
-                        {OCCURRENCE_TYPES.map(t => (
-                          <option key={t.label} value={t.label}>{t.label}</option>
+                      <label className="form-label" style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '0.75rem' }}>
+                        Classificações do Atendimento (Selecione uma ou mais)
+                      </label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', maxHeight: '350px', overflowY: 'auto' }}>
+                        {Object.entries(CLASSIFICATIONS_TREE).map(([category, subcategories]) => (
+                          <div key={category} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem', marginBottom: '0.25rem', fontSize: '0.9rem' }}>
+                              {category}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem', paddingLeft: '0.5rem' }}>
+                              {subcategories.map(sub => {
+                                const isChecked = (formData.classifications || []).includes(sub);
+                                return (
+                                  <label key={sub} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        let updatedList = [...(formData.classifications || [])];
+                                        if (e.target.checked) {
+                                          updatedList.push(sub);
+                                        } else {
+                                          updatedList = updatedList.filter(item => item !== sub);
+                                        }
+                                        setFormData({ ...formData, classifications: updatedList });
+                                      }}
+                                    />
+                                    <span>{sub}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
-                    {formData.type && (
-                      <div className="form-group full-width fade-in">
-                        <label className="form-label">Assunto / Descrição do Ocorrido</label>
-                        <textarea
-                          placeholder="Relate detalhadamente o ocorrido ou o motivo do atendimento aos pais..."
-                          className="form-textarea"
-                          style={{ minHeight: '180px' }}
-                          value={formData.subject}
-                          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                          required
-                        />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                          Mínimo 10 caracteres. Atual: {formData.subject.trim().length}
-                        </span>
-                      </div>
-                    )}
+                    <div className="form-group full-width fade-in">
+                      <label className="form-label">Assunto / Descrição do Ocorrido</label>
+                      <textarea
+                        placeholder="Relate detalhadamente o ocorrido ou o motivo do atendimento..."
+                        className="form-textarea"
+                        style={{ minHeight: '180px' }}
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        required
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Mínimo 10 caracteres.</span>
+                        <span>Atual: {formData.subject.trim().length}</span>
+                      </span>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
@@ -1498,13 +1700,44 @@ function App() {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <button className="btn btn-secondary" onClick={() => setFormStep(3)}>
                       ⬅️ Editar Dados
                     </button>
-                    <button className="btn btn-success" onClick={handleSaveOccurrence}>
-                      💾 Salvar Registro e Finalizar
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        style={{ backgroundColor: 'var(--warning-light)', color: 'var(--warning-hover)', borderColor: 'var(--warning)' }}
+                        onClick={() => {
+                          const tempOcc = {
+                            ...formData,
+                            schoolId: user.schoolId || formData.schoolId || schools[0]?.id,
+                            createdById: user.id,
+                            createdByName: user.name,
+                            status: 'rascunho'
+                          };
+                          handlePrint(tempOcc);
+                        }}
+                      >
+                        🖨️ Imprimir Prévia (Rascunho)
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-warning" 
+                        style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                        onClick={() => handleSaveOccurrence('rascunho')}
+                      >
+                        💾 Salvar Rascunho
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-success" 
+                        onClick={() => handleSaveOccurrence('finalizado')}
+                      >
+                        ✅ Finalizar e Salvar
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1631,6 +1864,18 @@ function App() {
                       placeholder="Ex: Ana Souza"
                       value={newUserData.name}
                       onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">E-mail</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="Ex: ana@pome.com"
+                      value={newUserData.email || ''}
+                      onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                       required
                     />
                   </div>
@@ -1966,20 +2211,23 @@ function App() {
       {/* ----------------- HIDDEN PRINTABLE TEMPLATE (A4 PAGE SIZE) ----------------- */}
       {selectedOccurrence && (
         <div className="printable-report">
-          <div className="print-header">
-            <Logo style={{ width: '60px', height: '60px', marginRight: '10px' }} />
-            <div className="print-title-block">
+          {selectedOccurrence.status === 'rascunho' && (
+            <div className="print-watermark">Rascunho</div>
+          )}
+          <div className="print-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
               <div className="print-school-name">
                 {schools.find(s => s.id === selectedOccurrence.schoolId)?.name || 'ESCOLA MUNICIPAL'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
-                <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>PERTENCER</span>
-                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>MONITORAMENTO DE CLIMA ESCOLAR</span>
+                <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>POME</span>
+                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>PLATAFORMA DE OBSERVAÇÃO DOS NÚCLEOS DE MEDIAÇÃO PARA MELHORIA DO CLIMA ESCOLAR</span>
               </div>
-              <div className="print-doc-title">REGISTRO DE ATENDIMENTO AOS PAIS</div>
+              <div className="print-doc-title">REGISTRO DE ATENDIMENTO</div>
             </div>
+            <Logo style={{ height: '60px', width: 'auto' }} />
           </div>
-
+ 
           <div className="print-fields-grid">
             <div className="print-field col-6">
               <span className="print-field-label">Estudante:</span> {selectedOccurrence.studentName}
@@ -1991,53 +2239,82 @@ function App() {
               <span className="print-field-label">Turma:</span> {selectedOccurrence.className}
             </div>
             <div className="print-field col-2">
-              <span className="print-field-label">Profª:</span> {selectedOccurrence.teacherName}
+              <span className="print-field-label">Professor(a):</span> {selectedOccurrence.teacherName}
+            </div>
+            {selectedOccurrence.subject_matter && (
+              <div className="print-field col-12" style={{ gridColumn: 'span 12' }}>
+                <span className="print-field-label">Componente Curricular:</span> {selectedOccurrence.subject_matter}
+              </div>
+            )}
+            
+            <div className="print-field col-12" style={{ gridColumn: 'span 12', marginTop: '6px' }}>
+              <span className="print-field-label" style={{ display: 'block', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px' }}>Pessoas Atendidas:</span>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #000' }}>
+                    <th style={{ textAlign: 'left', fontSize: '9pt', padding: '2px', fontWeight: 'bold' }}>Nome</th>
+                    <th style={{ textAlign: 'left', fontSize: '9pt', padding: '2px', fontWeight: 'bold' }}>Vínculo</th>
+                    <th style={{ textAlign: 'left', fontSize: '9pt', padding: '2px', fontWeight: 'bold' }}>Contato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedOccurrence.attended_people || [
+                    { name: selectedOccurrence.guardianName || 'Não informado', bond: 'Responsável', contact: selectedOccurrence.contacts || 'Não informado' }
+                  ]).map((person, i) => (
+                    <tr key={i} style={{ borderBottom: '1px dashed #ddd' }}>
+                      <td style={{ fontSize: '9pt', padding: '4px 2px' }}>{person.name}</td>
+                      <td style={{ fontSize: '9pt', padding: '4px 2px' }}>{person.bond}</td>
+                      <td style={{ fontSize: '9pt', padding: '4px 2px' }}>{person.contact}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="print-field col-6">
+              <span className="print-field-label">Data da Ocorrência:</span> {new Date(selectedOccurrence.date).toLocaleDateString('pt-BR')}
             </div>
             <div className="print-field col-6">
-              <span className="print-field-label">Nome do Responsável:</span> {selectedOccurrence.guardianName}
-            </div>
-            <div className="print-field col-2">
-              <span className="print-field-label">Data:</span> {new Date(selectedOccurrence.date).toLocaleDateString('pt-BR')}
-            </div>
-            <div className="print-field col-4">
-              <span className="print-field-label">Contatos:</span> {selectedOccurrence.contacts}
+              <span className="print-field-label">Classificação:</span> {Array.isArray(selectedOccurrence.classifications) ? selectedOccurrence.classifications.join(', ') : selectedOccurrence.type}
             </div>
           </div>
 
           <div className="print-section">
-            <div className="print-section-title">Assunto (Relato do Ocorrido)</div>
+            <div className="print-section-title">ASSUNTO (RELATO DO OCORRIDO)</div>
             <div className="print-section-content">{selectedOccurrence.subject}</div>
           </div>
 
           <div className="print-section">
-            <div className="print-section-title">Encaminhamentos Tomados</div>
+            <div className="print-section-title">ENCAMINHAMENTOS E AÇÕES TOMADAS</div>
             <div className="print-section-content">{selectedOccurrence.referrals}</div>
           </div>
 
-          <div className="print-section">
-            <div className="print-section-title">Observações Complementares</div>
-            <div className="print-section-content short">
-              {selectedOccurrence.observations || 'Nenhuma.'}
-              {selectedOccurrence.directorNotes && (
-                <div style={{ marginTop: '10px', borderTop: '1px dashed #cccccc', paddingTop: '5px' }}>
-                  <strong>Acompanhamento da Diretoria:</strong> {selectedOccurrence.directorNotes}
-                </div>
-              )}
+          {selectedOccurrence.observations && (
+            <div className="print-section">
+              <div className="print-section-title">OBSERVAÇÕES PEDAGÓGICAS ADICIONAIS</div>
+              <div className="print-section-content">{selectedOccurrence.observations}</div>
             </div>
-          </div>
+          )}
 
-          <div className="print-signatures-block">
+          {selectedOccurrence.directorNotes && (
+            <div className="print-section">
+              <div className="print-section-title">ACOMPANHAMENTO / VISTO DA DIRETORIA</div>
+              <div className="print-section-content">{selectedOccurrence.directorNotes}</div>
+            </div>
+          )}
+
+          <div className="print-signatures-block" style={{ marginTop: '40px' }}>
             <div className="print-signature-line">
-              Responsável (Pai/Mãe/Tutor)
+              <div style={{ borderTop: '1px solid #000', width: '220px', margin: '0 auto' }}></div>
+              Pedagogo(a) / Responsável pelo Registro
             </div>
             <div className="print-signature-line">
-              Estudante
+              <div style={{ borderTop: '1px solid #000', width: '220px', margin: '0 auto' }}></div>
+              Direção Escolar
             </div>
-            <div className="print-signature-line" style={{ marginTop: '30px' }}>
-              Pedagoga Responsável
-            </div>
-            <div className="print-signature-line" style={{ marginTop: '30px' }}>
-              Professora Regente
+            <div className="print-signature-line">
+              <div style={{ borderTop: '1px solid #000', width: '220px', margin: '0 auto' }}></div>
+              Responsável(is) Atendido(s)
             </div>
           </div>
         </div>
@@ -2046,16 +2323,12 @@ function App() {
       {/* ----------------- HIDDEN PRINTABLE CONSOLIDATED REPORT (A4) ----------------- */}
       {!selectedOccurrence && (
         <div className="printable-report-summary">
-          <div className="print-header">
-            <Logo style={{ width: '60px', height: '60px', marginRight: '10px' }} />
-            <div className="print-title-block">
+          <div className="print-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
               <div className="print-school-name">REDE MUNICIPAL DE ENSINO</div>
-              <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
-                <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>PERTENCER</span>
-                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>MONITORAMENTO DE CLIMA ESCOLAR</span>
-              </div>
-              <div className="print-doc-title">RELATÓRIO CONSOLIDADO DE GESTÃO</div>
+              <div className="print-doc-title" style={{ marginTop: '5px' }}>RELATÓRIO CONSOLIDADO DE GESTÃO</div>
             </div>
+            <Logo style={{ height: '60px', width: 'auto' }} />
           </div>
 
           <div style={{ fontSize: '11pt', marginBottom: '20px', display: 'flex', gap: '2rem', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>
@@ -2129,7 +2402,7 @@ function App() {
               <div>
                 <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Apresentação</h4>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  O sistema <strong>PERTENCER</strong> é uma ferramenta de monitoramento de clima escolar. Ele centraliza o registro de ocorrências (bullying, homofobia, racismo, conflitos) e o acompanhamento pedagógico e diretivo.
+                  A plataforma <strong>POME</strong> é uma ferramenta de monitoramento de clima escolar. Ela centraliza o registro de atendimentos, observações pedagógicas e o acompanhamento diretivo.
                 </p>
               </div>
 
@@ -2137,31 +2410,32 @@ function App() {
                 <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Perfis de Acesso e Funcionalidades</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
                   <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--accent-green)' }}>
-                    <strong>🛡️ Gestor (Elisabette Leo)</strong>
+                    <strong>🛡️ Gestor</strong>
                     <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
                       <li>Cadastrar novas escolas na aba "Gerenciar Escolas".</li>
-                      <li>Cadastrar e remover usuários na aba "Gerenciar Usuários".</li>
-                      <li>Visualizar estatísticas consolidadas e relatórios gráficos.</li>
-                      <li>Excluir qualquer ocorrência do sistema.</li>
+                      <li>Cadastrar e remover usuários na aba "Gerenciar Usuários" (garantindo unicidade de e-mail e CPF).</li>
+                      <li>Visualizar estatísticas consolidadas e relatórios gerais.</li>
+                      <li>Excluir ocorrências do sistema.</li>
                       <li>Exportar todos os dados em formato SPSS (.csv estruturado para estatística).</li>
                     </ul>
                   </div>
 
                   <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--accent-orange)' }}>
-                    <strong>💼 Diretor (Diretor Wancleber)</strong>
+                    <strong>💼 Diretor</strong>
                     <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
                       <li>Visualizar todas as ocorrências de sua escola.</li>
                       <li>Inserir "Visto da Diretoria" e registrar planos de ação/observações no modal de detalhes.</li>
-                      <li>Exportar os dados específicos de sua escola em formato SPSS.</li>
+                      <li>Criar novos registros de atendimento.</li>
                     </ul>
                   </div>
 
                   <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--primary)' }}>
-                    <strong>✏️ Pedagogo (Pedagoga Maria Silva / Ana Costa)</strong>
+                    <strong>✏️ Pedagogo</strong>
                     <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
-                      <li>Registrar novas ocorrências através do formulário por etapas (Passos 1, 2 e 3).</li>
+                      <li>Registrar novos atendimentos através do formulário por etapas (Passos 1, 2, 3 e 4).</li>
                       <li>Visualizar e filtrar ocorrências das turmas designadas a você.</li>
-                      <li>Imprimir relatórios individuais em formato de folha A4 com campos de assinatura para pais e escola.</li>
+                      <li>Salvar rascunhos de atendimentos ou finalizá-los.</li>
+                      <li>Imprimir relatórios individuais em formato de folha A4 com campos de assinatura.</li>
                       <li>Excluir ocorrências que foram criadas por você mesmo.</li>
                     </ul>
                   </div>

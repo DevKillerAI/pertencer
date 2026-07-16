@@ -1,59 +1,21 @@
 {
   "schools": [
-    {
-      "id": "esc-1",
-      "name": "Escola Municipal Wancleber Pacheco Neto"
-    },
-    {
-      "id": "esc-2",
-      "name": "Anita Garibaldi Test 2"
-    },
-    {
-      "id": "esc-3",
-      "name": "Escola Municipal Castro Alves"
-    },
-    {
-      "id": "esc-4",
-      "name": "Escola Municipal Monteiro Lobato"
-    },
-    {
-      "id": "esc-5",
-      "name": "Escola Municipal Cecília Meireles"
-    },
-    {
-      "id": "esc-6",
-      "name": "Escola Municipal Duque de Caxias"
-    },
-    {
-      "id": "esc-7",
-      "name": "Escola Municipal Ruy Barbosa"
-    },
-    {
-      "id": "esc-8",
-      "name": "Escola Municipal Getúlio Vargas"
-    },
-    {
-      "id": "esc-9",
-      "name": "Escola Municipal Machado de Assis"
-    },
-    {
-      "id": "esc-1784007393437",
-      "name": "Escola Municipal Ayrton Senna"
-    },
-    {
-      "id": "esc-1784009907119",
-      "name": "Escola Provisoria 2"
-    },
-    {
-      "id": "esc-1784009941040",
-      "name": "Escola Provisoria 3"
-    }
+    { "id": "esc-1", "name": "Escola Municipal Professor Wancleber Pacheco" },
+    { "id": "esc-2", "name": "Escola Municipal Anita Garibaldi" },
+    { "id": "esc-3", "name": "Escola Municipal Castro Alves" },
+    { "id": "esc-4", "name": "Escola Municipal Monteiro Lobato" },
+    { "id": "esc-5", "name": "Escola Municipal Cecília Meireles" },
+    { "id": "esc-6", "name": "Escola Municipal Duque de Caxias" },
+    { "id": "esc-7", "name": "Escola Municipal Ruy Barbosa" },
+    { "id": "esc-8", "name": "Escola Municipal Getúlio Vargas" },
+    { "id": "esc-9", "name": "Escola Municipal Machado de Assis" }
   ],
   "users": [
     {
       "id": "usr-1",
       "name": "Elisabette Leo",
       "cpf": "00000000000",
+      "email": "gestor@pome.com",
       "password": "admin",
       "role": "gestor",
       "schoolId": null,
@@ -63,6 +25,7 @@
       "id": "usr-2",
       "name": "Diretor Wancleber",
       "cpf": "11111111111",
+      "email": "diretor@pome.com",
       "password": "senha",
       "role": "diretor",
       "schoolId": "esc-1",
@@ -72,26 +35,21 @@
       "id": "usr-3",
       "name": "Pedagoga Maria Silva",
       "cpf": "22222222222",
+      "email": "pedagoga1@pome.com",
       "password": "senha",
       "role": "pedagogo",
       "schoolId": "esc-1",
-      "classes": [
-        "5º Ano A",
-        "5º Ano B",
-        "4º Ano A"
-      ]
+      "classes": ["5º Ano A", "5º Ano B", "4º Ano A"]
     },
     {
       "id": "usr-4",
       "name": "Pedagoga Ana Costa",
       "cpf": "33333333333",
+      "email": "pedagoga2@pome.com",
       "password": "senha",
       "role": "pedagogo",
       "schoolId": "esc-2",
-      "classes": [
-        "3º Ano A",
-        "3º Ano B"
-      ]
+      "classes": ["3º Ano A", "3º Ano B"]
     }
   ],
   "occurrences": [
@@ -105,31 +63,17 @@
       "gradeCycle": "5º Ano",
       "className": "5º Ano A",
       "teacherName": "Profª Cláudia Mendes",
-      "guardianName": "Regina Souza Lima",
-      "contacts": "(41) 98888-7777",
+      "subject_matter": "Língua Portuguesa",
+      "attended_people": [
+        { "name": "Regina Souza Lima", "bond": "Mãe", "contact": "(41) 98888-7777" }
+      ],
+      "classifications": ["Bullying"],
       "type": "Bullying",
+      "status": "finalizado",
       "subject": "O estudante relatou sofrer apelidos depreciativos recorrentes por parte de colegas da mesma turma durante o recreio.",
       "referrals": "Conversa individual com os alunos envolvidos. Ligação para os responsáveis e agendamento de atendimento presencial conjunto.",
       "observations": "O aluno demonstrou-se bastante abalado. A professora de sala foi orientada a monitorar mais de perto as interações na sala.",
       "directorNotes": "Acompanhei o caso e os responsáveis compareceram no dia 14/07. Comprometeram-se a acompanhar a rotina escolar."
-    },
-    {
-      "id": "occ-1784006929691",
-      "studentName": "Matheus Silva Cruz",
-      "gradeCycle": "5º Ano",
-      "className": "5º Ano B",
-      "teacherName": "Profª Mariana",
-      "guardianName": "Helena Silva Cruz",
-      "contacts": "(41) 97777-6666",
-      "date": "2026-07-14",
-      "type": "Bullying",
-      "subject": "Relatou isolamento e apelidos pejorativos.",
-      "referrals": "Conversado com os envolvidos e agendado reunião.",
-      "observations": "",
-      "directorNotes": "Acompanhando o caso. Reunião marcada.",
-      "schoolId": "esc-1",
-      "createdById": "usr-3",
-      "createdByName": "Pedagoga Maria Silva"
     }
   ]
 }
