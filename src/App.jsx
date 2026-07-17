@@ -207,13 +207,6 @@ function App() {
   const [tutorialTab, setTutorialTab] = useState('welcome');
   const [showTutorialModal, setShowTutorialModal] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Authentication & Session
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
@@ -253,6 +246,7 @@ function App() {
   // Progressive Form State
   const initialFormState = {
     id: '',
+    schoolId: '',
     studentName: '',
     gradeCycle: '',
     className: '',
@@ -278,16 +272,7 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Load initial data based on login state
-  useEffect(() => {
-    if (user) {
-      fetchSchools();
-      fetchOccurrences();
-      if (user.role === 'gestor') {
-        fetchUsers();
-      }
-    }
-  }, [user]);
+  // Removed mock/duplicate initial data loading useEffect (handled in loading useEffect above)
 
   // API Call: Fetch Schools
   const fetchSchools = async () => {
@@ -296,25 +281,29 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         setSchools(data);
+        return data;
       }
     } catch (err) {
       console.error('Error fetching schools:', err);
     }
+    return null;
   };
 
   // API Call: Fetch Occurrences
   const fetchOccurrences = async () => {
-    if (!user) return;
+    if (!user) return null;
     try {
       const url = `/api/occurrences?schoolId=${user.schoolId || ''}&role=${user.role}&userId=${user.id}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setOccurrences(data);
+        return data;
       }
     } catch (err) {
       console.error('Error fetching occurrences:', err);
     }
+    return null;
   };
 
   // API Call: Fetch Users (Gestor only)
@@ -324,11 +313,31 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         setUsersList(data);
+        return data;
       }
     } catch (err) {
       console.error('Error fetching users:', err);
     }
+    return null;
   };
+
+  useEffect(() => {
+    const initApp = async () => {
+      if (user) {
+        try {
+          const promises = [fetchSchools(), fetchOccurrences()];
+          if (user.role === 'gestor') {
+            promises.push(fetchUsers());
+          }
+          await Promise.all(promises);
+        } catch (err) {
+          console.error('Error loading initial data:', err);
+        }
+      }
+      setLoading(false);
+    };
+    initApp();
+  }, [user]);
 
   // Handler: Login
   const handleLogin = async (e) => {
@@ -409,6 +418,7 @@ function App() {
   const handleEditOccurrence = (occ) => {
     setFormData({
       id: occ.id,
+      schoolId: occ.schoolId,
       studentName: occ.studentName,
       gradeCycle: occ.gradeCycle,
       className: occ.className,
@@ -523,6 +533,7 @@ function App() {
       : [];
     const payload = {
       name: newUserData.name,
+      email: newUserData.email,
       cpf: newUserData.cpf.replace(/\D/g, ''),
       password: newUserData.password,
       role: newUserData.role,
@@ -537,7 +548,7 @@ function App() {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        setNewUserData({ name: '', cpf: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
+        setNewUserData({ name: '', cpf: '', email: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
         fetchUsers();
       } else {
         const err = await res.json();
@@ -673,7 +684,7 @@ function App() {
     // In addition, if pedagogue, restrict list to their designated classes
     const matchesPedagogueClasses = 
       user && user.role === 'pedagogo' && user.classes && user.classes.length > 0
-        ? user.classes.includes(className)
+        ? user.classes.some(c => c.trim().toLowerCase() === className.trim().toLowerCase())
         : true;
 
     return matchesSearch && matchesType && matchesSchool && matchesClass && matchesPedagogueClasses;
@@ -1365,6 +1376,24 @@ function App() {
                       />
                     </div>
 
+                    {/* School selector for Gestor only */}
+                    {user.role === 'gestor' && (
+                      <div className="form-group full-width fade-in">
+                        <label className="form-label">Escola Municipal Designada</label>
+                        <select
+                          className="form-select"
+                          value={formData.schoolId || ''}
+                          onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                          required
+                        >
+                          <option value="">Selecione a escola...</option>
+                          {schools.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     {/* Appears when Name has >= 3 chars */}
                     {isNameFilled && (
                       <>
@@ -1381,14 +1410,36 @@ function App() {
                         </div>
                         <div className="form-group fade-in">
                           <label className="form-label">Turma</label>
-                          <input
-                            type="text"
-                            placeholder="Ex: 5º Ano A"
-                            className="form-control"
-                            value={formData.className}
-                            onChange={(e) => setFormData({ ...formData, className: e.target.value })}
-                            required
-                          />
+                          {user.role === 'pedagogo' && user.classes && user.classes.length > 0 ? (
+                            <select
+                              className="form-select"
+                              value={formData.className}
+                              onChange={(e) => {
+                                const selectedClass = e.target.value;
+                                let inferredCycle = formData.gradeCycle;
+                                if (selectedClass.toLowerCase().includes('ano')) {
+                                  const idx = selectedClass.toLowerCase().indexOf('ano');
+                                  inferredCycle = selectedClass.slice(0, idx + 3).trim();
+                                }
+                                setFormData({ ...formData, className: selectedClass, gradeCycle: inferredCycle });
+                              }}
+                              required
+                            >
+                              <option value="">Selecione a turma...</option>
+                              {user.classes.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="Ex: 5º Ano A"
+                              className="form-control"
+                              value={formData.className}
+                              onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                              required
+                            />
+                          )}
                         </div>
                       </>
                     )}
@@ -1486,9 +1537,12 @@ function App() {
                                   onClick={() => {
                                     const newPeople = formData.attended_people.filter((_, i) => i !== index);
                                     const updates = { attended_people: newPeople };
-                                    if (index === 0 && newPeople.length > 0) {
+                                    if (newPeople.length > 0) {
                                       updates.guardianName = newPeople[0].name;
                                       updates.contacts = newPeople[0].contact;
+                                    } else {
+                                      updates.guardianName = '';
+                                      updates.contacts = '';
                                     }
                                     setFormData({ ...formData, ...updates });
                                   }}
@@ -1534,7 +1588,7 @@ function App() {
                     <button 
                       className="btn btn-primary" 
                       onClick={() => setFormStep(2)}
-                      disabled={!isTeacherGuardianFilled || !formData.contacts || !formData.date}
+                      disabled={!isTeacherGuardianFilled || !formData.contacts || !formData.date || (user.role === 'gestor' && !formData.schoolId)}
                     >
                       Continuar ➡️
                     </button>

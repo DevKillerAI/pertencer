@@ -14,8 +14,46 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
 const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
 
+// Dynamic schema detection for Supabase mode fallback
+export const schemaCache = {
+  occurrences: {
+    hasSubjectMatter: false,
+    hasAttendedPeople: false,
+    hasClassifications: false,
+    hasStatus: false
+  },
+  users: {
+    hasEmail: false
+  }
+};
+
+async function detectSchema() {
+  if (!isSupabaseConfigured) return;
+  try {
+    const { error: errSubjectMatter } = await supabase.from('occurrences').select('subject_matter').limit(1);
+    schemaCache.occurrences.hasSubjectMatter = !errSubjectMatter;
+
+    const { error: errAttendedPeople } = await supabase.from('occurrences').select('attended_people').limit(1);
+    schemaCache.occurrences.hasAttendedPeople = !errAttendedPeople;
+
+    const { error: errClassifications } = await supabase.from('occurrences').select('classifications').limit(1);
+    schemaCache.occurrences.hasClassifications = !errClassifications;
+
+    const { error: errStatus } = await supabase.from('occurrences').select('status').limit(1);
+    schemaCache.occurrences.hasStatus = !errStatus;
+
+    const { error: errEmail } = await supabase.from('users').select('email').limit(1);
+    schemaCache.users.hasEmail = !errEmail;
+
+    console.log('Database: Schema detection completed:', JSON.stringify(schemaCache));
+  } catch (error) {
+    console.error('Database: Schema detection failed, using fallbacks:', error);
+  }
+}
+
 if (isSupabaseConfigured) {
   console.log('Database: Connected using Supabase.');
+  detectSchema();
 } else {
   console.log('Database: Supabase keys not set. Falling back to local db.json file.');
 }
@@ -210,7 +248,21 @@ export const db = {
         console.error('Supabase Error (getUsers):', error);
         throw error;
       }
-      return data || [];
+      const list = data || [];
+      return list.map(u => {
+        let decoded = { ...u };
+        // Extract email from classes if present and email column is missing
+        if (!schemaCache.users.hasEmail && Array.isArray(decoded.classes)) {
+          const emailItem = decoded.classes.find(c => c && c.startsWith('__email:'));
+          if (emailItem) {
+            decoded.email = emailItem.slice(8);
+            decoded.classes = decoded.classes.filter(c => c !== emailItem);
+          } else {
+            decoded.email = '';
+          }
+        }
+        return decoded;
+      });
     }
     return readDb().users;
   },
@@ -223,8 +275,18 @@ export const db = {
       // Ensure classes is stored as JSON array in Supabase JSONB
       const payload = {
         ...user,
-        classes: Array.isArray(user.classes) ? user.classes : []
+        classes: Array.isArray(user.classes) ? [...user.classes] : []
       };
+      
+      if (!schemaCache.users.hasEmail) {
+        // Store email in classes array as a special item
+        if (user.email) {
+          payload.classes.push(`__email:${user.email}`);
+        }
+        // Remove email column from payload to avoid PostgREST error
+        delete payload.email;
+      }
+
       const { data, error } = await supabase
         .from('users')
         .upsert(payload)
@@ -233,7 +295,7 @@ export const db = {
         console.error('Supabase Error (saveUser):', error);
         throw error;
       }
-      return data[0];
+      return user;
     }
     
     // Local Fallback
@@ -278,7 +340,41 @@ export const db = {
         console.error('Supabase Error (getOccurrences):', error);
         throw error;
       }
-      return data || [];
+      
+      const list = data || [];
+      return list.map(o => {
+        let decoded = { ...o };
+        
+        // Extract metadata from observations if present
+        if (decoded.observations && decoded.observations.includes('[POME_META:')) {
+          try {
+            const startIdx = decoded.observations.indexOf('[POME_META:');
+            const endIdx = decoded.observations.indexOf(']', startIdx);
+            if (endIdx !== -1) {
+              const jsonStr = decoded.observations.slice(startIdx + 11, endIdx);
+              const meta = JSON.parse(jsonStr);
+              
+              if (!schemaCache.occurrences.hasSubjectMatter) decoded.subject_matter = meta.subject_matter;
+              if (!schemaCache.occurrences.hasAttendedPeople) decoded.attended_people = meta.attended_people;
+              if (!schemaCache.occurrences.hasClassifications) decoded.classifications = meta.classifications;
+              if (!schemaCache.occurrences.hasStatus) decoded.status = meta.status;
+              
+              // Clean up the metadata tag from observations so it doesn't show in UI
+              decoded.observations = (decoded.observations.slice(0, startIdx) + decoded.observations.slice(endIdx + 1)).trim();
+            }
+          } catch (e) {
+            console.error("Failed to parse serialized occurrence metadata:", e);
+          }
+        }
+        
+        // Default values if missing
+        if (!decoded.attended_people) decoded.attended_people = [];
+        if (!decoded.classifications) decoded.classifications = [];
+        if (!decoded.status) decoded.status = 'finalizado';
+        if (!decoded.subject_matter) decoded.subject_matter = '';
+        
+        return decoded;
+      });
     }
     return readDb().occurrences;
   },
@@ -288,15 +384,42 @@ export const db = {
       if (!occurrence.id) {
         occurrence.id = 'occ-' + Date.now();
       }
+      
+      const payload = { ...occurrence };
+      
+      // If schema is missing columns, serialize them into observations
+      if (!schemaCache.occurrences.hasSubjectMatter || 
+          !schemaCache.occurrences.hasAttendedPeople || 
+          !schemaCache.occurrences.hasClassifications || 
+          !schemaCache.occurrences.hasStatus) {
+        
+        const meta = {
+          subject_matter: occurrence.subject_matter || '',
+          attended_people: occurrence.attended_people || [],
+          classifications: occurrence.classifications || [],
+          status: occurrence.status || 'finalizado'
+        };
+        
+        // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
+        if (!schemaCache.occurrences.hasSubjectMatter) delete payload.subject_matter;
+        if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
+        if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
+        if (!schemaCache.occurrences.hasStatus) delete payload.status;
+        
+        // Append metadata to observations
+        const metaTag = `[POME_META:${JSON.stringify(meta)}]`;
+        payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
+      }
+
       const { data, error } = await supabase
         .from('occurrences')
-        .upsert(occurrence)
+        .upsert(payload)
         .select();
       if (error) {
         console.error('Supabase Error (saveOccurrence):', error);
         throw error;
       }
-      return data[0];
+      return occurrence;
     }
     
     // Local Fallback
