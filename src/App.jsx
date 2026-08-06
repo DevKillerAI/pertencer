@@ -252,7 +252,7 @@ function App() {
     className: '',
     teacherName: '',
     subject_matter: '',
-    attended_people: [{ name: '', bond: 'Pai/Mãe', contact: '' }],
+    attended_people: [{ name: '', bond: '', contact: '' }],
     guardianName: '',
     contacts: '',
     date: new Date().toISOString().split('T')[0],
@@ -325,10 +325,7 @@ function App() {
     const initApp = async () => {
       if (user) {
         try {
-          const promises = [fetchSchools(), fetchOccurrences()];
-          if (user.role === 'gestor') {
-            promises.push(fetchUsers());
-          }
+          const promises = [fetchSchools(), fetchOccurrences(), fetchUsers()];
           await Promise.all(promises);
         } catch (err) {
           console.error('Error loading initial data:', err);
@@ -392,7 +389,10 @@ function App() {
       status: status,
       schoolId: user.schoolId || formData.schoolId || schools[0]?.id,
       createdById: formData.createdById || user.id,
-      createdByName: formData.createdByName || user.name
+      createdByName: formData.createdByName || user.name,
+      updatedAt: new Date().toISOString(),
+      updatedById: user.id,
+      updatedByName: user.name
     };
 
     try {
@@ -467,7 +467,10 @@ function App() {
     if (!selectedOccurrence) return;
     const updated = {
       ...selectedOccurrence,
-      directorNotes: directorNotes
+      directorNotes: directorNotes,
+      updatedAt: new Date().toISOString(),
+      updatedById: user.id,
+      updatedByName: user.name
     };
     try {
       const res = await fetch('/api/occurrences', {
@@ -780,9 +783,33 @@ function App() {
 
               <div className="tutorial-tab-content">
                 {tutorialTab === 'welcome' && (
-                  <p>
-                    A plataforma <strong>POME</strong> é um sistema de monitoramento de clima escolar para registro e acompanhamento de atendimentos e ocorrências da rede municipal. Navegue usando as contas de teste na próxima aba.
-                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p>
+                      A plataforma <strong>POME</strong> é um sistema de monitoramento de clima escolar para registro e acompanhamento de atendimentos e ocorrências da rede municipal. Navegue usando as contas de teste na próxima aba.
+                    </p>
+                    <a
+                      href="/tutorial_com_bubbles.webp"
+                      download="Tutorial_POME_Fluxo_Completo.webp"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '0.5rem 1rem',
+                        backgroundColor: 'var(--primary)',
+                        color: 'white',
+                        borderRadius: 'var(--radius-sm)',
+                        textDecoration: 'none',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        width: 'fit-content',
+                        transition: 'opacity 0.2s',
+                      }}
+                      onMouseOver={e => e.currentTarget.style.opacity = '0.85'}
+                      onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                    >
+                      ⬇️ Baixar Tutorial Animado (.webp)
+                    </a>
+                  </div>
                 )}
 
                 {tutorialTab === 'roles' && (
@@ -1109,7 +1136,9 @@ function App() {
                               </td>
                               <td style={{ color: 'var(--text-secondary)' }}>{o.createdByName}</td>
                               <td>
-                                {o.directorNotes ? (
+                                {o.status === 'rascunho' ? (
+                                  <span className="badge badge-secondary" style={{ backgroundColor: 'var(--text-secondary)', color: 'white' }}>Rascunho</span>
+                                ) : o.directorNotes ? (
                                   <span className="badge badge-success">Visto Diretoria</span>
                                 ) : (
                                   <span className="badge badge-warning">Pendente Visto</span>
@@ -1137,7 +1166,7 @@ function App() {
                                   </button>
                                   {(user.role === 'gestor' || 
                                     (user.role === 'diretor' && o.schoolId === user.schoolId) || 
-                                    (user.role === 'pedagogo' && o.createdById === user.id)) && (
+                                    (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-warning" 
                                       style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
@@ -1146,7 +1175,7 @@ function App() {
                                       Alterar
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || o.createdById === user.id) && (
+                                  {(user.role === 'gestor' || (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-danger" 
                                       style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
@@ -1264,7 +1293,9 @@ function App() {
                               </td>
                               <td style={{ color: 'var(--text-secondary)' }}>{o.createdByName}</td>
                               <td>
-                                {o.directorNotes ? (
+                                {o.status === 'rascunho' ? (
+                                  <span className="badge badge-secondary" style={{ backgroundColor: 'var(--text-secondary)', color: 'white' }}>Rascunho</span>
+                                ) : o.directorNotes ? (
                                   <span className="badge badge-success">Visto Diretoria</span>
                                 ) : (
                                   <span className="badge badge-warning">Pendente</span>
@@ -1292,7 +1323,7 @@ function App() {
                                   </button>
                                   {(user.role === 'gestor' || 
                                     (user.role === 'diretor' && o.schoolId === user.schoolId) || 
-                                    (user.role === 'pedagogo' && o.createdById === user.id)) && (
+                                    (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-warning" 
                                       style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
@@ -1301,7 +1332,7 @@ function App() {
                                       Alterar
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || o.createdById === user.id) && (
+                                  {(user.role === 'gestor' || (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-danger" 
                                       style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
@@ -1399,14 +1430,23 @@ function App() {
                       <>
                         <div className="form-group fade-in">
                           <label className="form-label">Ano / Ciclo</label>
-                          <input
-                            type="text"
-                            placeholder="Ex: 5º Ano"
-                            className="form-control"
+                          <select
+                            className="form-select"
                             value={formData.gradeCycle}
                             onChange={(e) => setFormData({ ...formData, gradeCycle: e.target.value })}
                             required
-                          />
+                          >
+                            <option value="">Selecione o ano...</option>
+                            <option value="1º Ano">1º Ano</option>
+                            <option value="2º Ano">2º Ano</option>
+                            <option value="3º Ano">3º Ano</option>
+                            <option value="4º Ano">4º Ano</option>
+                            <option value="5º Ano">5º Ano</option>
+                            <option value="6º Ano">6º Ano</option>
+                            <option value="7º Ano">7º Ano</option>
+                            <option value="8º Ano">8º Ano</option>
+                            <option value="9º Ano">9º Ano</option>
+                          </select>
                         </div>
                         <div className="form-group fade-in">
                           <label className="form-label">Turma</label>
@@ -1450,14 +1490,43 @@ function App() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', gridColumn: 'span 2' }}>
                           <div className="form-group fade-in">
                             <label className="form-label">Professor(a)</label>
-                            <input
-                              type="text"
-                              placeholder="Nome do(a) professor(a)..."
-                              className="form-control"
-                              value={formData.teacherName}
-                              onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
-                              required
-                            />
+                            {(() => {
+                              const selectedYear = formData.gradeCycle ? formData.gradeCycle.trim().toLowerCase() : '';
+                              const schoolIdToMatch = user.schoolId || formData.schoolId || (schools[0] && schools[0].id);
+                              const filteredPedagogues = usersList.filter(u => {
+                                if (u.role !== 'pedagogo') return false;
+                                if (u.schoolId !== schoolIdToMatch) return false;
+                                if (!selectedYear) return true;
+                                return u.classes && u.classes.some(cls => cls.toLowerCase().includes(selectedYear));
+                              });
+
+                              if (filteredPedagogues.length > 0) {
+                                return (
+                                  <select
+                                    className="form-select"
+                                    value={formData.teacherName}
+                                    onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
+                                    required
+                                  >
+                                    <option value="">Selecione o(a) pedagogo(a)...</option>
+                                    {filteredPedagogues.map(p => (
+                                      <option key={p.id} value={p.name}>{p.name}</option>
+                                    ))}
+                                  </select>
+                                );
+                              } else {
+                                return (
+                                  <input
+                                    type="text"
+                                    placeholder="Nome do(a) professor(a)..."
+                                    className="form-control"
+                                    value={formData.teacherName}
+                                    onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
+                                    required
+                                  />
+                                );
+                              }
+                            })()}
                           </div>
                           <div className="form-group fade-in">
                             <label className="form-label">Componente Curricular</label>
@@ -1480,14 +1549,14 @@ function App() {
                               className="btn btn-secondary"
                               style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                               onClick={() => {
-                                const newPeople = [...(formData.attended_people || []), { name: '', bond: 'Pai/Mãe', contact: '' }];
+                                const newPeople = [...(formData.attended_people || []), { name: '', bond: '', contact: '' }];
                                 setFormData({ ...formData, attended_people: newPeople });
                               }}
                             >
                               + Adicionar Pessoa
                             </button>
                           </label>
-                          {(formData.attended_people || [{ name: '', bond: 'Pai/Mãe', contact: '' }]).map((person, index) => (
+                          {(formData.attended_people || [{ name: '', bond: '', contact: '' }]).map((person, index) => (
                             <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
                               <input
                                 type="text"
@@ -1503,18 +1572,39 @@ function App() {
                                 }}
                                 required
                               />
-                              <input
-                                type="text"
-                                placeholder="Vínculo (ex: Mãe)..."
-                                className="form-control"
-                                value={person.bond}
-                                onChange={(e) => {
-                                  const newPeople = [...formData.attended_people];
-                                  newPeople[index].bond = e.target.value;
-                                  setFormData({ ...formData, attended_people: newPeople });
-                                }}
-                                required
-                              />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                                <select
+                                  className="form-select"
+                                  value={['Pai', 'Mãe', 'Responsável'].includes(person.bond) ? person.bond : (person.bond ? 'Outro' : '')}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const newPeople = [...formData.attended_people];
+                                    newPeople[index].bond = val === 'Outro' ? 'Outro' : val;
+                                    setFormData({ ...formData, attended_people: newPeople });
+                                  }}
+                                  required
+                                >
+                                  <option value="">Selecione o vínculo...</option>
+                                  <option value="Pai">Pai</option>
+                                  <option value="Mãe">Mãe</option>
+                                  <option value="Responsável">Responsável</option>
+                                  <option value="Outro">Outro</option>
+                                </select>
+                                {!['Pai', 'Mãe', 'Responsável'].includes(person.bond) && (
+                                  <input
+                                    type="text"
+                                    placeholder="Especifique o vínculo (ex: Avó)..."
+                                    className="form-control"
+                                    value={person.bond === 'Outro' ? '' : person.bond}
+                                    onChange={(e) => {
+                                      const newPeople = [...formData.attended_people];
+                                      newPeople[index].bond = e.target.value;
+                                      setFormData({ ...formData, attended_people: newPeople });
+                                    }}
+                                    required
+                                  />
+                                )}
+                              </div>
                               <input
                                 type="text"
                                 placeholder="Contato..."
@@ -2240,17 +2330,23 @@ function App() {
                 <strong>Observações da Diretoria (Visto/Acompanhamento)</strong>
                 
                 {user.role === 'diretor' || user.role === 'gestor' ? (
-                  <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <textarea
-                      className="form-textarea"
-                      placeholder="Escreva aqui observações do diretor, visto ou plano de acompanhamento..."
-                      value={directorNotes}
-                      onChange={(e) => setDirectorNotes(e.target.value)}
-                    />
-                    <button className="btn btn-primary" onClick={handleSaveDirectorNotes}>
-                      Confirmar Visto da Diretoria
-                    </button>
-                  </div>
+                  selectedOccurrence.status === 'rascunho' ? (
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic', fontSize: '0.875rem' }}>
+                      Esta ocorrência está em modo de Rascunho. Aguarde a finalização pelo pedagogo para registrar o visto da diretoria.
+                    </p>
+                  ) : (
+                    <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <textarea
+                        className="form-textarea"
+                        placeholder="Escreva aqui observações do diretor, visto ou plano de acompanhamento..."
+                        value={directorNotes}
+                        onChange={(e) => setDirectorNotes(e.target.value)}
+                      />
+                      <button className="btn btn-primary" onClick={handleSaveDirectorNotes}>
+                        Confirmar Visto da Diretoria
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontStyle: 'italic' }}>
                     {selectedOccurrence.directorNotes || 'Nenhuma observação cadastrada pela diretoria ainda.'}
@@ -2453,6 +2549,37 @@ function App() {
               </button>
             </div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', maxHeight: '75vh', padding: '1.5rem' }}>
+              {/* Download Tutorial Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '1.5rem' }}>🎬</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: '600', fontSize: '0.875rem', marginBottom: '0.2rem' }}>Tutorial Animado do Sistema</p>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Veja o fluxo completo: Pedagogo → Diretor → Gestora</p>
+                </div>
+                <a
+                  href="/tutorial_com_bubbles.webp"
+                  download="Tutorial_POME_Fluxo_Completo.webp"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0.5rem 0.9rem',
+                    backgroundColor: 'var(--primary)',
+                    color: 'white',
+                    borderRadius: 'var(--radius-sm)',
+                    textDecoration: 'none',
+                    fontSize: '0.82rem',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.opacity = '0.85'}
+                  onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                >
+                  ⬇️ Baixar
+                </a>
+              </div>
+
               <div>
                 <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Apresentação</h4>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

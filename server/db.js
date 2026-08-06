@@ -20,7 +20,10 @@ export const schemaCache = {
     hasSubjectMatter: false,
     hasAttendedPeople: false,
     hasClassifications: false,
-    hasStatus: false
+    hasStatus: false,
+    hasUpdatedAt: false,
+    hasUpdatedById: false,
+    hasUpdatedByName: false
   },
   users: {
     hasEmail: false
@@ -41,6 +44,15 @@ async function detectSchema() {
 
     const { error: errStatus } = await supabase.from('occurrences').select('status').limit(1);
     schemaCache.occurrences.hasStatus = !errStatus;
+
+    const { error: errUpdatedAt } = await supabase.from('occurrences').select('updatedAt').limit(1);
+    schemaCache.occurrences.hasUpdatedAt = !errUpdatedAt;
+
+    const { error: errUpdatedById } = await supabase.from('occurrences').select('updatedById').limit(1);
+    schemaCache.occurrences.hasUpdatedById = !errUpdatedById;
+
+    const { error: errUpdatedByName } = await supabase.from('occurrences').select('updatedByName').limit(1);
+    schemaCache.occurrences.hasUpdatedByName = !errUpdatedByName;
 
     const { error: errEmail } = await supabase.from('users').select('email').limit(1);
     schemaCache.users.hasEmail = !errEmail;
@@ -161,6 +173,21 @@ function writeDb(data) {
     console.error('Error writing DB:', error);
     return false;
   }
+}
+
+function findClosingBracket(str, startIdx) {
+  let depth = 0;
+  for (let i = startIdx; i < str.length; i++) {
+    if (str[i] === '[') {
+      depth++;
+    } else if (str[i] === ']') {
+      depth--;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 export const db = {
@@ -328,7 +355,7 @@ export const db = {
     data.users = data.users.filter(u => u.id !== id);
     writeDb(data);
   },
-  
+
   // Occurrences
   getOccurrences: async () => {
     if (isSupabaseConfigured) {
@@ -347,24 +374,31 @@ export const db = {
         
         // Extract metadata from observations if present
         if (decoded.observations && decoded.observations.includes('[POME_META:')) {
-          try {
-            const startIdx = decoded.observations.indexOf('[POME_META:');
-            const endIdx = decoded.observations.indexOf(']', startIdx);
+          let obs = decoded.observations;
+          let startIdx;
+          while ((startIdx = obs.indexOf('[POME_META:')) !== -1) {
+            const endIdx = findClosingBracket(obs, startIdx);
             if (endIdx !== -1) {
-              const jsonStr = decoded.observations.slice(startIdx + 11, endIdx);
-              const meta = JSON.parse(jsonStr);
-              
-              if (!schemaCache.occurrences.hasSubjectMatter) decoded.subject_matter = meta.subject_matter;
-              if (!schemaCache.occurrences.hasAttendedPeople) decoded.attended_people = meta.attended_people;
-              if (!schemaCache.occurrences.hasClassifications) decoded.classifications = meta.classifications;
-              if (!schemaCache.occurrences.hasStatus) decoded.status = meta.status;
-              
-              // Clean up the metadata tag from observations so it doesn't show in UI
-              decoded.observations = (decoded.observations.slice(0, startIdx) + decoded.observations.slice(endIdx + 1)).trim();
+              const jsonStr = obs.slice(startIdx + 11, endIdx);
+              try {
+                const meta = JSON.parse(jsonStr);
+                if (!schemaCache.occurrences.hasSubjectMatter && meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
+                if (!schemaCache.occurrences.hasAttendedPeople && meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
+                if (!schemaCache.occurrences.hasClassifications && meta.classifications !== undefined) decoded.classifications = meta.classifications;
+                if (!schemaCache.occurrences.hasStatus && meta.status !== undefined) decoded.status = meta.status;
+                if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
+                if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
+                if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
+              } catch (e) {
+                console.error("Failed to parse serialized occurrence metadata:", e);
+              }
+              // Remove the metadata tag from obs
+              obs = (obs.slice(0, startIdx) + obs.slice(endIdx + 1)).trim();
+            } else {
+              break;
             }
-          } catch (e) {
-            console.error("Failed to parse serialized occurrence metadata:", e);
           }
+          decoded.observations = obs;
         }
         
         // Default values if missing
@@ -372,6 +406,9 @@ export const db = {
         if (!decoded.classifications) decoded.classifications = [];
         if (!decoded.status) decoded.status = 'finalizado';
         if (!decoded.subject_matter) decoded.subject_matter = '';
+        if (!decoded.updatedAt) decoded.updatedAt = '';
+        if (!decoded.updatedById) decoded.updatedById = '';
+        if (!decoded.updatedByName) decoded.updatedByName = '';
         
         return decoded;
       });
@@ -391,13 +428,19 @@ export const db = {
       if (!schemaCache.occurrences.hasSubjectMatter || 
           !schemaCache.occurrences.hasAttendedPeople || 
           !schemaCache.occurrences.hasClassifications || 
-          !schemaCache.occurrences.hasStatus) {
+          !schemaCache.occurrences.hasStatus ||
+          !schemaCache.occurrences.hasUpdatedAt ||
+          !schemaCache.occurrences.hasUpdatedById ||
+          !schemaCache.occurrences.hasUpdatedByName) {
         
         const meta = {
           subject_matter: occurrence.subject_matter || '',
           attended_people: occurrence.attended_people || [],
           classifications: occurrence.classifications || [],
-          status: occurrence.status || 'finalizado'
+          status: occurrence.status || 'finalizado',
+          updatedAt: occurrence.updatedAt || '',
+          updatedById: occurrence.updatedById || '',
+          updatedByName: occurrence.updatedByName || ''
         };
         
         // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
@@ -405,6 +448,9 @@ export const db = {
         if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
         if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
         if (!schemaCache.occurrences.hasStatus) delete payload.status;
+        if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
+        if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
+        if (!schemaCache.occurrences.hasUpdatedByName) delete payload.updatedByName;
         
         // Append metadata to observations
         const metaTag = `[POME_META:${JSON.stringify(meta)}]`;
@@ -425,7 +471,12 @@ export const db = {
     // Local Fallback
     const data = readDb();
     if (occurrence.id) {
-      data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
+      const exists = data.occurrences.some(o => o.id === occurrence.id);
+      if (exists) {
+        data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
+      } else {
+        data.occurrences.push(occurrence);
+      }
     } else {
       occurrence.id = 'occ-' + Date.now();
       data.occurrences.push(occurrence);

@@ -17,6 +17,11 @@ ALTER TABLE occurrences ADD COLUMN IF NOT EXISTS attended_people JSONB DEFAULT '
 -- Adiciona a coluna para múltiplas classificações de ocorrência como JSONB
 ALTER TABLE occurrences ADD COLUMN IF NOT EXISTS classifications JSONB DEFAULT '[]'::jsonb;
 
+-- Adiciona colunas para trilha de auditoria (metadados de alteração)
+ALTER TABLE occurrences ADD COLUMN IF NOT EXISTS "updatedAt" TEXT;
+ALTER TABLE occurrences ADD COLUMN IF NOT EXISTS "updatedById" TEXT;
+ALTER TABLE occurrences ADD COLUMN IF NOT EXISTS "updatedByName" TEXT;
+
 -- 3. Atualizar dados existentes no banco (opcional para retrocompatibilidade)
 -- Preenche as colunas de quem já existe para não quebrar o layout
 UPDATE occurrences 

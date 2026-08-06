@@ -83,6 +83,9 @@ app.get('/api/occurrences', async (req, res) => {
     const { schoolId, role, userId } = req.query;
     let occurrences = await db.getOccurrences();
 
+    // Filter drafts: only show drafts to the user who created them
+    occurrences = occurrences.filter(o => !o.status || o.status !== 'rascunho' || o.createdById === userId);
+
     if (role === 'pedagogo') {
       // Pedagogues only see their own school's occurrences, and we can filter by their classes on the frontend or here
       occurrences = occurrences.filter(o => o.schoolId === schoolId);
@@ -195,6 +198,9 @@ app.delete('/api/occurrences/:id', async (req, res) => {
       const occ = occurrences.find(o => o.id === req.params.id);
       if (occ && occ.createdById !== userId) {
         return res.status(403).json({ error: 'Não autorizado. O pedagogo só pode excluir ocorrências criadas por ele.' });
+      }
+      if (occ && occ.directorNotes) {
+        return res.status(403).json({ error: 'Não autorizado. Ocorrências com visto da diretoria não podem ser excluídas por pedagogos.' });
       }
     } else if (role === 'diretor') {
       return res.status(403).json({ error: 'Não autorizado. Diretores não têm permissão para excluir ocorrências.' });
