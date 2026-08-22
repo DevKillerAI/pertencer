@@ -228,33 +228,35 @@ export const db = {
   // Schools
   getSchools: async () => {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) {
-        console.error('Supabase Error (getSchools):', error);
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('*')
+          .order('name', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Supabase getSchools failed, using local fallback:', err.message || err);
       }
-      return data || [];
     }
     return readDb().schools;
   },
   
   saveSchool: async (school) => {
     if (isSupabaseConfigured) {
-      if (!school.id) {
-        school.id = 'esc-' + Date.now();
+      try {
+        if (!school.id) {
+          school.id = 'esc-' + Date.now();
+        }
+        const { data, error } = await supabase
+          .from('schools')
+          .upsert(school)
+          .select();
+        if (error) throw error;
+        return data[0];
+      } catch (err) {
+        console.warn('Supabase saveSchool failed, using local fallback:', err.message || err);
       }
-      const { data, error } = await supabase
-        .from('schools')
-        .upsert(school)
-        .select();
-      if (error) {
-        console.error('Supabase Error (saveSchool):', error);
-        throw error;
-      }
-      return data[0];
     }
     
     // Local Fallback
@@ -271,15 +273,16 @@ export const db = {
   
   deleteSchool: async (id) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', id);
-      if (error) {
-        console.error('Supabase Error (deleteSchool):', error);
-        throw error;
+      try {
+        const { error } = await supabase
+          .from('schools')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return;
+      } catch (err) {
+        console.warn('Supabase deleteSchool failed, using local fallback:', err.message || err);
       }
-      return;
     }
     
     // Local Fallback
@@ -291,62 +294,64 @@ export const db = {
   // Users
   getUsers: async () => {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) {
-        console.error('Supabase Error (getUsers):', error);
-        throw error;
-      }
-      const list = data || [];
-      return list.map(u => {
-        let decoded = { ...u };
-        // Extract email from classes if present and email column is missing
-        if (!schemaCache.users.hasEmail && Array.isArray(decoded.classes)) {
-          const emailItem = decoded.classes.find(c => c && c.startsWith('__email:'));
-          if (emailItem) {
-            decoded.email = emailItem.slice(8);
-            decoded.classes = decoded.classes.filter(c => c !== emailItem);
-          } else {
-            decoded.email = '';
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .order('name', { ascending: true });
+        if (error) throw error;
+        const list = data || [];
+        return list.map(u => {
+          let decoded = { ...u };
+          // Extract email from classes if present and email column is missing
+          if (!schemaCache.users.hasEmail && Array.isArray(decoded.classes)) {
+            const emailItem = decoded.classes.find(c => c && c.startsWith('__email:'));
+            if (emailItem) {
+              decoded.email = emailItem.slice(8);
+              decoded.classes = decoded.classes.filter(c => c !== emailItem);
+            } else {
+              decoded.email = '';
+            }
           }
-        }
-        return decoded;
-      });
+          return decoded;
+        });
+      } catch (err) {
+        console.warn('Supabase getUsers failed, using local fallback:', err.message || err);
+      }
     }
     return readDb().users;
   },
   
   saveUser: async (user) => {
     if (isSupabaseConfigured) {
-      if (!user.id) {
-        user.id = 'usr-' + Date.now();
-      }
-      // Ensure classes is stored as JSON array in Supabase JSONB
-      const payload = {
-        ...user,
-        classes: Array.isArray(user.classes) ? [...user.classes] : []
-      };
-      
-      if (!schemaCache.users.hasEmail) {
-        // Store email in classes array as a special item
-        if (user.email) {
-          payload.classes.push(`__email:${user.email}`);
+      try {
+        if (!user.id) {
+          user.id = 'usr-' + Date.now();
         }
-        // Remove email column from payload to avoid PostgREST error
-        delete payload.email;
-      }
+        // Ensure classes is stored as JSON array in Supabase JSONB
+        const payload = {
+          ...user,
+          classes: Array.isArray(user.classes) ? [...user.classes] : []
+        };
+        
+        if (!schemaCache.users.hasEmail) {
+          // Store email in classes array as a special item
+          if (user.email) {
+            payload.classes.push(`__email:${user.email}`);
+          }
+          // Remove email column from payload to avoid PostgREST error
+          delete payload.email;
+        }
 
-      const { error } = await supabase
-        .from('users')
-        .upsert(payload)
-        .select();
-      if (error) {
-        console.error('Supabase Error (saveUser):', error);
-        throw error;
+        const { error } = await supabase
+          .from('users')
+          .upsert(payload)
+          .select();
+        if (error) throw error;
+        return user;
+      } catch (err) {
+        console.warn('Supabase saveUser failed, using local fallback:', err.message || err);
       }
-      return user;
     }
     
     // Local Fallback
@@ -363,15 +368,16 @@ export const db = {
   
   deleteUser: async (id) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id);
-      if (error) {
-        console.error('Supabase Error (deleteUser):', error);
-        throw error;
+      try {
+        const { error } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return;
+      } catch (err) {
+        console.warn('Supabase deleteUser failed, using local fallback:', err.message || err);
       }
-      return;
     }
     
     // Local Fallback
@@ -383,82 +389,83 @@ export const db = {
   // Occurrences
   getOccurrences: async () => {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('occurrences')
-        .select('*')
-        .order('date', { ascending: false });
-      if (error) {
-        console.error('Supabase Error (getOccurrences):', error);
-        throw error;
-      }
-      
-      const list = data || [];
-      return list.map(o => {
-        let decoded = { ...o };
+      try {
+        const { data, error } = await supabase
+          .from('occurrences')
+          .select('*')
+          .order('date', { ascending: false });
+        if (error) throw error;
         
-        // Extract metadata from observations if present
-        if (decoded.observations && decoded.observations.includes('[POME_META:')) {
-          let obs = decoded.observations;
-          let startIdx;
-          while ((startIdx = obs.indexOf('[POME_META:')) !== -1) {
-            const endIdx = findClosingBracket(obs, startIdx);
-            if (endIdx !== -1) {
-              const jsonStr = obs.slice(startIdx + 11, endIdx);
-              try {
-                const meta = JSON.parse(jsonStr);
-                if (!schemaCache.occurrences.hasSubjectMatter && meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
-                if (!schemaCache.occurrences.hasAttendedPeople && meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
-                if (!schemaCache.occurrences.hasStudents && meta.students !== undefined) decoded.students = meta.students;
-                if (!schemaCache.occurrences.hasClassifications && meta.classifications !== undefined) decoded.classifications = meta.classifications;
-                if (!schemaCache.occurrences.hasFeelings && meta.feelings !== undefined) decoded.feelings = meta.feelings;
-                if (!schemaCache.occurrences.hasFeelingsObservations && meta.feelings_observations !== undefined) decoded.feelings_observations = meta.feelings_observations;
-                if (!schemaCache.occurrences.hasDirectionReferrals && meta.direction_referrals !== undefined) decoded.direction_referrals = meta.direction_referrals;
-                if (!schemaCache.occurrences.hasStatus && meta.status !== undefined) decoded.status = meta.status;
-                if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
-                if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
-                if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
-              } catch (e) {
-                console.error("Failed to parse serialized occurrence metadata:", e);
+        const list = data || [];
+        return list.map(o => {
+          let decoded = { ...o };
+          
+          // Extract metadata from observations if present
+          if (decoded.observations && decoded.observations.includes('[POME_META:')) {
+            let obs = decoded.observations;
+            let startIdx;
+            while ((startIdx = obs.indexOf('[POME_META:')) !== -1) {
+              const endIdx = findClosingBracket(obs, startIdx);
+              if (endIdx !== -1) {
+                const jsonStr = obs.slice(startIdx + 11, endIdx);
+                try {
+                  const meta = JSON.parse(jsonStr);
+                  if (!schemaCache.occurrences.hasSubjectMatter && meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
+                  if (!schemaCache.occurrences.hasAttendedPeople && meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
+                  if (!schemaCache.occurrences.hasStudents && meta.students !== undefined) decoded.students = meta.students;
+                  if (!schemaCache.occurrences.hasClassifications && meta.classifications !== undefined) decoded.classifications = meta.classifications;
+                  if (!schemaCache.occurrences.hasFeelings && meta.feelings !== undefined) decoded.feelings = meta.feelings;
+                  if (!schemaCache.occurrences.hasFeelingsObservations && meta.feelings_observations !== undefined) decoded.feelings_observations = meta.feelings_observations;
+                  if (!schemaCache.occurrences.hasDirectionReferrals && meta.direction_referrals !== undefined) decoded.direction_referrals = meta.direction_referrals;
+                  if (!schemaCache.occurrences.hasStatus && meta.status !== undefined) decoded.status = meta.status;
+                  if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
+                  if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
+                  if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
+                } catch (e) {
+                  console.error("Failed to parse serialized occurrence metadata:", e);
+                }
+                // Remove the metadata tag from obs
+                obs = (obs.slice(0, startIdx) + obs.slice(endIdx + 1)).trim();
+              } else {
+                break;
               }
-              // Remove the metadata tag from obs
-              obs = (obs.slice(0, startIdx) + obs.slice(endIdx + 1)).trim();
-            } else {
-              break;
             }
+            decoded.observations = obs;
           }
-          decoded.observations = obs;
-        }
-        
-        // Default values if missing
-        if (!decoded.attended_people) decoded.attended_people = [];
-        if (!decoded.students) {
-          decoded.students = [{
-            studentName: decoded.studentName || '',
-            sex: decoded.sex || '',
-            turn: decoded.turn || '',
-            gradeCycle: decoded.gradeCycle || '',
-            className: decoded.className || '',
-            teacherName: decoded.teacherName || '',
-            subject_matter: decoded.subject_matter || '',
-            guardian: {
-              name: decoded.guardianName || (decoded.attended_people[0]?.name || ''),
-              bond: decoded.attended_people[0]?.bond || 'Responsável',
-              contact: decoded.contacts || (decoded.attended_people[0]?.contact || '')
-            }
-          }];
-        }
-        if (!decoded.classifications) decoded.classifications = decoded.type ? [decoded.type] : [];
-        if (!decoded.feelings) decoded.feelings = [];
-        if (!decoded.feelings_observations) decoded.feelings_observations = '';
-        if (!decoded.direction_referrals) decoded.direction_referrals = [];
-        if (!decoded.status) decoded.status = 'finalizado';
-        if (!decoded.subject_matter) decoded.subject_matter = '';
-        if (!decoded.updatedAt) decoded.updatedAt = '';
-        if (!decoded.updatedById) decoded.updatedById = '';
-        if (!decoded.updatedByName) decoded.updatedByName = '';
-        
-        return decoded;
-      });
+          
+          // Default values if missing
+          if (!decoded.attended_people) decoded.attended_people = [];
+          if (!decoded.students) {
+            decoded.students = [{
+              studentName: decoded.studentName || '',
+              sex: decoded.sex || '',
+              turn: decoded.turn || '',
+              gradeCycle: decoded.gradeCycle || '',
+              className: decoded.className || '',
+              teacherName: decoded.teacherName || '',
+              subject_matter: decoded.subject_matter || '',
+              guardian: {
+                name: decoded.guardianName || (decoded.attended_people[0]?.name || ''),
+                bond: decoded.attended_people[0]?.bond || 'Responsável',
+                contact: decoded.contacts || (decoded.attended_people[0]?.contact || '')
+              }
+            }];
+          }
+          if (!decoded.classifications) decoded.classifications = decoded.type ? [decoded.type] : [];
+          if (!decoded.feelings) decoded.feelings = [];
+          if (!decoded.feelings_observations) decoded.feelings_observations = '';
+          if (!decoded.direction_referrals) decoded.direction_referrals = [];
+          if (!decoded.status) decoded.status = 'finalizado';
+          if (!decoded.subject_matter) decoded.subject_matter = '';
+          if (!decoded.updatedAt) decoded.updatedAt = '';
+          if (!decoded.updatedById) decoded.updatedById = '';
+          if (!decoded.updatedByName) decoded.updatedByName = '';
+          
+          return decoded;
+        });
+      } catch (err) {
+        console.warn('Supabase getOccurrences failed, using local fallback:', err.message || err);
+      }
     }
     const localOccurrences = readDb().occurrences || [];
     return localOccurrences.map(o => {
@@ -488,66 +495,67 @@ export const db = {
   
   saveOccurrence: async (occurrence) => {
     if (isSupabaseConfigured) {
-      if (!occurrence.id) {
-        occurrence.id = 'occ-' + Date.now();
-      }
-      
-      const payload = { ...occurrence };
-      
-      // If schema is missing columns, serialize them into observations
-      if (!schemaCache.occurrences.hasSubjectMatter || 
-          !schemaCache.occurrences.hasAttendedPeople || 
-          !schemaCache.occurrences.hasStudents ||
-          !schemaCache.occurrences.hasClassifications || 
-          !schemaCache.occurrences.hasFeelings ||
-          !schemaCache.occurrences.hasFeelingsObservations ||
-          !schemaCache.occurrences.hasDirectionReferrals ||
-          !schemaCache.occurrences.hasStatus ||
-          !schemaCache.occurrences.hasUpdatedAt ||
-          !schemaCache.occurrences.hasUpdatedById ||
-          !schemaCache.occurrences.hasUpdatedByName) {
+      try {
+        if (!occurrence.id) {
+          occurrence.id = 'occ-' + Date.now();
+        }
         
-        const meta = {
-          subject_matter: occurrence.subject_matter || '',
-          attended_people: occurrence.attended_people || [],
-          students: occurrence.students || [],
-          classifications: occurrence.classifications || [],
-          feelings: occurrence.feelings || [],
-          feelings_observations: occurrence.feelings_observations || '',
-          direction_referrals: occurrence.direction_referrals || [],
-          status: occurrence.status || 'finalizado',
-          updatedAt: occurrence.updatedAt || '',
-          updatedById: occurrence.updatedById || '',
-          updatedByName: occurrence.updatedByName || ''
-        };
+        const payload = { ...occurrence };
         
-        // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
-        if (!schemaCache.occurrences.hasSubjectMatter) delete payload.subject_matter;
-        if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
-        if (!schemaCache.occurrences.hasStudents) delete payload.students;
-        if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
-        if (!schemaCache.occurrences.hasFeelings) delete payload.feelings;
-        if (!schemaCache.occurrences.hasFeelingsObservations) delete payload.feelings_observations;
-        if (!schemaCache.occurrences.hasDirectionReferrals) delete payload.direction_referrals;
-        if (!schemaCache.occurrences.hasStatus) delete payload.status;
-        if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
-        if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
-        if (!schemaCache.occurrences.hasUpdatedByName) delete payload.updatedByName;
-        
-        // Append metadata to observations
-        const metaTag = `[POME_META:${JSON.stringify(meta)}]`;
-        payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
-      }
+        // If schema is missing columns, serialize them into observations
+        if (!schemaCache.occurrences.hasSubjectMatter || 
+            !schemaCache.occurrences.hasAttendedPeople || 
+            !schemaCache.occurrences.hasStudents ||
+            !schemaCache.occurrences.hasClassifications || 
+            !schemaCache.occurrences.hasFeelings ||
+            !schemaCache.occurrences.hasFeelingsObservations ||
+            !schemaCache.occurrences.hasDirectionReferrals ||
+            !schemaCache.occurrences.hasStatus ||
+            !schemaCache.occurrences.hasUpdatedAt ||
+            !schemaCache.occurrences.hasUpdatedById ||
+            !schemaCache.occurrences.hasUpdatedByName) {
+          
+          const meta = {
+            subject_matter: occurrence.subject_matter || '',
+            attended_people: occurrence.attended_people || [],
+            students: occurrence.students || [],
+            classifications: occurrence.classifications || [],
+            feelings: occurrence.feelings || [],
+            feelings_observations: occurrence.feelings_observations || '',
+            direction_referrals: occurrence.direction_referrals || [],
+            status: occurrence.status || 'finalizado',
+            updatedAt: occurrence.updatedAt || '',
+            updatedById: occurrence.updatedById || '',
+            updatedByName: occurrence.updatedByName || ''
+          };
+          
+          // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
+          if (!schemaCache.occurrences.hasSubjectMatter) delete payload.subject_matter;
+          if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
+          if (!schemaCache.occurrences.hasStudents) delete payload.students;
+          if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
+          if (!schemaCache.occurrences.hasFeelings) delete payload.feelings;
+          if (!schemaCache.occurrences.hasFeelingsObservations) delete payload.feelings_observations;
+          if (!schemaCache.occurrences.hasDirectionReferrals) delete payload.direction_referrals;
+          if (!schemaCache.occurrences.hasStatus) delete payload.status;
+          if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
+          if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
+          if (!schemaCache.occurrences.hasUpdatedByName) delete payload.updatedByName;
+          
+          // Append metadata to observations
+          const metaTag = `[POME_META:${JSON.stringify(meta)}]`;
+          payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
+        }
 
-      const { error } = await supabase
-        .from('occurrences')
-        .upsert(payload)
-        .select();
-      if (error) {
-        console.error('Supabase Error (saveOccurrence):', error);
-        throw error;
+        const { error } = await supabase
+          .from('occurrences')
+          .upsert(payload)
+          .select();
+        if (error) throw error;
+        return occurrence;
+      } catch (err) {
+        console.warn('Supabase saveOccurrence failed, using local fallback:', err.message || err);
       }
-      return occurrence;
     }
     
     // Local Fallback
@@ -569,15 +577,16 @@ export const db = {
   
   deleteOccurrence: async (id) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase
-        .from('occurrences')
-        .delete()
-        .eq('id', id);
-      if (error) {
-        console.error('Supabase Error (deleteOccurrence):', error);
-        throw error;
+      try {
+        const { error } = await supabase
+          .from('occurrences')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return;
+      } catch (err) {
+        console.warn('Supabase deleteOccurrence failed, using local fallback:', err.message || err);
       }
-      return;
     }
     
     // Local Fallback
