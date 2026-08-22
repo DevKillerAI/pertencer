@@ -84,6 +84,19 @@
         "3º Ano A",
         "3º Ano B"
       ]
+    },
+    {
+      "name": "Novo Assistente Aprovado",
+      "cpf": "88888888888",
+      "email": "assistente@educacao.contagem.mg.gov.br",
+      "phone": "",
+      "password": "senha123",
+      "role": "assistente",
+      "schoolId": "esc-1",
+      "classes": [],
+      "lgpd_accepted": true,
+      "createdAt": "2026-08-22T20:05:02.329Z",
+      "id": "usr-1787429102329"
     }
   ],
   "occurrences": [

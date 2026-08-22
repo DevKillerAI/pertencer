@@ -77,6 +77,56 @@ app.post('/api/schools', async (req, res) => {
   }
 });
 
+// API Register (Public user request with LGPD compliance)
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, cpf, email, phone, role, schoolId, lgpd_accepted } = req.body;
+    
+    if (!name || !cpf || !email || !role) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes (nome, CPF, e-mail e perfil são necessários).' });
+    }
+
+    if (!lgpd_accepted) {
+      return res.status(400).json({ error: 'É necessário aceitar os termos de consentimento e sigilo da LGPD.' });
+    }
+
+    const cleanCpf = cpf.replace(/\D/g, '');
+    const users = await db.getUsers();
+
+    // Check duplicate CPF
+    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf);
+    if (duplicateCpf) {
+      return res.status(400).json({ error: 'CPF já cadastrado no sistema.' });
+    }
+
+    // Check duplicate Email
+    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    if (duplicateEmail) {
+      return res.status(400).json({ error: 'E-mail já cadastrado no sistema.' });
+    }
+
+    const newUser = {
+      name,
+      cpf: cleanCpf,
+      email,
+      phone: phone || '',
+      password: req.body.password || 'senha123',
+      role: role.toLowerCase(), // seduc, pedagogo, diretor, assistente
+      schoolId: role.toLowerCase() === 'seduc' ? null : (schoolId || null),
+      classes: [],
+      lgpd_accepted: true,
+      createdAt: new Date().toISOString()
+    };
+
+    const saved = await db.saveUser(newUser);
+    const { password: _pwd, ...savedWithoutPassword } = saved;
+    res.status(201).json(savedWithoutPassword);
+  } catch (error) {
+    console.error('Error during self-registration:', error);
+    res.status(500).json({ error: 'Erro interno do servidor ao solicitar cadastro.' });
+  }
+});
+
 // GET Occurrences (Filtered by role and school)
 app.get('/api/occurrences', async (req, res) => {
   try {
@@ -86,15 +136,12 @@ app.get('/api/occurrences', async (req, res) => {
     // Filter drafts: only show drafts to the user who created them
     occurrences = occurrences.filter(o => !o.status || o.status !== 'rascunho' || o.createdById === userId);
 
-    if (role === 'pedagogo') {
-      // Pedagogues only see their own school's occurrences, and we can filter by their classes on the frontend or here
+    if (role === 'pedagogo' || role === 'assistente') {
       occurrences = occurrences.filter(o => o.schoolId === schoolId);
     } else if (role === 'diretor') {
-      // Directors see occurrences from their school
       occurrences = occurrences.filter(o => o.schoolId === schoolId);
-    } else if (role === 'gestor') {
-      // Gestor sees everything
-      // No filter
+    } else if (role === 'gestor' || role === 'seduc') {
+      // Gestor / Seduc sees everything
     }
 
     res.json(occurrences);
@@ -108,9 +155,30 @@ app.get('/api/occurrences', async (req, res) => {
 app.post('/api/occurrences', async (req, res) => {
   try {
     const occurrence = req.body;
+    const hasStudentName = occurrence.studentName || (Array.isArray(occurrence.students) && occurrence.students.length > 0 && occurrence.students[0].studentName);
     
-    if (!occurrence.studentName || !occurrence.schoolId || !occurrence.type) {
-      return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+    if (!hasStudentName || !occurrence.schoolId) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes (Estudante e Escola são necessários).' });
+    }
+
+    // Set first student name as studentName if missing for backward compatibility
+    if (!occurrence.studentName && Array.isArray(occurrence.students) && occurrence.students.length > 0) {
+      occurrence.studentName = occurrence.students[0].studentName;
+      occurrence.gradeCycle = occurrence.students[0].gradeCycle;
+      occurrence.className = occurrence.students[0].className;
+      occurrence.teacherName = occurrence.students[0].teacherName;
+      occurrence.subject_matter = occurrence.students[0].subject_matter;
+      if (occurrence.students[0].guardian) {
+        occurrence.guardianName = occurrence.students[0].guardian.name;
+        occurrence.contacts = occurrence.students[0].guardian.contact;
+      }
+    }
+
+    // Ensure type field is populated from classifications
+    if (!occurrence.type && Array.isArray(occurrence.classifications) && occurrence.classifications.length > 0) {
+      occurrence.type = occurrence.classifications[0];
+    } else if (!occurrence.type) {
+      occurrence.type = 'Atendimento';
     }
 
     const saved = await db.saveOccurrence(occurrence);
@@ -125,7 +193,7 @@ app.post('/api/occurrences', async (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const users = await db.getUsers();
-    const usersWithoutPassword = users.map(({ password, ...u }) => u);
+    const usersWithoutPassword = users.map(({ password: _pwd, ...u }) => u);
     res.json(usersWithoutPassword);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -146,19 +214,19 @@ app.post('/api/users', async (req, res) => {
     const users = await db.getUsers();
     
     // Check duplicate CPF
-    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf);
+    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf && u.id !== user.id);
     if (duplicateCpf) {
       return res.status(400).json({ error: 'CPF já cadastrado.' });
     }
 
     // Check duplicate Email
-    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase() && u.id !== user.id);
     if (duplicateEmail) {
       return res.status(400).json({ error: 'E-mail já cadastrado.' });
     }
 
     const saved = await db.saveUser(user);
-    const { password, ...savedWithoutPassword } = saved;
+    const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
   } catch (error) {
     console.error('Error saving user:', error);

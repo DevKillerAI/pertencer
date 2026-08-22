@@ -19,14 +19,20 @@ export const schemaCache = {
   occurrences: {
     hasSubjectMatter: false,
     hasAttendedPeople: false,
+    hasStudents: false,
     hasClassifications: false,
+    hasFeelings: false,
+    hasFeelingsObservations: false,
+    hasDirectionReferrals: false,
     hasStatus: false,
     hasUpdatedAt: false,
     hasUpdatedById: false,
     hasUpdatedByName: false
   },
   users: {
-    hasEmail: false
+    hasEmail: false,
+    hasPhone: false,
+    hasLgpdAccepted: false
   }
 };
 
@@ -39,8 +45,20 @@ async function detectSchema() {
     const { error: errAttendedPeople } = await supabase.from('occurrences').select('attended_people').limit(1);
     schemaCache.occurrences.hasAttendedPeople = !errAttendedPeople;
 
+    const { error: errStudents } = await supabase.from('occurrences').select('students').limit(1);
+    schemaCache.occurrences.hasStudents = !errStudents;
+
     const { error: errClassifications } = await supabase.from('occurrences').select('classifications').limit(1);
     schemaCache.occurrences.hasClassifications = !errClassifications;
+
+    const { error: errFeelings } = await supabase.from('occurrences').select('feelings').limit(1);
+    schemaCache.occurrences.hasFeelings = !errFeelings;
+
+    const { error: errFeelingsObservations } = await supabase.from('occurrences').select('feelings_observations').limit(1);
+    schemaCache.occurrences.hasFeelingsObservations = !errFeelingsObservations;
+
+    const { error: errDirectionReferrals } = await supabase.from('occurrences').select('direction_referrals').limit(1);
+    schemaCache.occurrences.hasDirectionReferrals = !errDirectionReferrals;
 
     const { error: errStatus } = await supabase.from('occurrences').select('status').limit(1);
     schemaCache.occurrences.hasStatus = !errStatus;
@@ -56,6 +74,12 @@ async function detectSchema() {
 
     const { error: errEmail } = await supabase.from('users').select('email').limit(1);
     schemaCache.users.hasEmail = !errEmail;
+
+    const { error: errPhone } = await supabase.from('users').select('phone').limit(1);
+    schemaCache.users.hasPhone = !errPhone;
+
+    const { error: errLgpd } = await supabase.from('users').select('lgpd_accepted').limit(1);
+    schemaCache.users.hasLgpdAccepted = !errLgpd;
 
     console.log('Database: Schema detection completed:', JSON.stringify(schemaCache));
   } catch (error) {
@@ -314,7 +338,7 @@ export const db = {
         delete payload.email;
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .upsert(payload)
         .select();
@@ -384,7 +408,11 @@ export const db = {
                 const meta = JSON.parse(jsonStr);
                 if (!schemaCache.occurrences.hasSubjectMatter && meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
                 if (!schemaCache.occurrences.hasAttendedPeople && meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
+                if (!schemaCache.occurrences.hasStudents && meta.students !== undefined) decoded.students = meta.students;
                 if (!schemaCache.occurrences.hasClassifications && meta.classifications !== undefined) decoded.classifications = meta.classifications;
+                if (!schemaCache.occurrences.hasFeelings && meta.feelings !== undefined) decoded.feelings = meta.feelings;
+                if (!schemaCache.occurrences.hasFeelingsObservations && meta.feelings_observations !== undefined) decoded.feelings_observations = meta.feelings_observations;
+                if (!schemaCache.occurrences.hasDirectionReferrals && meta.direction_referrals !== undefined) decoded.direction_referrals = meta.direction_referrals;
                 if (!schemaCache.occurrences.hasStatus && meta.status !== undefined) decoded.status = meta.status;
                 if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
                 if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
@@ -403,7 +431,26 @@ export const db = {
         
         // Default values if missing
         if (!decoded.attended_people) decoded.attended_people = [];
-        if (!decoded.classifications) decoded.classifications = [];
+        if (!decoded.students) {
+          decoded.students = [{
+            studentName: decoded.studentName || '',
+            sex: decoded.sex || '',
+            turn: decoded.turn || '',
+            gradeCycle: decoded.gradeCycle || '',
+            className: decoded.className || '',
+            teacherName: decoded.teacherName || '',
+            subject_matter: decoded.subject_matter || '',
+            guardian: {
+              name: decoded.guardianName || (decoded.attended_people[0]?.name || ''),
+              bond: decoded.attended_people[0]?.bond || 'Responsável',
+              contact: decoded.contacts || (decoded.attended_people[0]?.contact || '')
+            }
+          }];
+        }
+        if (!decoded.classifications) decoded.classifications = decoded.type ? [decoded.type] : [];
+        if (!decoded.feelings) decoded.feelings = [];
+        if (!decoded.feelings_observations) decoded.feelings_observations = '';
+        if (!decoded.direction_referrals) decoded.direction_referrals = [];
         if (!decoded.status) decoded.status = 'finalizado';
         if (!decoded.subject_matter) decoded.subject_matter = '';
         if (!decoded.updatedAt) decoded.updatedAt = '';
@@ -413,7 +460,30 @@ export const db = {
         return decoded;
       });
     }
-    return readDb().occurrences;
+    const localOccurrences = readDb().occurrences || [];
+    return localOccurrences.map(o => {
+      let decoded = { ...o };
+      if (!decoded.students) {
+        decoded.students = [{
+          studentName: decoded.studentName || '',
+          sex: decoded.sex || '',
+          turn: decoded.turn || '',
+          gradeCycle: decoded.gradeCycle || '',
+          className: decoded.className || '',
+          teacherName: decoded.teacherName || '',
+          subject_matter: decoded.subject_matter || '',
+          guardian: {
+            name: decoded.guardianName || (decoded.attended_people?.[0]?.name || ''),
+            bond: decoded.attended_people?.[0]?.bond || 'Responsável',
+            contact: decoded.contacts || (decoded.attended_people?.[0]?.contact || '')
+          }
+        }];
+      }
+      if (!decoded.feelings) decoded.feelings = [];
+      if (!decoded.feelings_observations) decoded.feelings_observations = '';
+      if (!decoded.direction_referrals) decoded.direction_referrals = [];
+      return decoded;
+    });
   },
   
   saveOccurrence: async (occurrence) => {
@@ -427,7 +497,11 @@ export const db = {
       // If schema is missing columns, serialize them into observations
       if (!schemaCache.occurrences.hasSubjectMatter || 
           !schemaCache.occurrences.hasAttendedPeople || 
+          !schemaCache.occurrences.hasStudents ||
           !schemaCache.occurrences.hasClassifications || 
+          !schemaCache.occurrences.hasFeelings ||
+          !schemaCache.occurrences.hasFeelingsObservations ||
+          !schemaCache.occurrences.hasDirectionReferrals ||
           !schemaCache.occurrences.hasStatus ||
           !schemaCache.occurrences.hasUpdatedAt ||
           !schemaCache.occurrences.hasUpdatedById ||
@@ -436,7 +510,11 @@ export const db = {
         const meta = {
           subject_matter: occurrence.subject_matter || '',
           attended_people: occurrence.attended_people || [],
+          students: occurrence.students || [],
           classifications: occurrence.classifications || [],
+          feelings: occurrence.feelings || [],
+          feelings_observations: occurrence.feelings_observations || '',
+          direction_referrals: occurrence.direction_referrals || [],
           status: occurrence.status || 'finalizado',
           updatedAt: occurrence.updatedAt || '',
           updatedById: occurrence.updatedById || '',
@@ -446,7 +524,11 @@ export const db = {
         // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
         if (!schemaCache.occurrences.hasSubjectMatter) delete payload.subject_matter;
         if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
+        if (!schemaCache.occurrences.hasStudents) delete payload.students;
         if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
+        if (!schemaCache.occurrences.hasFeelings) delete payload.feelings;
+        if (!schemaCache.occurrences.hasFeelingsObservations) delete payload.feelings_observations;
+        if (!schemaCache.occurrences.hasDirectionReferrals) delete payload.direction_referrals;
         if (!schemaCache.occurrences.hasStatus) delete payload.status;
         if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
         if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
@@ -457,7 +539,7 @@ export const db = {
         payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('occurrences')
         .upsert(payload)
         .select();

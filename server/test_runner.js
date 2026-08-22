@@ -64,7 +64,39 @@ async function runTests() {
     assert.match(jsonUserEmail.error, /E-mail já cadastrado/);
     console.log('✅ Test Passed: Duplicate Email blocked.');
 
-    // 3. Test Pedagogue deleting unauthorized occurrence
+    // 3. Test Public Self-Registration with LGPD (Apontamento 1)
+    console.log('Testing Public Self-Registration with LGPD requirement...');
+    const resRegNoLgpd = await fetch('http://localhost:3002/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Novo Assistente',
+        cpf: '88888888888',
+        email: 'assistente@educacao.contagem.mg.gov.br',
+        role: 'assistente',
+        schoolId: 'esc-1',
+        lgpd_accepted: false
+      })
+    });
+    assert.strictEqual(resRegNoLgpd.status, 400);
+    console.log('✅ Test Passed: Self-registration blocked without LGPD consent.');
+
+    const resRegOk = await fetch('http://localhost:3002/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Novo Assistente Aprovado',
+        cpf: '88888888888',
+        email: 'assistente@educacao.contagem.mg.gov.br',
+        role: 'assistente',
+        schoolId: 'esc-1',
+        lgpd_accepted: true
+      })
+    });
+    assert.strictEqual(resRegOk.status, 201);
+    console.log('✅ Test Passed: Self-registration with LGPD completed.');
+
+    // 4. Test Pedagogue deleting unauthorized occurrence
     console.log('Testing Pedagogue delete permission restriction...');
     const resDelFail = await fetch('http://localhost:3002/api/occurrences/occ-1?role=pedagogo&userId=usr-4', {
       method: 'DELETE'
@@ -74,7 +106,7 @@ async function runTests() {
     assert.match(jsonDelFail.error, /O pedagogo só pode excluir ocorrências criadas por ele/);
     console.log('✅ Test Passed: Pedagogue cannot delete others\' occurrences.');
 
-    // 4. Test Director deleting occurrence
+    // 5. Test Director deleting occurrence
     console.log('Testing Director delete permission restriction...');
     const resDelDir = await fetch('http://localhost:3002/api/occurrences/occ-1?role=diretor&userId=usr-2', {
       method: 'DELETE'
@@ -84,7 +116,7 @@ async function runTests() {
     assert.match(jsonDelDir.error, /Diretores não têm permissão para excluir ocorrências/);
     console.log('✅ Test Passed: Director blocked from deleting.');
 
-    // 5. Test Pedagogue deleting their own occurrence with director notes
+    // 6. Test Pedagogue deleting their own occurrence with director notes
     console.log('Testing Pedagogue deleting their own occurrence that has director notes...');
     const resDelSigned = await fetch('http://localhost:3002/api/occurrences/occ-1?role=pedagogo&userId=usr-3', {
       method: 'DELETE'
@@ -94,7 +126,55 @@ async function runTests() {
     assert.match(jsonDelSigned.error, /Ocorrências com visto da diretoria não podem ser excluídas por pedagogos/);
     console.log('✅ Test Passed: Pedagogue blocked from deleting signed occurrence.');
 
-    // 6. Create a draft occurrence as usr-3
+    // 7. Create full occurrence with multiple students, feelings (CNV), and protection referral
+    console.log('Testing creating occurrence with multiple students, CNV feelings and protection network referral...');
+    const resCreateMulti = await fetch('http://localhost:3002/api/occurrences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: 'occ-multi-test',
+        schoolId: 'esc-1',
+        createdById: 'usr-3',
+        createdByName: 'Pedagoga Maria Silva',
+        date: '2026-08-22',
+        students: [
+          {
+            studentName: 'Estudante 1 Teste',
+            sex: 'Feminino',
+            turn: 'Manhã',
+            gradeCycle: '5º Ano',
+            className: '5º Ano A',
+            teacherName: 'Profª Cláudia',
+            subject_matter: 'Língua Portuguesa',
+            guardian: { name: 'Mãe 1', bond: 'Mãe', contact: '(31) 98888-0001' }
+          },
+          {
+            studentName: 'Estudante 2 Teste',
+            sex: 'Masculino',
+            turn: 'Manhã',
+            gradeCycle: '5º Ano',
+            className: '5º Ano A',
+            teacherName: 'Profª Cláudia',
+            subject_matter: 'Língua Portuguesa',
+            guardian: { name: 'Pai 2', bond: 'Pai', contact: '(31) 98888-0002' }
+          }
+        ],
+        classifications: ['Bullying', 'Agressão verbal'],
+        subject: 'Relato completo de conflito com mediação pedagógica realizada.',
+        feelings: ['Frustração', 'Insegurança', 'Tristeza'],
+        feelings_observations: 'Os estudantes expressaram tristeza e arrependimento durante a escuta qualificada.',
+        referrals: 'Roda de conversa com a turma e diálogo com famílias.',
+        direction_referrals: ['Conselho tutelar'],
+        status: 'finalizado'
+      })
+    });
+    assert.strictEqual(resCreateMulti.status, 200);
+    const createdOcc = await resCreateMulti.json();
+    assert.strictEqual(createdOcc.students.length, 2);
+    assert.strictEqual(createdOcc.feelings.length, 3);
+    console.log('✅ Test Passed: Multi-student occurrence with CNV and direction referral created.');
+
+    // 8. Create a draft occurrence as usr-3
     console.log('Creating a draft occurrence as usr-3...');
     const resCreateDraft = await fetch('http://localhost:3002/api/occurrences', {
       method: 'POST',
@@ -114,7 +194,7 @@ async function runTests() {
     assert.strictEqual(resCreateDraft.status, 200);
     console.log('✅ Test Passed: Draft created successfully.');
 
-    // 7. Test that usr-4 (different user) cannot see the draft of usr-3
+    // 9. Test that usr-4 (different user) cannot see the draft of usr-3
     console.log('Testing that usr-4 cannot see the draft of usr-3...');
     const resGetDraftsOther = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-4');
     assert.strictEqual(resGetDraftsOther.status, 200);
@@ -123,7 +203,7 @@ async function runTests() {
     assert.strictEqual(foundDraftOther, undefined);
     console.log('✅ Test Passed: User usr-4 cannot see usr-3\'s draft.');
 
-    // 8. Test that usr-3 (creator) CAN see the draft
+    // 10. Test that usr-3 (creator) CAN see the draft
     console.log('Testing that usr-3 can see their own draft...');
     const resGetDraftsSelf = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-3');
     assert.strictEqual(resGetDraftsSelf.status, 200);
@@ -133,11 +213,10 @@ async function runTests() {
     assert.strictEqual(foundDraftSelf.status, 'rascunho');
     console.log('✅ Test Passed: Creator can see their own draft.');
 
-    // Clean up draft
-    console.log('Cleaning up draft occurrence...');
-    await fetch('http://localhost:3002/api/occurrences/occ-draft-test?role=gestor&userId=usr-1', {
-      method: 'DELETE'
-    });
+    // Clean up test occurrences
+    console.log('Cleaning up test data...');
+    await fetch('http://localhost:3002/api/occurrences/occ-draft-test?role=gestor&userId=usr-1', { method: 'DELETE' });
+    await fetch('http://localhost:3002/api/occurrences/occ-multi-test?role=gestor&userId=usr-1', { method: 'DELETE' });
 
     console.log('\n🎉 ALL POME TESTS PASSED SUCCESSFULLY! 🎉\n');
   } catch (error) {
