@@ -53,7 +53,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Duplicate Email User',
-        cpf: '99999999999',
+        cpf: '77777777777',
         email: 'gestor@pome.com', // same as gestor
         password: 'password',
         role: 'pedagogo'
@@ -66,13 +66,16 @@ async function runTests() {
 
     // 3. Test Public Self-Registration with LGPD (Apontamento 1)
     console.log('Testing Public Self-Registration with LGPD requirement...');
+    const testRegCpf = `88${Date.now().toString().slice(-9)}`;
+    const testRegEmail = `assistente_${Date.now()}@educacao.contagem.mg.gov.br`;
+
     const resRegNoLgpd = await fetch('http://localhost:3002/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: 'Novo Assistente',
-        cpf: '88888888888',
-        email: 'assistente@educacao.contagem.mg.gov.br',
+        name: 'Novo Assistente Sem LGPD',
+        cpf: testRegCpf,
+        email: testRegEmail,
         role: 'assistente',
         schoolId: 'esc-1',
         lgpd_accepted: false
@@ -86,17 +89,35 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Novo Assistente Aprovado',
-        cpf: '88888888888',
-        email: 'assistente@educacao.contagem.mg.gov.br',
+        cpf: testRegCpf,
+        email: testRegEmail,
         role: 'assistente',
         schoolId: 'esc-1',
         lgpd_accepted: true
       })
     });
     assert.strictEqual(resRegOk.status, 201);
+    const registeredUser = await resRegOk.json();
     console.log('✅ Test Passed: Self-registration with LGPD completed.');
 
-    // 4. Test Pedagogue deleting unauthorized occurrence
+    // 4. Test Director adding "Visto da Diretoria" (Director's notes/signature)
+    console.log('Testing Director adding notes / visto to an occurrence...');
+    const resDirVisto = await fetch('http://localhost:3002/api/occurrences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: 'occ-1',
+        schoolId: 'esc-1',
+        studentName: 'Gabriel Souza Lima',
+        directorNotes: 'Visto e parecer pedagógico homologado pela diretoria em 23/08.',
+        updatedById: 'usr-2',
+        updatedByName: 'Diretor Wancleber'
+      })
+    });
+    assert.strictEqual(resDirVisto.status, 200);
+    console.log('✅ Test Passed: Director successfully applied official visto / parecer.');
+
+    // 5. Test Pedagogue deleting unauthorized occurrence
     console.log('Testing Pedagogue delete permission restriction...');
     const resDelFail = await fetch('http://localhost:3002/api/occurrences/occ-1?role=pedagogo&userId=usr-4', {
       method: 'DELETE'
@@ -106,7 +127,7 @@ async function runTests() {
     assert.match(jsonDelFail.error, /O pedagogo só pode excluir ocorrências criadas por ele/);
     console.log('✅ Test Passed: Pedagogue cannot delete others\' occurrences.');
 
-    // 5. Test Director deleting occurrence
+    // 6. Test Director deleting occurrence (forbidden)
     console.log('Testing Director delete permission restriction...');
     const resDelDir = await fetch('http://localhost:3002/api/occurrences/occ-1?role=diretor&userId=usr-2', {
       method: 'DELETE'
@@ -116,7 +137,7 @@ async function runTests() {
     assert.match(jsonDelDir.error, /Diretores não têm permissão para excluir ocorrências/);
     console.log('✅ Test Passed: Director blocked from deleting.');
 
-    // 6. Test Pedagogue deleting their own occurrence with director notes
+    // 7. Test Pedagogue deleting their own occurrence that has director notes
     console.log('Testing Pedagogue deleting their own occurrence that has director notes...');
     const resDelSigned = await fetch('http://localhost:3002/api/occurrences/occ-1?role=pedagogo&userId=usr-3', {
       method: 'DELETE'
@@ -126,7 +147,7 @@ async function runTests() {
     assert.match(jsonDelSigned.error, /Ocorrências com visto da diretoria não podem ser excluídas por pedagogos/);
     console.log('✅ Test Passed: Pedagogue blocked from deleting signed occurrence.');
 
-    // 7. Create full occurrence with multiple students, feelings (CNV), and protection referral
+    // 8. Create full occurrence with multiple students, feelings (CNV), and protection referral
     console.log('Testing creating occurrence with multiple students, CNV feelings and protection network referral...');
     const resCreateMulti = await fetch('http://localhost:3002/api/occurrences', {
       method: 'POST',
@@ -174,7 +195,7 @@ async function runTests() {
     assert.strictEqual(createdOcc.feelings.length, 3);
     console.log('✅ Test Passed: Multi-student occurrence with CNV and direction referral created.');
 
-    // 8. Create a draft occurrence as usr-3
+    // 9. Create a draft occurrence as usr-3
     console.log('Creating a draft occurrence as usr-3...');
     const resCreateDraft = await fetch('http://localhost:3002/api/occurrences', {
       method: 'POST',
@@ -194,7 +215,7 @@ async function runTests() {
     assert.strictEqual(resCreateDraft.status, 200);
     console.log('✅ Test Passed: Draft created successfully.');
 
-    // 9. Test that usr-4 (different user) cannot see the draft of usr-3
+    // 10. Test that usr-4 (different user) cannot see the draft of usr-3
     console.log('Testing that usr-4 cannot see the draft of usr-3...');
     const resGetDraftsOther = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-4');
     assert.strictEqual(resGetDraftsOther.status, 200);
@@ -203,7 +224,7 @@ async function runTests() {
     assert.strictEqual(foundDraftOther, undefined);
     console.log('✅ Test Passed: User usr-4 cannot see usr-3\'s draft.');
 
-    // 10. Test that usr-3 (creator) CAN see the draft
+    // 11. Test that usr-3 (creator) CAN see the draft
     console.log('Testing that usr-3 can see their own draft...');
     const resGetDraftsSelf = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-3');
     assert.strictEqual(resGetDraftsSelf.status, 200);
@@ -213,10 +234,108 @@ async function runTests() {
     assert.strictEqual(foundDraftSelf.status, 'rascunho');
     console.log('✅ Test Passed: Creator can see their own draft.');
 
-    // Clean up test occurrences
+    // 12. Test Gestor / Seduc global visibility (all schools)
+    console.log('Testing Gestor global visibility across all schools...');
+    const resGestorOccs = await fetch('http://localhost:3002/api/occurrences?role=gestor&userId=usr-1');
+    assert.strictEqual(resGestorOccs.status, 200);
+    const gestorOccs = await resGestorOccs.json();
+    assert.ok(gestorOccs.length >= 2, 'Gestor must see occurrences across all schools');
+    console.log(`✅ Test Passed: Gestor sees all ${gestorOccs.length} network occurrences.`);
+
+    // 13. Test Assistente School-Specific Visibility
+    console.log('Testing Assistente visibility scoped to school esc-1...');
+    const resAssistOccs = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=assistente&userId=usr-assist');
+    assert.strictEqual(resAssistOccs.status, 200);
+    const assistOccs = await resAssistOccs.json();
+    assert.ok(assistOccs.every(o => o.schoolId === 'esc-1'));
+    console.log('✅ Test Passed: Assistente view is strictly scoped to assigned school.');
+
+    // 14. Test Gestor School CRUD (Create and Delete)
+    console.log('Testing Gestor school management...');
+    const resNewSchool = await fetch('http://localhost:3002/api/schools', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Escola Teste Integração' })
+    });
+    assert.strictEqual(resNewSchool.status, 200);
+    const savedSchool = await resNewSchool.json();
+    assert.ok(savedSchool.id);
+    
+    // Delete school
+    const resDelSchool = await fetch(`http://localhost:3002/api/schools/${savedSchool.id}`, { method: 'DELETE' });
+    assert.strictEqual(resDelSchool.status, 200);
+    console.log('✅ Test Passed: Gestor school creation and deletion.');
+
+    // 15. Test Super Admin Telemetry Metrics
+    console.log('Testing Super Admin telemetry metrics API...');
+    const resMetrics = await fetch('http://localhost:3002/api/admin/metrics');
+    assert.strictEqual(resMetrics.status, 200);
+    const metrics = await resMetrics.json();
+    assert.ok(metrics.counts.schools >= 1);
+    assert.ok(metrics.counts.users >= 1);
+    assert.ok(typeof metrics.uptimeSeconds === 'number');
+    console.log('✅ Test Passed: Super Admin Telemetry Metrics operational.');
+
+    // 16. Test Super Admin Activity & Error Logs
+    console.log('Testing Super Admin activity logs API...');
+    const resLogs = await fetch('http://localhost:3002/api/admin/logs');
+    assert.strictEqual(resLogs.status, 200);
+    const logs = await resLogs.json();
+    assert.ok(Array.isArray(logs));
+    assert.ok(logs.length > 0);
+    console.log(`✅ Test Passed: Super Admin retrieved ${logs.length} activity/audit logs.`);
+
+    // 17. Test Super Admin Automatic & Manual Backup Snapshot
+    console.log('Testing Super Admin backup generation and listing...');
+    const resBackup = await fetch('http://localhost:3002/api/admin/backups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: 'test_automated' })
+    });
+    assert.ok(resBackup.status === 200 || resBackup.status === 201);
+    const backupResult = await resBackup.json();
+    assert.ok(backupResult.backup);
+    assert.ok(backupResult.backup.filename.startsWith('pome_backup_'));
+
+    const resBackupsList = await fetch('http://localhost:3002/api/admin/backups');
+    assert.strictEqual(resBackupsList.status, 200);
+    const backupsList = await resBackupsList.json();
+    assert.ok(backupsList.some(b => b.filename === backupResult.backup.filename));
+    console.log('✅ Test Passed: Backup snapshot created and indexed successfully.');
+
+    // 18. Test Super Admin Impersonation of any user account
+    console.log('Testing Super Admin impersonation of Pedagoga Maria Silva (usr-3)...');
+    const resImpersonate = await fetch('http://localhost:3002/api/admin/impersonate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: 'usr-3' })
+    });
+    assert.strictEqual(resImpersonate.status, 200);
+    const targetUserSession = await resImpersonate.json();
+    assert.strictEqual(targetUserSession.id, 'usr-3');
+    assert.strictEqual(targetUserSession.role, 'pedagogo');
+    assert.strictEqual(targetUserSession.password, undefined); // Password stripped for security
+    console.log('✅ Test Passed: Super Admin impersonated target user successfully with credentials protected.');
+
+    // 19. Test Super Admin Backup Restore
+    console.log('Testing Super Admin backup restore execution...');
+    const resRestore = await fetch('http://localhost:3002/api/admin/backups/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: backupResult.backup.filename })
+    });
+    assert.strictEqual(resRestore.status, 200);
+    const restoreResult = await resRestore.json();
+    assert.strictEqual(restoreResult.success, true);
+    console.log('✅ Test Passed: Database restoration executed and verified.');
+
+    // Clean up test occurrences and registered test user
     console.log('Cleaning up test data...');
     await fetch('http://localhost:3002/api/occurrences/occ-draft-test?role=gestor&userId=usr-1', { method: 'DELETE' });
     await fetch('http://localhost:3002/api/occurrences/occ-multi-test?role=gestor&userId=usr-1', { method: 'DELETE' });
+    if (registeredUser && registeredUser.id) {
+      await fetch(`http://localhost:3002/api/users/${registeredUser.id}`, { method: 'DELETE' });
+    }
 
     console.log('\n🎉 ALL POME TESTS PASSED SUCCESSFULLY! 🎉\n');
   } catch (error) {

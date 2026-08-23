@@ -1283,3 +1283,47 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   color: #166534;
 }
 
+/* Impersonation Audit Banner */
+.impersonation-banner {
+  background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
+  color: #ffffff;
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.impersonation-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.impersonation-badge {
+  background-color: #ffffff;
+  color: #b45309;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.04em;
+}
+
+/* Spin Animation for Reload buttons */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+

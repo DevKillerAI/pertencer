@@ -128,6 +128,45 @@ const EyeOffIcon = (props) => (
   </svg>
 );
 
+const IconServer = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+    <line x1="6" y1="6" x2="6.01" y2="6" />
+    <line x1="6" y1="18" x2="6.01" y2="18" />
+  </svg>
+);
+
+const IconDatabase = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <ellipse cx="12" cy="5" rx="9" ry="3" />
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+  </svg>
+);
+
+const IconRefresh = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+const IconDownload = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const IconLightning = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
 // Constants: Grade Cycles / Anos
 const GRADE_CYCLES = [
   '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
@@ -268,6 +307,21 @@ function App() {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // Impersonation State (Super Admin viewing as another user)
+  const [impersonatedOriginalUser, setImpersonatedOriginalUser] = useState(() => {
+    const saved = localStorage.getItem('impersonatedOriginalUser');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // Admin Telemetry & Control Panel States (Super Admin)
+  const [adminMetrics, setAdminMetrics] = useState(null);
+  const [adminLogs, setAdminLogs] = useState([]);
+  const [adminBackups, setAdminBackups] = useState([]);
+  const [logFilterLevel, setLogFilterLevel] = useState('ALL');
+  const [impersonateSearch, setImpersonateSearch] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [backupActionStatus, setBackupActionStatus] = useState('');
   
   const [loginData, setLoginData] = useState({ cpf: '', password: '' });
   const [loginError, setLoginError] = useState('');
@@ -400,11 +454,33 @@ function App() {
     return null;
   };
 
+  const fetchAdminData = async () => {
+    try {
+      setAdminLoading(true);
+      const [metricsRes, logsRes, backupsRes] = await Promise.all([
+        fetch('/api/admin/metrics'),
+        fetch(`/api/admin/logs?level=${logFilterLevel === 'ALL' ? '' : logFilterLevel}`),
+        fetch('/api/admin/backups')
+      ]);
+      if (metricsRes.ok) setAdminMetrics(await metricsRes.json());
+      if (logsRes.ok) setAdminLogs(await logsRes.json());
+      if (backupsRes.ok) setAdminBackups(await backupsRes.json());
+    } catch (err) {
+      console.error('Error loading admin telemetry data:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   useEffect(() => {
     const initApp = async () => {
       if (user) {
         try {
-          await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers()]);
+          const promises = [fetchSchools(), fetchOccurrences(), fetchUsers()];
+          if (user.role === 'superadmin' || impersonatedOriginalUser) {
+            promises.push(fetchAdminData());
+          }
+          await Promise.all(promises);
         } catch (err) {
           console.error('Error loading initial data:', err);
         }
@@ -430,7 +506,7 @@ function App() {
         const loggedUser = await res.json();
         setUser(loggedUser);
         localStorage.setItem('user', JSON.stringify(loggedUser));
-        setActiveTab('dashboard');
+        setActiveTab(loggedUser.role === 'superadmin' ? 'sysadmin' : 'dashboard');
       } else {
         const data = await res.json();
         setLoginError(data.error || 'Credenciais inválidas.');
@@ -459,7 +535,7 @@ function App() {
         body: JSON.stringify(registerData)
       });
       if (res.ok) {
-        setRegisterSuccess('Solicitação de cadastro realizada com sucesso! Você já pode realizar o login.');
+        setRegisterSuccess('Cadastro realizado com sucesso! Você já pode realizar o login imediatamente com seu CPF/E-mail e senha.');
         setRegisterData({
           name: '', cpf: '', email: '', phone: '', role: 'pedagogo', schoolId: '', password: '', lgpd_accepted: false
         });
@@ -477,10 +553,119 @@ function App() {
     }
   };
 
+  // Handler: Impersonate (Super Admin logging as any user)
+  const handleImpersonate = async (targetUser) => {
+    if (!confirm(`Deseja entrar na conta de ${targetUser.name} (${targetUser.role.toUpperCase()}) para auditoria e suporte?`)) return;
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: targetUser.id })
+      });
+      if (res.ok) {
+        const impersonatedUser = await res.json();
+        
+        // Preserve the original Root Super Admin (never overwrite with an impersonated user)
+        const rootSuperAdmin = impersonatedOriginalUser || user;
+        setImpersonatedOriginalUser(rootSuperAdmin);
+        localStorage.setItem('impersonatedOriginalUser', JSON.stringify(rootSuperAdmin));
+        
+        // Switch current user
+        setUser(impersonatedUser);
+        localStorage.setItem('user', JSON.stringify(impersonatedUser));
+        setActiveTab('dashboard');
+      } else {
+        alert('Erro ao iniciar impersonação de conta.');
+      }
+    } catch (err) {
+      console.error('Error during impersonation:', err);
+      alert('Erro ao conectar ao servidor.');
+    }
+  };
+
+  // Handler: Stop Impersonation (Cleanly return to Super Admin)
+  const handleStopImpersonation = () => {
+    const rootSuperAdmin = impersonatedOriginalUser || JSON.parse(localStorage.getItem('impersonatedOriginalUser') || 'null');
+    if (rootSuperAdmin) {
+      // Clear impersonation state first
+      setImpersonatedOriginalUser(null);
+      localStorage.removeItem('impersonatedOriginalUser');
+      
+      // Restore Super Admin session
+      setUser(rootSuperAdmin);
+      localStorage.setItem('user', JSON.stringify(rootSuperAdmin));
+      setActiveTab('sysadmin');
+      setTimeout(fetchAdminData, 100);
+    }
+  };
+
+  // Handler: Create Manual Backup
+  const handleCreateBackup = async (label = 'manual') => {
+    try {
+      setBackupActionStatus('Gerando backup...');
+      const res = await fetch('/api/admin/backups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label })
+      });
+      if (res.ok) {
+        setBackupActionStatus('✅ Backup gerado com sucesso!');
+        fetchAdminData();
+        setTimeout(() => setBackupActionStatus(''), 4000);
+      } else {
+        alert('Erro ao criar backup.');
+        setBackupActionStatus('');
+      }
+    } catch (err) {
+      console.error('Error creating backup:', err);
+      alert('Erro ao gerar backup.');
+      setBackupActionStatus('');
+    }
+  };
+
+  // Handler: Restore Backup
+  const handleRestoreBackup = async (filename) => {
+    if (!confirm(`⚠️ ATENÇÃO: Deseja restaurar a base de dados a partir do arquivo "${filename}"?\n\nOs dados atuais serão atualizados com as informações deste backup.`)) return;
+    try {
+      setBackupActionStatus('Restaurando dados do backup...');
+      const res = await fetch('/api/admin/backups/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      if (res.ok) {
+        setBackupActionStatus('✅ Base de dados restaurada com sucesso!');
+        await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers(), fetchAdminData()]);
+        setTimeout(() => setBackupActionStatus(''), 4000);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erro ao restaurar backup.');
+        setBackupActionStatus('');
+      }
+    } catch (err) {
+      console.error('Error restoring backup:', err);
+      alert('Erro de conexão ao restaurar backup.');
+      setBackupActionStatus('');
+    }
+  };
+
+  // Handler: Clear Logs
+  const handleClearLogs = async () => {
+    if (!confirm('Deseja realmente limpar todos os logs de atividade em memória?')) return;
+    try {
+      const res = await fetch('/api/admin/logs', { method: 'DELETE' });
+      if (res.ok) fetchAdminData();
+    } catch (err) {
+      console.error('Error clearing logs:', err);
+    }
+  };
+
   // Handler: Logout
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    setImpersonatedOriginalUser(null);
+    localStorage.removeItem('impersonatedOriginalUser');
     setActiveTab('dashboard');
     setShowForm(false);
     setFormStep(1);
@@ -727,14 +912,40 @@ function App() {
     document.body.removeChild(link);
   };
 
+  // Helper: Match classification to taxonomy nature
+  const getNatureForClassification = (classificationTerm) => {
+    if (!classificationTerm) return null;
+    const termLower = classificationTerm.toLowerCase().trim();
+    for (const [natureName, dimensions] of Object.entries(TAXONOMY_TREE)) {
+      for (const [dimName, terms] of Object.entries(dimensions)) {
+        if (terms.some(t => {
+          const tLower = t.toLowerCase();
+          return tLower === termLower || termLower.includes(tLower) || tLower.includes(termLower);
+        })) {
+          if (natureName.includes('Perturbadora')) return 'Perturbadora';
+          if (natureName.includes('Agressiva')) return 'Agressiva';
+          if (natureName.includes('risco') || natureName.includes('Risco')) return 'Risco';
+        }
+      }
+    }
+    return null;
+  };
+
+  const occurrenceHasNature = (occ, natureType) => {
+    const list = Array.isArray(occ.classifications) && occ.classifications.length > 0
+      ? occ.classifications
+      : [occ.type || ''];
+    return list.some(term => getNatureForClassification(term) === natureType);
+  };
+
   // Filter & Search Logic
   const filteredOccurrences = occurrences.filter(o => {
     const studentNames = (Array.isArray(o.students) ? o.students.map(s => s.studentName).join(' ') : o.studentName) || '';
-    const guardianName = o.guardianName || '';
+    const guardianName = o.guardianName || (Array.isArray(o.students) && o.students[0]?.guardian?.name) || '';
     const subject = o.subject || '';
-    const className = o.className || '';
+    const className = o.className || (Array.isArray(o.students) && o.students[0]?.className) || '';
     const createdByName = o.createdByName || '';
-    const gradeCycle = o.gradeCycle || '';
+    const gradeCycle = o.gradeCycle || (Array.isArray(o.students) && o.students[0]?.gradeCycle) || '';
     const type = o.type || '';
     const status = o.status || 'finalizado';
     const schoolName = schools.find(s => s.id === o.schoolId)?.name || '';
@@ -751,58 +962,137 @@ function App() {
       normalize(schoolName).includes(normalizedQuery) ||
       normalize(gradeCycle).includes(normalizedQuery) ||
       normalize(type).includes(normalizedQuery) ||
-      normalize(status).includes(normalizedQuery);
+      normalize(status).includes(normalizedQuery) ||
+      (Array.isArray(o.classifications) && o.classifications.some(c => normalize(c).includes(normalizedQuery)));
       
     const matchesSchool = filterSchool ? o.schoolId === filterSchool : true;
-    const matchesClass = filterClass ? className.toLowerCase().includes(filterClass.toLowerCase()) : true;
+    const matchesClass = filterClass 
+      ? className.toLowerCase().includes(filterClass.toLowerCase()) ||
+        `${gradeCycle} ${className}`.toLowerCase().includes(filterClass.toLowerCase()) ||
+        (Array.isArray(o.students) && o.students.some(st => (st.className || '').toLowerCase().includes(filterClass.toLowerCase()) || `${st.gradeCycle || ''} ${st.className || ''}`.toLowerCase().includes(filterClass.toLowerCase())))
+      : true;
     
-    // Nature filter
+    // Nature filter (Search page dropdown)
     const matchesNature = filterNature
       ? (Array.isArray(o.classifications) && o.classifications.some(c => c.toLowerCase().includes(filterNature.toLowerCase()))) ||
         (o.type && o.type.toLowerCase().includes(filterNature.toLowerCase()))
       : true;
 
-    // Pedagogue class restriction
-    const matchesPedagogueClasses = 
-      user && user.role === 'pedagogo' && user.classes && user.classes.length > 0
-        ? user.classes.some(c => c.trim().toLowerCase() === className.trim().toLowerCase())
-        : true;
+    // Dashboard Dimension Panorama Filter (Pill buttons)
+    const matchesDashboard = (activeTab === 'dashboard' && dashboardFilter !== 'all')
+      ? occurrenceHasNature(o, dashboardFilter)
+      : true;
 
-    return matchesSearch && matchesNature && matchesSchool && matchesClass && matchesPedagogueClasses;
+    return matchesSearch && matchesNature && matchesSchool && matchesClass && matchesDashboard;
   });
 
-  // Calculate Metrics/Statistics for current context
+  // Calculate Metrics/Statistics for current context (Real database counts)
   const getMetrics = () => {
-    const activeOccurrences = filteredOccurrences;
-    const total = activeOccurrences.length;
-    const perturbadoras = activeOccurrences.filter(o => {
-      const classifications = o.classifications || [o.type];
-      return classifications.some(c => 
-        ['Indisciplina recorrente', 'Saída injustificada da sala', 'Uso indevido de aparelhos eletrônicos', 'Incivilidade', 'Transgressão', 'Intimidação (ato isolado, não sistemático)'].some(k => c?.includes(k))
-      );
-    }).length;
-
-    const agressivas = activeOccurrences.filter(o => {
-      const classifications = o.classifications || [o.type];
-      return classifications.some(c => 
-        ['Agressão física', 'Agressão verbal', 'Ameaça', 'Bullying', 'Racismo', 'LGBTfobia', 'Homofobia', 'Assédio', 'Vandalismo'].some(k => c?.includes(k))
-      );
-    }).length;
-
-    const riscos = activeOccurrences.filter(o => {
-      const classifications = o.classifications || [o.type];
-      return classifications.some(c => 
-        ['Automutilação', 'Suicídio', 'Álcool', 'Drogas', 'Violência doméstica', 'Evasão', 'Arma'].some(k => c?.includes(k))
-      );
-    }).length;
-
-    const comVisto = activeOccurrences.filter(o => o.directorNotes).length;
-    const rascunhos = activeOccurrences.filter(o => o.status === 'rascunho').length;
+    const baseOccurrences = occurrences; // Real database list scoped to current school/user
+    const total = baseOccurrences.length;
+    
+    const perturbadoras = baseOccurrences.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
+    const agressivas = baseOccurrences.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
+    const riscos = baseOccurrences.filter(o => occurrenceHasNature(o, 'Risco')).length;
+    const comVisto = baseOccurrences.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length;
+    const rascunhos = baseOccurrences.filter(o => o.status === 'rascunho').length;
 
     return { total, perturbadoras, agressivas, riscos, comVisto, rascunhos };
   };
 
   const metrics = getMetrics();
+
+  // Relatórios Analíticos (Pedagogo, Diretor, Gestor e Super Admin)
+  const getTurmasReport = () => {
+    const map = {};
+    occurrences.forEach(o => {
+      const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+      const classKey = (studentsList.length > 0 ? `${studentsList[0].gradeCycle || ''} - ${studentsList[0].className || ''}` : `${o.gradeCycle || ''} - ${o.className || ''}`).trim() || 'Geral / Outros';
+      
+      if (!map[classKey]) {
+        map[classKey] = {
+          className: classKey,
+          count: 0,
+          studentsCount: 0,
+          comVisto: 0,
+          semVisto: 0,
+          perturbadoras: 0,
+          agressivas: 0,
+          risco: 0,
+          myCount: 0
+        };
+      }
+      map[classKey].count += 1;
+      if (user && o.createdById === user.id) map[classKey].myCount += 1;
+      map[classKey].studentsCount += (studentsList.length || 1);
+      if (o.directorNotes && o.directorNotes.trim()) map[classKey].comVisto += 1;
+      else map[classKey].semVisto += 1;
+      if (occurrenceHasNature(o, 'Perturbadora')) map[classKey].perturbadoras += 1;
+      if (occurrenceHasNature(o, 'Agressiva')) map[classKey].agressivas += 1;
+      if (occurrenceHasNature(o, 'Risco')) map[classKey].risco += 1;
+    });
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  };
+
+  const getSentimentosReport = () => {
+    const map = {};
+    occurrences.forEach(o => {
+      if (Array.isArray(o.feelings)) {
+        o.feelings.forEach(f => {
+          if (!f) return;
+          map[f] = (map[f] || 0) + 1;
+        });
+      }
+    });
+    return Object.entries(map)
+      .map(([feeling, count]) => ({ feeling, count }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  const getDisciplinasReport = () => {
+    const map = {};
+    occurrences.forEach(o => {
+      const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+      const subj = (studentsList[0]?.subject_matter || o.subject_matter || 'Não especificada').trim();
+      const prof = (studentsList[0]?.teacherName || o.teacherName || 'Geral').trim();
+      const key = `${subj} (${prof})`;
+      if (!map[key]) {
+        map[key] = { key, subject: subj, teacher: prof, count: 0 };
+      }
+      map[key].count += 1;
+    });
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  };
+
+  const getEncaminhamentosReport = () => {
+    const map = {};
+    occurrences.forEach(o => {
+      if (Array.isArray(o.direction_referrals)) {
+        o.direction_referrals.forEach(ref => {
+          if (!ref) return;
+          map[ref] = (map[ref] || 0) + 1;
+        });
+      }
+    });
+    return Object.entries(map)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  const getEscolasReport = () => {
+    return schools.map(s => {
+      const occs = occurrences.filter(o => o.schoolId === s.id);
+      return {
+        id: s.id,
+        name: s.name,
+        total: occs.length,
+        comVisto: occs.filter(o => o.directorNotes && o.directorNotes.trim()).length,
+        semVisto: occs.filter(o => !o.directorNotes && o.status !== 'rascunho').length,
+        rascunhos: occs.filter(o => o.status === 'rascunho').length,
+        riscos: occs.filter(o => occurrenceHasNature(o, 'Risco') || occurrenceHasNature(o, 'Agressiva')).length
+      };
+    }).sort((a, b) => b.total - a.total);
+  };
 
   // Print PDF function
   const handlePrint = (occ) => {
@@ -916,9 +1206,16 @@ function App() {
                     <div className="quick-login-grid">
                       <div 
                         className="quick-login-card" 
+                        onClick={() => setLoginData({ cpf: 'vina@pome.com.br', password: '2018@Senha' })}
+                      >
+                        <span className="quick-login-role">👑 Felipe Marcelino (Super Admin)</span>
+                        <span className="quick-login-creds">vina@pome.com.br | 2018@Senha</span>
+                      </div>
+                      <div 
+                        className="quick-login-card" 
                         onClick={() => setLoginData({ cpf: '000.000.000-00', password: 'admin' })}
                       >
-                        <span className="quick-login-role">🛡️ Gestor / Seduc</span>
+                        <span className="quick-login-role">⚡ Elisabette (Super Admin)</span>
                         <span className="quick-login-creds">CPF: 000.000.000-00 | Senha: admin</span>
                       </div>
                       <div 
@@ -969,14 +1266,20 @@ function App() {
           )}
 
           <div className="form-group">
-            <label className="form-label">CPF</label>
+            <label className="form-label">CPF ou E-mail Institucional</label>
             <input
               type="text"
-              placeholder="000.000.000-00"
+              placeholder="000.000.000-00 ou seu e-mail..."
               className="form-control"
               value={loginData.cpf}
-              onChange={(e) => setLoginData({ ...loginData, cpf: formatCPF(e.target.value) })}
-              maxLength={14}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^[\d.-]*$/.test(val) && !val.includes('@')) {
+                  setLoginData({ ...loginData, cpf: formatCPF(val) });
+                } else {
+                  setLoginData({ ...loginData, cpf: val });
+                }
+              }}
               required
             />
           </div>
@@ -1210,6 +1513,26 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Impersonation Alert Banner */}
+      {impersonatedOriginalUser && (
+        <div className="impersonation-banner">
+          <div className="impersonation-banner-info">
+            <span className="impersonation-badge">⚠️ AUDITORIA MASTER ATIVA</span>
+            <span>
+              Você está navegando como <strong>{user.name}</strong> ({user.role?.toUpperCase()}{user.schoolName ? ` | ${user.schoolName}` : ''}).
+            </span>
+          </div>
+          <button 
+            type="button" 
+            className="btn btn-warning" 
+            onClick={handleStopImpersonation}
+            style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', fontWeight: '700', backgroundColor: '#d97706', color: 'white', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+          >
+            ⬅️ Sair e Voltar para Super Admin
+          </button>
+        </div>
+      )}
+
       {/* Navigation Bar */}
       <header className="navbar">
         <a href="#" className="navbar-brand" onClick={() => setActiveTab('dashboard')}>
@@ -1219,7 +1542,7 @@ function App() {
           <div className="user-info">
             <div className="user-name">{user.name}</div>
             <div className="user-role">
-              {user.role.toUpperCase()} {user.schoolName ? `| ${user.schoolName}` : ''}
+              {user.role === 'superadmin' ? '👑 SUPER ADMIN' : user.role.toUpperCase()} {user.schoolName ? `| ${user.schoolName}` : ''}
             </div>
           </div>
           
@@ -1263,7 +1586,7 @@ function App() {
             <IconSearch style={{ marginRight: '6px' }} /> Buscar Ocorrências
           </button>
           
-          {(user.role === 'gestor' || user.role === 'seduc') && (
+          {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
             <>
               <button 
                 className={`btn ${activeTab === 'schools' ? 'btn-primary' : 'btn-secondary'}`}
@@ -1277,13 +1600,31 @@ function App() {
               >
                 <IconUsers style={{ marginRight: '6px' }} /> Gerenciar Usuários
               </button>
-              <button 
-                className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => { setActiveTab('reports'); setShowForm(false); }}
-              >
-                <IconFolder style={{ marginRight: '6px' }} /> Relatórios de Gestão
-              </button>
             </>
+          )}
+
+          <button 
+            className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => { setActiveTab('reports'); setShowForm(false); }}
+          >
+            <IconFolder style={{ marginRight: '6px' }} />
+            {user.role === 'pedagogo' || user.role === 'assistente' ? 'Meus Relatórios' : 
+             user.role === 'diretor' ? 'Relatórios da Direção' : 'Relatórios de Gestão'}
+          </button>
+
+          {(user.role === 'superadmin' || impersonatedOriginalUser) && (
+            <button 
+              className={`btn ${activeTab === 'sysadmin' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => { setActiveTab('sysadmin'); setShowForm(false); fetchAdminData(); }}
+              style={{
+                backgroundColor: activeTab === 'sysadmin' ? '#7c3aed' : 'var(--bg-app)',
+                borderColor: '#7c3aed',
+                color: activeTab === 'sysadmin' ? 'white' : '#7c3aed',
+                fontWeight: '700'
+              }}
+            >
+              <IconLightning style={{ marginRight: '6px' }} /> Administração do Sistema
+            </button>
           )}
         </div>
 
@@ -2417,8 +2758,8 @@ function App() {
           </div>
         )}
 
-        {/* ----------------- TAB: GERENCIAR ESCOLAS (GESTOR / SEDUC) ----------------- */}
-        {activeTab === 'schools' && (user.role === 'gestor' || user.role === 'seduc') && (
+        {/* ----------------- TAB: GERENCIAR ESCOLAS (GESTOR / SEDUC / SUPERADMIN) ----------------- */}
+        {activeTab === 'schools' && (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
           <div className="fade-in">
             <h2>Gerenciamento de Escolas</h2>
             
@@ -2540,8 +2881,8 @@ function App() {
           </div>
         )}
 
-        {/* ----------------- TAB: GERENCIAR USUÁRIOS (GESTOR / SEDUC) ----------------- */}
-        {activeTab === 'users' && (user.role === 'gestor' || user.role === 'seduc') && (
+        {/* ----------------- TAB: GERENCIAR USUÁRIOS (GESTOR / SEDUC / SUPERADMIN) ----------------- */}
+        {activeTab === 'users' && (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
           <div className="fade-in">
             <h2>Gerenciamento de Usuários</h2>
             
@@ -2770,56 +3111,758 @@ function App() {
           </div>
         )}
 
-        {/* ----------------- TAB: RELATÓRIOS (GESTOR / SEDUC) ----------------- */}
-        {activeTab === 'reports' && (user.role === 'gestor' || user.role === 'seduc') && (
+        {/* ----------------- TAB: RELATÓRIOS (ADAPTÁVEL POR PERFIL) ----------------- */}
+        {activeTab === 'reports' && (
+          <div className="fade-in">
+            {/* RELATÓRIO DO PEDAGOGO / ASSISTENTE */}
+            {(user.role === 'pedagogo' || user.role === 'assistente') && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2>📊 Relatório Pedagógico & Atendimentos da Unidade</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      Acompanhamento individual de registros realizados por <strong>{user.name}</strong> | {user.schoolName || 'Escola Municipal'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={() => window.print()}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Pedagógico</span>
+                    </button>
+                    <button className="btn btn-success" onClick={handleExportSPSS}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Cards de Métricas Pedagógicas */}
+                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconUsers /></div>
+                    <div className="metric-details">
+                      <h4>Cadastrados por Mim</h4>
+                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id).length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Atendimentos registrados por você</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                    <div className="metric-icon" style={{ color: '#3b82f6' }}><IconSchool /></div>
+                    <div className="metric-details">
+                      <h4>Total na Minha Escola</h4>
+                      <div className="metric-value">{occurrences.length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user.schoolName}</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-orange)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconFolder /></div>
+                    <div className="metric-details">
+                      <h4>Meus Rascunhos</h4>
+                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id && o.status === 'rascunho').length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pendentes de finalização</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconShield /></div>
+                    <div className="metric-details">
+                      <h4>Com Visto da Direção</h4>
+                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id && Boolean(o.directorNotes && o.directorNotes.trim())).length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Homologados pela diretoria</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quadro 1: Distribuição de Ocorrências por Turma */}
+                <div className="card" style={{ marginBottom: '1.75rem' }}>
+                  <div className="card-header">
+                    <h3>🏫 Distribuição de Atendimentos por Turma & Ciclo</h3>
+                  </div>
+                  <div className="card-body" style={{ padding: 0 }}>
+                    <div className="table-responsive">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Turma / Ciclo</th>
+                            <th>Total na Turma</th>
+                            <th>Cadastrados por Mim</th>
+                            <th>Estudantes Atendidos</th>
+                            <th>Perturbadoras</th>
+                            <th>Agressivas/Violentas</th>
+                            <th>Situações de Risco</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getTurmasReport().map(t => (
+                            <tr key={t.className}>
+                              <td style={{ fontWeight: '700' }}>{t.className}</td>
+                              <td><span className="badge badge-primary">{t.count}</span></td>
+                              <td><span className="badge badge-secondary" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '700' }}>{t.myCount}</span></td>
+                              <td>{t.studentsCount}</td>
+                              <td>{t.perturbadoras}</td>
+                              <td>{t.agressivas}</td>
+                              <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid 2 Colunas: Sentimentos CNV e Rede de Proteção */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+                  {/* Sentimentos CNV */}
+                  <div className="card">
+                    <div className="card-header">
+                      <h3>💬 Sentimentos Identificados (Escuta Ativa CNV)</h3>
+                    </div>
+                    <div className="card-body">
+                      {getSentimentosReport().length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum sentimento mapeado nos atendimentos.</p>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {getSentimentosReport().map(s => (
+                            <span key={s.feeling} className="badge badge-warning" style={{ padding: '0.45rem 0.75rem', fontSize: '0.825rem' }}>
+                              {s.feeling}: <strong>{s.count}</strong>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Encaminhamentos */}
+                  <div className="card">
+                    <div className="card-header">
+                      <h3>🛡️ Rede de Proteção & Encaminhamentos Externos</h3>
+                    </div>
+                    <div className="card-body">
+                      {getEncaminhamentosReport().length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encaminhamento externo registrado.</p>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {getEncaminhamentosReport().map(e => (
+                            <span key={e.name} className="badge badge-danger" style={{ padding: '0.45rem 0.75rem', fontSize: '0.825rem' }}>
+                              {e.name}: <strong>{e.count}</strong>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* RELATÓRIO DO DIRETOR */}
+            {user.role === 'diretor' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2>📊 Relatório de Gestão Escolar & Clima Institucional</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      Visão administrativa, homologação de vistos e mediação de conflitos da <strong>{user.schoolName || 'Escola Municipal'}</strong>
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={() => window.print()}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório da Diretoria</span>
+                    </button>
+                    <button className="btn btn-success" onClick={handleExportSPSS}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Cards de Métricas da Diretoria */}
+                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
+                    <div className="metric-details">
+                      <h4>Total Ocorrências</h4>
+                      <div className="metric-value">{occurrences.length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Recebidas na escola</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconShield /></div>
+                    <div className="metric-details">
+                      <h4>Vistos Homologados</h4>
+                      <div className="metric-value">{occurrences.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Com visto/parecer assinado</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-orange)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconWarning /></div>
+                    <div className="metric-details">
+                      <h4>Pendentes de Visto</h4>
+                      <div className="metric-value">{occurrences.filter(o => !o.directorNotes && o.status !== 'rascunho').length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Aguardando análise da direção</span>
+                    </div>
+                  </div>
+
+                  <div className="metric-card" style={{ borderLeft: '4px solid var(--danger)' }}>
+                    <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconActivity /></div>
+                    <div className="metric-details">
+                      <h4>Casos Críticos / Risco</h4>
+                      <div className="metric-value">{occurrences.filter(o => occurrenceHasNature(o, 'Risco') || occurrenceHasNature(o, 'Agressiva')).length}</div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Agressões e situações de risco</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quadro 1: Acompanhamento de Vistos por Turma */}
+                <div className="card" style={{ marginBottom: '1.75rem' }}>
+                  <div className="card-header">
+                    <h3>🏫 Acompanhamento de Ocorrências e Vistos por Turma</h3>
+                  </div>
+                  <div className="card-body" style={{ padding: 0 }}>
+                    <div className="table-responsive">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Turma / Ciclo</th>
+                            <th>Total Ocorrências</th>
+                            <th>Com Visto Direção</th>
+                            <th>Pendentes de Visto</th>
+                            <th>Casos de Risco</th>
+                            <th>Taxa de Homologação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getTurmasReport().map(t => {
+                            const taxa = t.count > 0 ? Math.round((t.comVisto / t.count) * 100) : 0;
+                            return (
+                              <tr key={t.className}>
+                                <td style={{ fontWeight: '700' }}>{t.className}</td>
+                                <td><span className="badge badge-primary">{t.count}</span></td>
+                                <td><span className="badge badge-success">{t.comVisto}</span></td>
+                                <td>
+                                  {t.semVisto > 0 ? (
+                                    <span className="badge badge-warning">{t.semVisto} pendentes</span>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Em dia</span>
+                                  )}
+                                </td>
+                                <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ flex: 1, backgroundColor: 'var(--bg-app)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                                      <div style={{ width: `${taxa}%`, backgroundColor: taxa === 100 ? 'var(--success)' : 'var(--accent-orange)', height: '100%' }}></div>
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: '700', minWidth: '32px' }}>{taxa}%</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid 2 Colunas: Ocorrências por Disciplina/Professor e Rede de Proteção */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+                  {/* Conflitos por Disciplina/Professor */}
+                  <div className="card">
+                    <div className="card-header">
+                      <h3>📚 Conflitos por Componente Curricular / Docente</h3>
+                    </div>
+                    <div className="card-body" style={{ padding: 0 }}>
+                      <div className="table-responsive">
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th>Componente / Professor</th>
+                              <th style={{ textAlign: 'right' }}>Registros</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getDisciplinasReport().map(d => (
+                              <tr key={d.key}>
+                                <td><strong>{d.subject}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({d.teacher})</span></td>
+                                <td style={{ textAlign: 'right', fontWeight: '700' }}><span className="badge badge-primary">{d.count}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rede de Proteção */}
+                  <div className="card">
+                    <div className="card-header">
+                      <h3>⚖️ Encaminhamentos a Órgãos da Rede de Proteção</h3>
+                    </div>
+                    <div className="card-body">
+                      {getEncaminhamentosReport().length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encaminhamento oficial para órgãos externos.</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {getEncaminhamentosReport().map(e => (
+                            <div key={e.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                              <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{e.name}</span>
+                              <span className="badge badge-danger">{e.count} acionamentos</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* RELATÓRIO DO GESTOR / SEDUC / SUPER ADMIN */}
+            {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2>📊 Relatório Consolidado de Clima Escolar da Rede Municipal</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      Visão analítica completa das ocorrências na rede municipal de ensino
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={() => window.print()}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Geral</span>
+                    </button>
+                    <button className="btn btn-success" onClick={handleExportSPSS}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar SPSS / CSV</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Metrics Grid da Rede */}
+                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+                  <div className="metric-card">
+                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
+                    <div className="metric-details">
+                      <h4>Total Escolas</h4>
+                      <div className="metric-value">{schools.length}</div>
+                    </div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconFolder /></div>
+                    <div className="metric-details">
+                      <h4>Total Ocorrências</h4>
+                      <div className="metric-value">{occurrences.length}</div>
+                    </div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconUsers /></div>
+                    <div className="metric-details">
+                      <h4>Média / Escola</h4>
+                      <div className="metric-value">
+                        {schools.length > 0 ? (occurrences.length / schools.length).toFixed(1) : 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconShield /></div>
+                    <div className="metric-details">
+                      <h4>Com Visto Direção</h4>
+                      <div className="metric-value">{occurrences.filter(o => o.directorNotes).length}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabela Comparativa por Escola */}
+                <div className="card" style={{ marginBottom: '1.75rem' }}>
+                  <div className="card-header">
+                    <h3>🏫 Quadro Comparativo por Unidade Escolar</h3>
+                  </div>
+                  <div className="card-body" style={{ padding: 0 }}>
+                    <div className="table-responsive">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Unidade Escolar</th>
+                            <th>Total Ocorrências</th>
+                            <th>Com Visto</th>
+                            <th>Pendentes de Visto</th>
+                            <th>Casos Críticos / Risco</th>
+                            <th>Rascunhos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getEscolasReport().map(escola => (
+                            <tr key={escola.id}>
+                              <td style={{ fontWeight: '600' }}>{escola.name}</td>
+                              <td><span className="badge badge-primary">{escola.total}</span></td>
+                              <td><span className="badge badge-success">{escola.comVisto}</span></td>
+                              <td>{escola.semVisto > 0 ? <span className="badge badge-warning">{escola.semVisto}</span> : '-'}</td>
+                              <td>{escola.riscos > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{escola.riscos}</span> : 0}</td>
+                              <td>{escola.rascunhos > 0 ? <span className="badge badge-secondary">{escola.rascunhos}</span> : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN) ----------------- */}
+        {activeTab === 'sysadmin' && (user.role === 'superadmin' || impersonatedOriginalUser) && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h2>Relatório Consolidado de Clima Escolar</h2>
-                <p style={{ color: 'var(--text-secondary)' }}>Visão analítica completa das ocorrências na rede municipal de ensino</p>
+                <h2>⚡ Painel de Administração do Sistema</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Super Administrador Master | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
+                </p>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary" onClick={() => window.print()}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Geral</span>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={fetchAdminData}
+                  disabled={adminLoading}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <IconRefresh className={adminLoading ? 'spin' : ''} /> {adminLoading ? 'Atualizando...' : 'Atualizar Dados'}
                 </button>
-                <button className="btn btn-success" onClick={handleExportSPSS}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar SPSS</span>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => handleCreateBackup('manual')}
+                  style={{ backgroundColor: '#7c3aed', borderColor: '#7c3aed', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <IconDatabase /> Criar Backup Imediato
                 </button>
               </div>
             </div>
 
-            <div className="metrics-grid" style={{ marginBottom: '1.5rem' }}>
-              <div className="metric-card">
-                <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
+            {backupActionStatus && (
+              <div style={{ padding: '0.85rem 1.25rem', marginBottom: '1.25rem', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>💾</span>
+                <span>{backupActionStatus}</span>
+              </div>
+            )}
+
+            {/* SEÇÃO 1: TELEMETRIA E SAÚDE DO SISTEMA */}
+            <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+              <div className="metric-card" style={{ borderLeft: '4px solid #10b981' }}>
+                <div className="metric-icon" style={{ color: '#10b981', backgroundColor: '#d1fae5' }}><IconServer /></div>
                 <div className="metric-details">
-                  <h4>Total Escolas</h4>
-                  <div className="metric-value">{schools.length}</div>
+                  <h4>Status Banco de Dados</h4>
+                  <div className="metric-value" style={{ fontSize: '1.05rem' }}>
+                    {adminMetrics?.supabase?.configured ? '🟢 Supabase Conectado' : '🟡 Fallback Local (db.json)'}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Uptime: {adminMetrics ? `${Math.floor(adminMetrics.uptimeSeconds / 3600)}h ${Math.floor((adminMetrics.uptimeSeconds % 3600) / 60)}m ${adminMetrics.uptimeSeconds % 60}s` : 'Calculando...'}
+                  </span>
                 </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconFolder /></div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                <div className="metric-icon" style={{ color: '#3b82f6', backgroundColor: '#dbeafe' }}><IconUsers /></div>
+                <div className="metric-details">
+                  <h4>Usuários Cadastrados</h4>
+                  <div className="metric-value">{adminMetrics?.counts?.users || usersList.length}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {schools.length} Escolas na rede municipal
+                  </span>
+                </div>
+              </div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+                <div className="metric-icon" style={{ color: '#f59e0b', backgroundColor: '#fef3c7' }}><IconFolder /></div>
                 <div className="metric-details">
                   <h4>Total Ocorrências</h4>
-                  <div className="metric-value">{occurrences.length}</div>
+                  <div className="metric-value">{adminMetrics?.counts?.occurrences || occurrences.length}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {adminMetrics?.counts?.drafts || 0} Rascunhos privados
+                  </span>
                 </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-icon" style={{ color: 'var(--success)' }}><IconUsers /></div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                <div className="metric-icon" style={{ color: '#8b5cf6', backgroundColor: '#ede9fe' }}><IconDatabase /></div>
                 <div className="metric-details">
-                  <h4>Média / Escola</h4>
-                  <div className="metric-value">
-                    {schools.length > 0 ? (occurrences.length / schools.length).toFixed(1) : 0}
-                  </div>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconShield /></div>
-                <div className="metric-details">
-                  <h4>Com Visto Direção</h4>
-                  <div className="metric-value">{occurrences.filter(o => o.directorNotes).length}</div>
+                  <h4>Central de Backups</h4>
+                  <div className="metric-value">{adminMetrics?.counts?.backups || adminBackups.length}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {adminMetrics?.lastBackup ? `Último: ${new Date(adminMetrics.lastBackup.createdAt).toLocaleTimeString('pt-BR')}` : 'Auto snapshot ativo'}
+                  </span>
                 </div>
               </div>
             </div>
+
+            {/* SEÇÃO 2: CENTRAL DE IMPERSONAÇÃO (TROCA RÁPIDA DE CONTA) */}
+            <div className="card" style={{ marginBottom: '1.75rem', border: '1px solid #7c3aed33' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', backgroundColor: 'var(--bg-app)' }}>
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#7c3aed' }}>
+                    <IconLightning /> Troca Rápida de Conta & Impersonação (Auditoria Master)
+                  </h3>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    Acesse o sistema diretamente pela visão de qualquer pedagogo, diretor ou assistente da rede para prestar suporte ou auditar lançamentos.
+                  </p>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar usuário por nome, CPF ou perfil..."
+                  className="form-control"
+                  style={{ maxWidth: '320px', fontSize: '0.85rem' }}
+                  value={impersonateSearch}
+                  onChange={(e) => setImpersonateSearch(e.target.value)}
+                />
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Nome do Usuário</th>
+                        <th>CPF</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th>Escola Vinculada</th>
+                        <th style={{ textAlign: 'right' }}>Ação de Impersonação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usersList
+                        .filter(u => {
+                          const query = impersonateSearch.toLowerCase();
+                          return (
+                            u.name?.toLowerCase().includes(query) ||
+                            u.cpf?.includes(query) ||
+                            u.role?.toLowerCase().includes(query) ||
+                            u.email?.toLowerCase().includes(query)
+                          );
+                        })
+                        .map(u => {
+                          const schoolName = schools.find(s => s.id === u.schoolId)?.name || 'Rede Central';
+                          const isSelf = u.id === user.id;
+                          return (
+                            <tr key={u.id}>
+                              <td style={{ fontWeight: '600' }}>{u.name}</td>
+                              <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{u.cpf}</td>
+                              <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{u.email || '-'}</td>
+                              <td>
+                                <span className={`badge ${
+                                  u.role === 'superadmin' ? 'badge-danger' :
+                                  u.role === 'gestor' || u.role === 'seduc' ? 'badge-warning' : 
+                                  u.role === 'diretor' ? 'badge-primary' : 'badge-success'
+                                }`}>
+                                  {u.role.toUpperCase()}
+                                </span>
+                              </td>
+                              <td style={{ fontSize: '0.85rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {schoolName}
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                {isSelf ? (
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Você está aqui</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', backgroundColor: '#7c3aed', borderColor: '#7c3aed', color: 'white' }}
+                                    onClick={() => handleImpersonate(u)}
+                                  >
+                                    👤 Entrar como este usuário
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* SEÇÃO 3: CENTRAL DE BACKUP AUTOMÁTICO & RECUPERAÇÃO */}
+            <div className="card" style={{ marginBottom: '1.75rem' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IconDatabase /> Central de Backup Automático & Recuperação de Desastres
+                  </h3>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    O sistema executa snapshots automáticos contínuos de todas as informações inseridas na rede escolar (escolas, usuários e ocorrências).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() => handleCreateBackup('manual')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                >
+                  <IconDownload /> Gerar Novo Snapshot Agora
+                </button>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                {adminBackups.length === 0 ? (
+                  <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Nenhum arquivo de backup encontrado no servidor.
+                  </p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Data e Hora do Snapshot</th>
+                          <th>Nome do Arquivo</th>
+                          <th>Tamanho</th>
+                          <th>Registros Contidos</th>
+                          <th style={{ textAlign: 'right' }}>Ações de Recuperação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminBackups.map((b, bIdx) => (
+                          <tr key={b.filename || bIdx}>
+                            <td style={{ fontWeight: '600' }}>
+                              {new Date(b.createdAt).toLocaleString('pt-BR')}
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                              {b.filename}
+                            </td>
+                            <td>{(b.sizeBytes / 1024).toFixed(1)} KB</td>
+                            <td>
+                              {b.metadata?.counts ? (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                  🏫 {b.metadata.counts.schools} | 👥 {b.metadata.counts.users} | 📋 {b.metadata.counts.occurrences}
+                                </span>
+                              ) : '-'}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                                <a
+                                  href={`/api/admin/backups/${b.filename}`}
+                                  download={b.filename}
+                                  className="btn btn-secondary"
+                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', textDecoration: 'none' }}
+                                >
+                                  📥 Baixar JSON
+                                </a>
+                                <button
+                                  type="button"
+                                  className="btn btn-warning"
+                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                  onClick={() => handleRestoreBackup(b.filename)}
+                                >
+                                  🔄 Restaurar Base
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SEÇÃO 4: LOGS DE ATIVIDADE, AUDITORIA E ERROS */}
+            <div className="card">
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IconActivity /> Logs de Atividade, Auditoria e Erros do Servidor
+                  </h3>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    Monitoramento em tempo real de requisições, erros HTTP, logins e trilha de auditoria LGPD.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select
+                    className="form-select"
+                    style={{ width: '150px', fontSize: '0.8rem' }}
+                    value={logFilterLevel}
+                    onChange={(e) => {
+                      setLogFilterLevel(e.target.value);
+                      setTimeout(fetchAdminData, 50);
+                    }}
+                  >
+                    <option value="ALL">Todos os Níveis</option>
+                    <option value="ERROR">Apenas Erros (ERROR)</option>
+                    <option value="WARN">Avisos (WARN)</option>
+                    <option value="AUDIT">Auditoria (AUDIT)</option>
+                    <option value="INFO">Informativo (INFO)</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={fetchAdminData}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                  >
+                    <IconRefresh />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleClearLogs}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                  >
+                    <IconTrash /> Limpar Logs
+                  </button>
+                </div>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                {adminLogs.length === 0 ? (
+                  <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Nenhum log registrado para o filtro selecionado.
+                  </p>
+                ) : (
+                  <div className="table-responsive" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <table className="table" style={{ fontSize: '0.825rem' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '160px' }}>Data e Hora</th>
+                          <th style={{ width: '90px' }}>Nível</th>
+                          <th>Mensagem de Atividade / Erro</th>
+                          <th style={{ width: '140px' }}>Metadados</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminLogs.map(log => (
+                          <tr key={log.id}>
+                            <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                              {new Date(log.timestamp).toLocaleTimeString('pt-BR')} ({new Date(log.timestamp).toLocaleDateString('pt-BR')})
+                            </td>
+                            <td>
+                              <span className={`badge ${
+                                log.level === 'ERROR' ? 'badge-danger' :
+                                log.level === 'WARN' ? 'badge-warning' :
+                                log.level === 'AUDIT' ? 'badge-primary' : 'badge-secondary'
+                              }`} style={{
+                                backgroundColor: log.level === 'AUDIT' ? '#7c3aed' : undefined,
+                                color: log.level === 'AUDIT' ? 'white' : undefined
+                              }}>
+                                {log.level}
+                              </span>
+                            </td>
+                            <td style={{ fontFamily: log.level === 'ERROR' ? 'monospace' : 'inherit', fontWeight: log.level === 'ERROR' ? '600' : 'normal' }}>
+                              {log.message}
+                            </td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                              {log.meta ? Object.entries(log.meta).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' | ') : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         )}
 

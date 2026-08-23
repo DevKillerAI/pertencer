@@ -11,8 +11,8 @@ const DB_FILE = path.join(__dirname, 'db.json');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
-const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
-const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
+export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Dynamic schema detection for Supabase mode fallback
 export const schemaCache = {
@@ -94,6 +94,157 @@ if (isSupabaseConfigured) {
   console.log('Database: Supabase keys not set. Falling back to local db.json file.');
 }
 
+// Paths for logging and automatic backups
+const LOGS_DIR = path.join(__dirname, 'logs');
+const LOG_FILE = path.join(LOGS_DIR, 'pome_activity.log');
+const BACKUP_DIR = path.join(__dirname, 'backups');
+
+if (!fs.existsSync(LOGS_DIR)) {
+  try { fs.mkdirSync(LOGS_DIR, { recursive: true }); } catch (_) {}
+}
+if (!fs.existsSync(BACKUP_DIR)) {
+  try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch (_) {}
+}
+
+// In-Memory Log Ring Buffer (last 300 logs)
+const memoryLogs = [];
+
+export const logEngine = {
+  log: (level, message, meta = {}) => {
+    const entry = {
+      id: 'log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      timestamp: new Date().toISOString(),
+      level: level.toUpperCase(), // 'INFO', 'WARN', 'ERROR', 'AUDIT'
+      message,
+      meta
+    };
+    memoryLogs.unshift(entry);
+    if (memoryLogs.length > 300) memoryLogs.pop();
+    
+    try {
+      fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + '\n', 'utf8');
+    } catch (e) {
+      console.error('Failed to append log to file:', e);
+    }
+    return entry;
+  },
+  getLogs: (limit = 100, level = null) => {
+    let result = memoryLogs;
+    if (level && level !== 'ALL') {
+      result = result.filter(l => l.level === level.toUpperCase());
+    }
+    return result.slice(0, limit);
+  },
+  clearLogs: () => {
+    memoryLogs.length = 0;
+  }
+};
+
+// Automatic Backup Engine
+export const backupEngine = {
+  createBackup: async (label = 'auto') => {
+    try {
+      const data = await db.getData();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `pome_backup_${label}_${timestamp}.json`;
+      const filePath = path.join(BACKUP_DIR, filename);
+      
+      const payload = {
+        metadata: {
+          version: '2.0.0',
+          createdAt: new Date().toISOString(),
+          label,
+          counts: {
+            schools: data.schools?.length || 0,
+            users: data.users?.length || 0,
+            occurrences: data.occurrences?.length || 0
+          }
+        },
+        data
+      };
+      
+      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+      logEngine.log('INFO', `Backup criado com sucesso [${label}]: ${filename}`, { counts: payload.metadata.counts });
+      return { filename, ...payload.metadata };
+    } catch (err) {
+      logEngine.log('ERROR', `Falha ao criar backup: ${err.message}`, { error: String(err) });
+      throw err;
+    }
+  },
+  
+  listBackups: () => {
+    try {
+      if (!fs.existsSync(BACKUP_DIR)) return [];
+      const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
+      return files.map(file => {
+        const filePath = path.join(BACKUP_DIR, file);
+        const stats = fs.statSync(filePath);
+        let meta = null;
+        try {
+          const raw = fs.readFileSync(filePath, 'utf8');
+          const parsed = JSON.parse(raw);
+          meta = parsed.metadata || null;
+        } catch (_) {}
+        
+        return {
+          filename: file,
+          sizeBytes: stats.size,
+          createdAt: stats.mtime.toISOString(),
+          metadata: meta
+        };
+      }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } catch (err) {
+      console.error('Error listing backups:', err);
+      return [];
+    }
+  },
+  
+  getBackupContent: (filename) => {
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(BACKUP_DIR, safeFilename);
+    if (!fs.existsSync(filePath)) return null;
+    return fs.readFileSync(filePath, 'utf8');
+  },
+  
+  restoreBackup: async (filenameOrData) => {
+    try {
+      let payload = filenameOrData;
+      if (typeof filenameOrData === 'string') {
+        const safeFilename = path.basename(filenameOrData);
+        const filePath = path.join(BACKUP_DIR, safeFilename);
+        if (!fs.existsSync(filePath)) throw new Error('Arquivo de backup não encontrado.');
+        const raw = fs.readFileSync(filePath, 'utf8');
+        payload = JSON.parse(raw);
+      }
+      
+      const targetData = payload.data || payload;
+      if (!targetData.schools || !targetData.users || !targetData.occurrences) {
+        throw new Error('Formato de backup inválido: dados essenciais ausentes.');
+      }
+      
+      // Save to local file
+      writeDb(targetData);
+      
+      // If Supabase configured, restore to Supabase tables
+      if (isSupabaseConfigured) {
+        try {
+          if (targetData.schools?.length) await supabase.from('schools').upsert(targetData.schools);
+          if (targetData.users?.length) await supabase.from('users').upsert(targetData.users);
+          if (targetData.occurrences?.length) await supabase.from('occurrences').upsert(targetData.occurrences);
+        } catch (e) {
+          console.warn('Supabase restore warning:', e);
+        }
+      }
+      
+      logEngine.log('AUDIT', `Banco de dados restaurado a partir do backup`, { counts: payload.metadata?.counts });
+      return { success: true, metadata: payload.metadata };
+    } catch (err) {
+      logEngine.log('ERROR', `Falha na restauração do backup: ${err.message}`, { error: String(err) });
+      throw err;
+    }
+  }
+};
+
 // Initialize database with seed data if it doesn't exist (Local Fallback only)
 const initialData = {
   schools: [
@@ -110,13 +261,25 @@ const initialData = {
   users: [
     {
       id: 'usr-1',
-      name: 'Elisabette Leo',
+      name: 'Elisabette Leo (Super Admin)',
       cpf: '00000000000',
       email: 'gestor@pome.com',
       password: 'admin',
-      role: 'gestor',
+      role: 'superadmin',
       schoolId: null,
       classes: []
+    },
+    {
+      id: 'usr-felipe',
+      name: 'Felipe Marcelino (Super Admin)',
+      cpf: '99999999999',
+      email: 'vina@pome.com.br',
+      phone: '(31) 99999-9999',
+      password: '2018@Senha',
+      role: 'superadmin',
+      schoolId: null,
+      classes: [],
+      lgpd_accepted: true
     },
     {
       id: 'usr-2',

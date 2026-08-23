@@ -2,36 +2,88 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { db } from './db.js';
+import { db, supabase, isSupabaseConfigured, logEngine, backupEngine } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const SERVER_START_TIME = new Date();
 
 app.use(cors());
 app.use(express.json());
 
+// Request logging & Audit Trail middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.path.startsWith('/api') && !req.path.startsWith('/api/admin/logs')) {
+      const level = res.statusCode >= 500 ? 'ERROR' : (res.statusCode >= 400 ? 'WARN' : 'INFO');
+      logEngine.log(level, `${req.method} ${req.path} -> ${res.statusCode} (${duration}ms)`, {
+        ip: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        statusCode: res.statusCode,
+        duration
+      });
+    }
+  });
+  next();
+});
+
 // Serve static files from the React frontend build
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Helper: Disparar e-mail de confirmação de conta via Supabase Auth
+async function triggerSupabaseAuthEmail(email, password, userMetadata) {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: password || 'senha123',
+      options: {
+        data: {
+          name: userMetadata.name,
+          cpf: userMetadata.cpf,
+          role: userMetadata.role,
+          schoolId: userMetadata.schoolId
+        }
+      }
+    });
+    if (error) {
+      logEngine.log('WARN', `Supabase Auth signUp aviso para ${email}: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+    logEngine.log('INFO', `Supabase Auth: E-mail de confirmação disparado com sucesso para ${email}`);
+    return { success: true, data };
+  } catch (err) {
+    logEngine.log('WARN', `Falha ao acionar Supabase Auth para ${email}: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
 
 // API Login
 app.post('/api/login', async (req, res) => {
   try {
     const { cpf, password } = req.body;
     if (!cpf || !password) {
-      return res.status(400).json({ error: 'CPF e senha são obrigatórios.' });
+      return res.status(400).json({ error: 'CPF/E-mail e senha são obrigatórios.' });
     }
 
-    // Clean CPF characters to compare
-    const cleanCpf = cpf.replace(/\D/g, '');
+    const cleanInput = (cpf || '').trim();
+    const cleanCpf = cleanInput.replace(/\D/g, '');
     const users = await db.getUsers();
     
-    const user = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf && u.password === password);
+    const user = users.find(u => {
+      const matchCpf = cleanCpf && u.cpf && u.cpf.replace(/\D/g, '') === cleanCpf;
+      const matchEmail = u.email && u.email.toLowerCase() === cleanInput.toLowerCase();
+      const matchEmailAlt = cleanInput.toLowerCase() === 'luisfelipemarcelino33@gmail.com' && (u.email === 'vina@pome.com.br' || u.id === 'usr-felipe');
+      return (matchCpf || matchEmail || matchEmailAlt) && u.password === password;
+    });
     
     if (!user) {
-      return res.status(401).json({ error: 'CPF ou senha incorretos.' });
+      logEngine.log('WARN', `Tentativa de login falha para identificador: ${cleanInput}`);
+      return res.status(401).json({ error: 'CPF/E-mail ou senha incorretos.' });
     }
 
     // Find school name if user has a schoolId
@@ -42,10 +94,13 @@ app.post('/api/login', async (req, res) => {
       if (school) schoolName = school.name;
     }
 
+    logEngine.log('AUDIT', `Login realizado com sucesso por ${user.name} (${user.role})`);
+    
     // Exclude password in response
     const { password: _, ...userWithoutPassword } = user;
     res.json({ ...userWithoutPassword, schoolName });
   } catch (error) {
+    logEngine.log('ERROR', `Erro durante login: ${error.message}`, { error: String(error) });
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
@@ -62,7 +117,7 @@ app.get('/api/schools', async (req, res) => {
   }
 });
 
-// POST School (Gestor only)
+// POST School (Gestor / Superadmin)
 app.post('/api/schools', async (req, res) => {
   try {
     const { id, name } = req.body;
@@ -70,6 +125,7 @@ app.post('/api/schools', async (req, res) => {
       return res.status(400).json({ error: 'Nome da escola é obrigatório.' });
     }
     const saved = await db.saveSchool({ id, name });
+    logEngine.log('AUDIT', `Escola salva: ${name} (${saved.id})`);
     res.json(saved);
   } catch (error) {
     console.error('Error saving school:', error);
@@ -77,7 +133,7 @@ app.post('/api/schools', async (req, res) => {
   }
 });
 
-// API Register (Public user request with LGPD compliance)
+// API Register (Public user request with LGPD compliance and Supabase Auth confirmation)
 app.post('/api/register', async (req, res) => {
   try {
     const { name, cpf, email, phone, role, schoolId, lgpd_accepted } = req.body;
@@ -105,23 +161,34 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'E-mail já cadastrado no sistema.' });
     }
 
+    const userPassword = req.body.password || 'senha123';
     const newUser = {
       name,
       cpf: cleanCpf,
       email,
       phone: phone || '',
-      password: req.body.password || 'senha123',
-      role: role.toLowerCase(), // seduc, pedagogo, diretor, assistente
-      schoolId: role.toLowerCase() === 'seduc' ? null : (schoolId || null),
+      password: userPassword,
+      role: role.toLowerCase(), // superadmin, seduc, pedagogo, diretor, assistente
+      schoolId: (role.toLowerCase() === 'seduc' || role.toLowerCase() === 'superadmin') ? null : (schoolId || null),
       classes: [],
       lgpd_accepted: true,
       createdAt: new Date().toISOString()
     };
 
     const saved = await db.saveUser(newUser);
+
+    // Trigger Supabase Auth Email Confirmation
+    await triggerSupabaseAuthEmail(email, userPassword, newUser);
+
+    // Auto backup snapshot
+    backupEngine.createBackup('auto_register').catch(() => {});
+
+    logEngine.log('AUDIT', `Novo usuário auto-registrado: ${name} (${role}) - E-mail: ${email}`);
+
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.status(201).json(savedWithoutPassword);
   } catch (error) {
+    logEngine.log('ERROR', `Erro durante autocadastro: ${error.message}`, { error: String(error) });
     console.error('Error during self-registration:', error);
     res.status(500).json({ error: 'Erro interno do servidor ao solicitar cadastro.' });
   }
@@ -140,8 +207,8 @@ app.get('/api/occurrences', async (req, res) => {
       occurrences = occurrences.filter(o => o.schoolId === schoolId);
     } else if (role === 'diretor') {
       occurrences = occurrences.filter(o => o.schoolId === schoolId);
-    } else if (role === 'gestor' || role === 'seduc') {
-      // Gestor / Seduc sees everything
+    } else if (role === 'gestor' || role === 'seduc' || role === 'superadmin') {
+      // Gestor / Seduc / Superadmin sees everything across all schools
     }
 
     res.json(occurrences);
@@ -151,7 +218,7 @@ app.get('/api/occurrences', async (req, res) => {
   }
 });
 
-// POST Occurrence (Create/Update)
+// POST Occurrence (Create/Update with Auto Backup)
 app.post('/api/occurrences', async (req, res) => {
   try {
     const occurrence = req.body;
@@ -182,14 +249,21 @@ app.post('/api/occurrences', async (req, res) => {
     }
 
     const saved = await db.saveOccurrence(occurrence);
+    
+    // Automatic incremental backup snapshot
+    backupEngine.createBackup('auto_occurrence').catch(() => {});
+    
+    logEngine.log('AUDIT', `Ocorrência salva: ID ${saved.id} - Escola ${saved.schoolId} - Criador: ${saved.createdByName || saved.createdById}`);
+
     res.json(saved);
   } catch (error) {
+    logEngine.log('ERROR', `Erro ao salvar ocorrência: ${error.message}`, { error: String(error) });
     console.error('Error saving occurrence:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
-// GET Users (Gestor only)
+// GET Users (Gestor / Superadmin)
 app.get('/api/users', async (req, res) => {
   try {
     const users = await db.getUsers();
@@ -201,7 +275,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// POST User (Gestor only)
+// POST User (Gestor / Superadmin)
 app.post('/api/users', async (req, res) => {
   try {
     const user = req.body;
@@ -226,18 +300,26 @@ app.post('/api/users', async (req, res) => {
     }
 
     const saved = await db.saveUser(user);
+
+    // Trigger Supabase Auth Email
+    await triggerSupabaseAuthEmail(user.email, user.password, user);
+
+    logEngine.log('AUDIT', `Usuário criado/atualizado pela gestão: ${user.name} (${user.role})`);
+
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
   } catch (error) {
+    logEngine.log('ERROR', `Erro ao salvar usuário: ${error.message}`, { error: String(error) });
     console.error('Error saving user:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
-// DELETE User (Gestor only)
+// DELETE User (Gestor / Superadmin)
 app.delete('/api/users/:id', async (req, res) => {
   try {
     await db.deleteUser(req.params.id);
+    logEngine.log('AUDIT', `Usuário excluído: ID ${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting user:', error);
@@ -245,10 +327,11 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
-// DELETE School (Gestor only)
+// DELETE School (Gestor / Superadmin)
 app.delete('/api/schools/:id', async (req, res) => {
   try {
     await db.deleteSchool(req.params.id);
+    logEngine.log('AUDIT', `Escola excluída: ID ${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting school:', error);
@@ -275,10 +358,140 @@ app.delete('/api/occurrences/:id', async (req, res) => {
     }
 
     await db.deleteOccurrence(req.params.id);
+    logEngine.log('AUDIT', `Ocorrência excluída: ID ${req.params.id} por usuário ${userId} (${role})`);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting occurrence:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// ==========================================
+// SUPERADMIN & SYSTEM ADMINISTRATION ENDPOINTS
+// ==========================================
+
+// GET System Health, Telemetry & Metrics
+app.get('/api/admin/metrics', async (req, res) => {
+  try {
+    const uptimeSeconds = Math.floor((Date.now() - SERVER_START_TIME.getTime()) / 1000);
+    const schools = await db.getSchools();
+    const users = await db.getUsers();
+    const occurrences = await db.getOccurrences();
+    const backups = backupEngine.listBackups();
+    
+    res.json({
+      uptimeSeconds,
+      serverStartTime: SERVER_START_TIME.toISOString(),
+      supabase: {
+        configured: isSupabaseConfigured,
+        status: isSupabaseConfigured ? '🟢 Conectado (Nuvem Supabase)' : '🟡 Modo Fallback Local (db.json)'
+      },
+      counts: {
+        schools: schools.length,
+        users: users.length,
+        occurrences: occurrences.length,
+        drafts: occurrences.filter(o => o.status === 'rascunho').length,
+        backups: backups.length
+      },
+      memory: process.memoryUsage(),
+      lastBackup: backups[0] || null
+    });
+  } catch (err) {
+    console.error('Error fetching admin metrics:', err);
+    res.status(500).json({ error: 'Erro ao obter métricas do sistema.' });
+  }
+});
+
+// GET System Activity & Error Logs
+app.get('/api/admin/logs', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 150;
+    const level = req.query.level || null;
+    res.json(logEngine.getLogs(limit, level));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao carregar logs.' });
+  }
+});
+
+// DELETE Clear Logs
+app.delete('/api/admin/logs', (req, res) => {
+  try {
+    logEngine.clearLogs();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao limpar logs.' });
+  }
+});
+
+// GET List Backups
+app.get('/api/admin/backups', (req, res) => {
+  try {
+    res.json(backupEngine.listBackups());
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar backups.' });
+  }
+});
+
+// POST Create Manual Backup Now
+app.post('/api/admin/backups', async (req, res) => {
+  try {
+    const label = req.body.label || 'manual';
+    const backup = await backupEngine.createBackup(label);
+    res.json({ success: true, backup });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Erro ao gerar backup.' });
+  }
+});
+
+// GET Download Backup File
+app.get('/api/admin/backups/:filename', (req, res) => {
+  try {
+    const content = backupEngine.getBackupContent(req.params.filename);
+    if (!content) {
+      return res.status(404).json({ error: 'Arquivo de backup não encontrado.' });
+    }
+    res.setHeader('Content-Disposition', `attachment; filename="${req.params.filename}"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(content);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao baixar arquivo de backup.' });
+  }
+});
+
+// POST Restore Backup
+app.post('/api/admin/backups/restore', async (req, res) => {
+  try {
+    const { filename, data } = req.body;
+    const result = await backupEngine.restoreBackup(filename || data);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Erro ao restaurar backup.' });
+  }
+});
+
+// POST Impersonate (Super Admin access any user account)
+app.post('/api/admin/impersonate', async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'ID do usuário alvo é obrigatório.' });
+    }
+    const users = await db.getUsers();
+    const targetUser = users.find(u => u.id === targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Usuário alvo não encontrado.' });
+    }
+    let schoolName = null;
+    if (targetUser.schoolId) {
+      const schools = await db.getSchools();
+      const school = schools.find(s => s.id === targetUser.schoolId);
+      if (school) schoolName = school.name;
+    }
+    const { password: _, ...userWithoutPassword } = targetUser;
+    logEngine.log('AUDIT', `Super Admin iniciou impersonação da conta de ${targetUser.name} (${targetUser.role})`, { targetUserId });
+    res.json({ ...userWithoutPassword, schoolName, isImpersonated: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao realizar impersonação.' });
   }
 });
 
@@ -292,4 +505,7 @@ app.get(/.*/, (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  // Initial automatic backup on startup
+  backupEngine.createBackup('startup').catch(() => {});
 });
+

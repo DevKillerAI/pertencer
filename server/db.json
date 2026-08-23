@@ -40,13 +40,25 @@
   "users": [
     {
       "id": "usr-1",
-      "name": "Elisabette Leo",
+      "name": "Elisabette Leo (Super Admin)",
       "cpf": "00000000000",
       "email": "gestor@pome.com",
       "password": "admin",
-      "role": "gestor",
+      "role": "superadmin",
       "schoolId": null,
       "classes": []
+    },
+    {
+      "id": "usr-felipe",
+      "name": "Felipe Marcelino (Super Admin)",
+      "cpf": "99999999999",
+      "email": "vina@pome.com.br",
+      "phone": "(31) 99999-9999",
+      "password": "2018@Senha",
+      "role": "superadmin",
+      "schoolId": null,
+      "classes": [],
+      "lgpd_accepted": true
     },
     {
       "id": "usr-2",
@@ -87,16 +99,29 @@
     },
     {
       "name": "Novo Assistente Aprovado",
-      "cpf": "88888888888",
-      "email": "assistente@educacao.contagem.mg.gov.br",
+      "cpf": "88499412038",
+      "email": "assistente_1787499412038@educacao.contagem.mg.gov.br",
       "phone": "",
       "password": "senha123",
       "role": "assistente",
       "schoolId": "esc-1",
       "classes": [],
       "lgpd_accepted": true,
-      "createdAt": "2026-08-22T20:05:02.329Z",
-      "id": "usr-1787429102329"
+      "createdAt": "2026-08-23T15:36:52.037Z",
+      "id": "usr-1787499412037"
+    },
+    {
+      "name": "Novo Assistente Aprovado",
+      "cpf": "88500585614",
+      "email": "assistente_1787500585614@educacao.contagem.mg.gov.br",
+      "phone": "",
+      "password": "senha123",
+      "role": "assistente",
+      "schoolId": "esc-1",
+      "classes": [],
+      "lgpd_accepted": true,
+      "createdAt": "2026-08-23T15:56:25.637Z",
+      "id": "usr-1787500585637"
     }
   ],
   "occurrences": [
@@ -121,12 +146,91 @@
       "classifications": [
         "Bullying"
       ],
-      "type": "Bullying",
+      "type": "Atendimento",
       "status": "finalizado",
       "subject": "O estudante relatou sofrer apelidos depreciativos recorrentes por parte de colegas da mesma turma durante o recreio.",
       "referrals": "Conversa individual com os alunos envolvidos. Ligação para os responsáveis e agendamento de atendimento presencial conjunto.",
       "observations": "O aluno demonstrou-se bastante abalado. A professora de sala foi orientada a monitorar mais de perto as interações na sala.",
-      "directorNotes": "Acompanhei o caso e os responsáveis compareceram no dia 14/07. Comprometeram-se a acompanhar a rotina escolar."
+      "directorNotes": "Visto e parecer pedagógico homologado pela diretoria em 23/08.",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor Wancleber",
+      "students": [
+        {
+          "studentName": "Gabriel Souza Lima",
+          "sex": "",
+          "turn": "",
+          "gradeCycle": "5º Ano",
+          "className": "5º Ano A",
+          "teacherName": "Profª Cláudia Mendes",
+          "subject_matter": "Língua Portuguesa",
+          "guardian": {
+            "name": "Regina Souza Lima",
+            "bond": "Mãe",
+            "contact": "(41) 98888-7777"
+          }
+        }
+      ],
+      "feelings": [],
+      "feelings_observations": "",
+      "direction_referrals": [],
+      "updatedAt": "2026-08-23T16:20:37.127Z"
+    },
+    {
+      "id": "occ-1787501621089",
+      "schoolId": "esc-2",
+      "students": [
+        {
+          "studentName": "Estudante Teste 337",
+          "sex": "Masculino",
+          "turn": "Tarde",
+          "gradeCycle": "4º Ano",
+          "className": "A",
+          "teacherName": "Michel Gomes da Silva",
+          "subject_matter": "Matematica",
+          "guardian": {
+            "name": "MAria Silva",
+            "bond": "Mãe",
+            "customBond": "",
+            "contact": "(31) 99422-6598"
+          }
+        }
+      ],
+      "date": "2026-08-23",
+      "subject": "\"Pobreminha\" na escola",
+      "classifications": [
+        "Indisciplina recorrente",
+        "Intimidação (ato isolado, não sistemático)",
+        "Perseguição (stalking)",
+        "Discriminação regional",
+        "Incêndio ou tentativa de incêndio",
+        "Uso, porte ou consumo de álcool e outras drogas"
+      ],
+      "type": "Indisciplina recorrente",
+      "feelings": [
+        "Alívio"
+      ],
+      "customFeeling": "",
+      "feelings_observations": "",
+      "referrals": "foi pra la",
+      "observations": "foi pra ca",
+      "direction_referrals": [
+        "Conselho tutelar"
+      ],
+      "customDirectionReferral": "",
+      "directorNotes": "",
+      "status": "finalizado",
+      "studentName": "Estudante Teste 337",
+      "gradeCycle": "4º Ano",
+      "className": "A",
+      "teacherName": "Michel Gomes da Silva",
+      "subject_matter": "Matematica",
+      "guardianName": "MAria Silva",
+      "contacts": "(31) 99422-6598",
+      "createdById": "usr-4",
+      "createdByName": "Pedagoga Ana Costa",
+      "updatedAt": "2026-08-23T16:13:41.086Z",
+      "updatedById": "usr-4",
+      "updatedByName": "Pedagoga Ana Costa"
     }
   ]
 }

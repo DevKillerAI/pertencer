@@ -29,3 +29,7 @@ dist-ssr
 *.sw?
 scratch/
 
+# Runtime Backups
+server/backups/*.json
+!server/backups/.gitkeep
+
