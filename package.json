@@ -1,7 +1,8 @@
 {
-  "name": "clima-new",
+  "name": "pome-clima-escolar",
+  "version": "1.0.0",
+  "description": "POME - Plataforma de Observação da Melhoria do Clima Escolar",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "repository": {
     "type": "git",
