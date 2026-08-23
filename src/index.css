@@ -1326,4 +1326,161 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   animation: spin 1s linear infinite;
 }
 
+/* Interactive Role Help Button & Tooltip */
+.help-role-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.help-role-badge:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Tooltip on Hover */
+.help-role-badge .tooltip-role-text {
+  visibility: hidden;
+  opacity: 0;
+  width: 220px;
+  background-color: #1e293b;
+  color: #ffffff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 10px;
+  position: absolute;
+  z-index: 2000;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.3;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+  white-space: normal;
+}
+
+.help-role-badge .tooltip-role-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+.help-role-badge:hover .tooltip-role-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+/* Tutorial Modal Tabs and Cards */
+.role-tutorial-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.role-tutorial-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.role-tutorial-tab-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.role-tutorial-tab-btn.active {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.permission-pill-allowed {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background-color: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.825rem;
+  line-height: 1.4;
+}
+
+.permission-pill-restricted {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background-color: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.825rem;
+  line-height: 1.4;
+}
+
+.tutorial-step-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background-color: var(--bg-app);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.tutorial-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+
 

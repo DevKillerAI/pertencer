@@ -295,12 +295,198 @@ const anonymizeText = (text, isAnonymized = false) => {
     .join(' ');
 };
 
+// Comprehensive Profile Tutorials & Permissions Dictionary
+const ROLE_TUTORIALS_DATA = {
+  pedagogo: {
+    roleKey: 'pedagogo',
+    name: 'Pedagogo(a) / Coordenação Pedagógica',
+    icon: '🎓',
+    color: '#d97706',
+    tagline: 'Atendimento direto, escuta ativa (CNV), mediação e registro de ocorrências escolares.',
+    overview: 'O perfil de Pedagogo(a) é o coração da mediação escolar. Ele é responsável pelo acolhimento de estudantes e responsáveis, realização de escuta qualificada sem julgamentos morais, registro das ocorrências com a taxonomia de 3 níveis, aplicação de práticas restaurativas e acompanhamento contínuo.',
+    permissions: {
+      allowed: [
+        'Cadastrar novos atendimentos e ocorrências no fluxo estruturado em 5 etapas',
+        'Incluir múltiplos estudantes, turnos, turmas, professores e responsáveis no mesmo registro',
+        'Mapear sentimentos identificados na escuta ativa baseada em Comunicação Não-Violenta (CNV)',
+        'Classificar ocorrências nas dimensões: Perturbadoras, Agressivas/Violentas ou Situações de Risco',
+        'Salvar ocorrências em modo "Rascunho" para complementação posterior com total privacidade',
+        'Editar e excluir suas próprias ocorrências ANTES que a diretoria emita o visto formal',
+        'Acessar "Meus Relatórios" com distribuição por turma, sentimentos e exportação em planilha CSV',
+        'Imprimir a ficha oficial de atendimento formatada para papel A4 com opção de anonimização (LGPD)'
+      ],
+      restricted: [
+        'Não pode visualizar os rascunhos particulares de outros pedagogos',
+        'Não pode alterar ou excluir ocorrências após a emissão do Visto da Diretoria',
+        'Não tem acesso às ocorrências de outras escolas da rede municipal',
+        'Não pode preencher o campo exclusivo de parecer/visto da diretoria escolar'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Iniciar Atendimento', desc: 'No Painel Principal, clique em "+ Nova Ocorrência" e preencha os dados dos estudantes e responsáveis atendidos.' },
+      { step: '2', title: 'Relato e Classificação', desc: 'Descreva detalhadamente o ocorrido no campo de Assunto e selecione os termos da taxonomia científica.' },
+      { step: '3', title: 'Escuta Ativa (CNV)', desc: 'Identifique os sentimentos expressos pelos envolvidos (Ansiedade, Frustração, Raiva, etc.) sem rotulá-los.' },
+      { step: '4', title: 'Medidas e Encaminhamentos', desc: 'Registre as ações escolares acordadas e, se necessário, marque encaminhamentos à rede de proteção externa.' },
+      { step: '5', title: 'Salvar ou Rascunho', desc: 'Revise todas as informações. Escolha "Salvar como Rascunho" se faltar informação ou "Finalizar e Salvar" para concluir.' }
+    ],
+    lgpd: 'Assegure-se de ativar o modo "Anonimizar (LGPD)" ao exibir telas ou relatórios em reuniões pedagógicas amplas, garantindo a proteção da identidade de crianças e adolescentes conforme a Lei 13.709/2018.'
+  },
+  diretor: {
+    roleKey: 'diretor',
+    name: 'Diretor(a) Escolar',
+    icon: '🏫',
+    color: '#059669',
+    tagline: 'Gestão institucional, homologação de vistos, pareceres diretivos e articulação da rede de proteção.',
+    overview: 'A Direção Escolar possui a atribuição de acompanhar o clima da unidade, analisar todos os atendimentos registrados pelos pedagogos, emitir pareceres formais (Vistos da Diretoria), acionar os órgãos de garantia de direitos e liderar as ações preventivas na escola.',
+    permissions: {
+      allowed: [
+        'Visualizar todas as ocorrências finalizadas registradas na sua escola',
+        'Emitir o Visto Oficial e Parecer da Diretoria com plano de acompanhamento institucional',
+        'Consultar o Relatório de Gestão Escolar com taxa de homologação de vistos e pendências',
+        'Analisar a distribuição de ocorrências por turma, turno, componente curricular e professor',
+        'Monitorar encaminhamentos oficiais a órgãos externos (Conselho Tutelar, CAPS, CRAS/CREAS)',
+        'Imprimir a ficha completa de atendimento em folha A4 com bloco de assinaturas formais',
+        'Exportar planilha em formato CSV de todas as ocorrências da unidade escolar'
+      ],
+      restricted: [
+        'Não pode visualizar dados de outras unidades escolares da rede municipal',
+        'Não pode excluir ocorrências da base (garantia de preservação do histórico institucional)',
+        'Não pode emitir visto em ocorrências que ainda estejam no status de Rascunho pelo pedagogo'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Filtrar Pendências', desc: 'No Painel Principal, localize as ocorrências com badge amarelo "Pendente" ou use o filtro do dashboard.' },
+      { step: '2', title: 'Analisar o Atendimento', desc: 'Clique no botão "Detalhes" para ler o relato dos fatos, sentimentos mapeados e ações tomadas pela equipe pedagógica.' },
+      { step: '3', title: 'Emitir o Visto Oficial', desc: 'No bloco "Observações da Diretoria", registre o parecer formal e clique em "Confirmar Visto da Diretoria".' },
+      { step: '4', title: 'Acionar Rede Externa', desc: 'Em casos de violação de direitos ou risco, articule o encaminhamento formal junto ao Conselho Tutelar/CAPS.' },
+      { step: '5', title: 'Monitorar Indicadores', desc: 'Acesse a aba "Relatórios da Direção" para acompanhar turmas com maior incidência e taxa de vistos emitidos.' }
+    ],
+    lgpd: 'O Diretor é o guardião legal dos registros físicos e digitais na unidade. Fichas impressas devem ser arquivadas em prontuários sob chave e sigilo funcional.'
+  },
+  assistente: {
+    roleKey: 'assistente',
+    name: 'Assistente / Mediador(a) de Conflitos',
+    icon: '🤝',
+    color: '#0ea5e9',
+    tagline: 'Apoio ao acolhimento, escuta inicial e colaboração no registro de mediações escolares.',
+    overview: 'O(A) Assistente ou Mediador(a) atua no suporte operacional e acolhimento direto dos estudantes, auxiliando na identificação precoce de conflitos, registro de atendimentos preliminares e articulação com a coordenação pedagógica.',
+    permissions: {
+      allowed: [
+        'Registrar novas ocorrências e acolhimentos de mediação no sistema',
+        'Mapear sentimentos (CNV) e aplicar a taxonomia científica de conflitos',
+        'Salvar rascunhos para posterior complementação com a equipe pedagógica',
+        'Consultar o histórico de ocorrências registradas em sua unidade escolar',
+        'Acessar relatórios pedagógicos e exportar dados em formato CSV',
+        'Imprimir fichas de atendimento em formato A4'
+      ],
+      restricted: [
+        'Não pode acessar dados de outras escolas da rede municipal',
+        'Não pode emitir visto ou parecer oficial da diretoria escolar',
+        'Não pode excluir ocorrências de outros usuários ou que já tenham recebido visto da direção'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Acolhimento Inicial', desc: 'Abra o formulário de Nova Ocorrência para registrar o atendimento inicial e os estudantes envolvidos.' },
+      { step: '2', title: 'Escuta e Mediação', desc: 'Registre o relato da mediação e mapeie as emoções observadas no diálogo.' },
+      { step: '3', title: 'Encaminhamento Interno', desc: 'Compartilhe o caso com o Pedagogo ou Diretor da unidade para acompanhamento integrado.' }
+    ],
+    lgpd: 'Mantenha total discrição e sigilo funcional em relação a qualquer conversa ou dado sociofamiliar obtido no atendimento.'
+  },
+  gestor: {
+    roleKey: 'gestor',
+    name: 'Gestor(a) SEDUC / Secretaria Municipal de Educação',
+    icon: '🌐',
+    color: '#1e40af',
+    tagline: 'Supervisão macro da rede, formulação de políticas públicas e governança educacional.',
+    overview: 'A equipe gestora da SEDUC possui visão analítica panorâmica sobre todas as unidades escolares do município. Utiliza os dados de clima escolar para identificar demandas regionais, apoiar equipes pedagógicas e subsidiar formações continuadas.',
+    permissions: {
+      allowed: [
+        'Visualização consolidada de todas as ocorrências em TODAS as escolas do município',
+        'Cadastrar, editar e gerenciar unidades escolares da rede municipal',
+        'Cadastrar, vincular e gerenciar contas de usuários (Diretores, Pedagogos, Assistentes)',
+        'Acessar o Relatório Consolidado de Clima Escolar com comparativo entre escolas',
+        'Exportar bases de dados completas em formato SPSS (para pesquisas estatísticas) e CSV',
+        'Filtrar ocorrências por qualquer escola, ciclo, natureza ou período',
+        'Editar ou excluir ocorrências para saneamento ou correção de dados'
+      ],
+      restricted: [
+        'Não possui acesso ao módulo de infraestrutura técnica/backups (exclusivo do Super Admin)',
+        'Não possui funcionalidade de impersonação de contas'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Monitorar a Rede', desc: 'Consulte os cards de métricas globais e filtre por escolas específicas no Painel Principal.' },
+      { step: '2', title: 'Gerenciar Escolas e Usuários', desc: 'Acesse as abas "Gerenciar Escolas" e "Gerenciar Usuários" para criar unidades e delegar acessos.' },
+      { step: '3', title: 'Exportar para Pesquisa (SPSS)', desc: 'Na aba "Relatórios de Gestão", clique em "Exportar SPSS" para obter a base estruturada para análise acadêmica.' },
+      { step: '4', title: 'Planejamento Estratégico', desc: 'Utilize os indicadores de situações de risco para direcionar equipes de apoio psicossocial às escolas prioritárias.' }
+    ],
+    lgpd: 'Tratamento de dados em conformidade com o Art. 7º e 11 da LGPD para execução de políticas públicas educacionais.'
+  },
+  seduc: {
+    roleKey: 'seduc',
+    name: 'SEDUC / Equipe Técnica da Secretaria',
+    icon: '🌐',
+    color: '#1e40af',
+    tagline: 'Acompanhamento pedagógico regional e monitoramento de indicadores de clima escolar.',
+    overview: 'Membros da equipe técnica da Secretaria de Educação possuem acesso analítico a todas as unidades escolares para suporte, orientação formativa e articulação com órgãos do município.',
+    permissions: {
+      allowed: [
+        'Visualização de ocorrências de toda a rede municipal de ensino',
+        'Emissão de relatórios consolidados em SPSS e CSV',
+        'Gestão de unidades escolares e contas pedagógicas',
+        'Filtro dinâmico por dimensões, escolas e turmas'
+      ],
+      restricted: [
+        'Não possui acesso ao módulo de backups e telemetria do Super Admin'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Diagnóstico da Rede', desc: 'Acesse o Painel Principal e Relatórios de Gestão para monitorar ocorrências em toda a rede.' },
+      { step: '2', title: 'Apoio às Unidades', desc: 'Identifique escolas com maior taxa de casos críticos e organize intervenções preventivas.' }
+    ],
+    lgpd: 'Uso estritamente institucional dos dados estatísticos conforme a legislação vigente.'
+  },
+  superadmin: {
+    roleKey: 'superadmin',
+    name: 'Super Administrador (Master Admin)',
+    icon: '👑',
+    color: '#7c3aed',
+    tagline: 'Acesso total, telemetria em tempo real, auditoria, impersonação e recuperação de desastres.',
+    overview: 'O perfil de Super Administrador Master detém privilégios totais sobre a plataforma. É responsável pela governança técnica, segurança da informação, auditoria em tempo real, suporte através de impersonação e execução de backups contínuos.',
+    permissions: {
+      allowed: [
+        'Acesso irrestrito a todas as páginas, escolas, usuários e ocorrências da plataforma',
+        'Aba exclusiva "⚡ Administração do Sistema" com telemetria de CPU, RAM, Uptime e Banco',
+        'Impersonação instantânea de qualquer conta para auditoria e suporte técnico em 1 clique',
+        'Geração manual e automática de snapshots de Backup com download JSON e restauração completa',
+        'Console de Logs de Auditoria LGPD e Erros do Sistema em tempo real',
+        'Acesso a todos os relatórios da rede, exportações SPSS e gerenciamento completo'
+      ],
+      restricted: [
+        'Nenhuma restrição técnica (Acesso Total de Nível Raiz / Master)'
+      ]
+    },
+    steps: [
+      { step: '1', title: 'Verificar Telemetria', desc: 'No painel de Administração, monitore a integridade do banco (Supabase/Local) e consumo de memória.' },
+      { step: '2', title: 'Auditoria e Impersonação', desc: 'Utilize a central de impersonação para inspecionar exatamente o que pedagogos e diretores visualizam.' },
+      { step: '3', title: 'Backups de Segurança', desc: 'Gere snapshots manuais antes de manutenções e teste a restauração caso necessário.' },
+      { step: '4', title: 'Análise de Logs', desc: 'Filtre os logs de severidade ERROR e AUDIT para garantir conformidade e rastreabilidade total.' }
+    ],
+    lgpd: 'Responsabilidade primária pela segurança técnica da base, criptografia e guarda dos backups em conformidade com a LGPD.'
+  }
+};
+
 function App() {
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
   const [tutorialTab, setTutorialTab] = useState('welcome');
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+
+  // Dynamic Role Tutorial State
+  const [showRoleTutorialModal, setShowRoleTutorialModal] = useState(false);
+  const [tutorialSelectedRole, setTutorialSelectedRole] = useState('pedagogo');
+  const [tutorialSubTab, setTutorialSubTab] = useState('overview');
 
   // Authentication & Session
   const [user, setUser] = useState(() => {
@@ -1208,28 +1394,92 @@ function App() {
                         className="quick-login-card" 
                         onClick={() => setLoginData({ cpf: 'vina@pome.com.br', password: '2018@Senha' })}
                       >
-                        <span className="quick-login-role">👑 Felipe Marcelino (Super Admin)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <span className="quick-login-role">👑 Felipe Marcelino (Super Admin)</span>
+                          <button
+                            type="button"
+                            className="help-role-badge"
+                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTutorialSelectedRole('superadmin');
+                              setTutorialSubTab('overview');
+                              setShowRoleTutorialModal(true);
+                            }}
+                          >
+                            ❓
+                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Super Admin</span>
+                          </button>
+                        </div>
                         <span className="quick-login-creds">vina@pome.com.br | 2018@Senha</span>
                       </div>
                       <div 
                         className="quick-login-card" 
                         onClick={() => setLoginData({ cpf: '000.000.000-00', password: 'admin' })}
                       >
-                        <span className="quick-login-role">⚡ Elisabette (Super Admin)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <span className="quick-login-role">⚡ Elisabette (Super Admin)</span>
+                          <button
+                            type="button"
+                            className="help-role-badge"
+                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTutorialSelectedRole('superadmin');
+                              setTutorialSubTab('overview');
+                              setShowRoleTutorialModal(true);
+                            }}
+                          >
+                            ❓
+                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Super Admin</span>
+                          </button>
+                        </div>
                         <span className="quick-login-creds">CPF: 000.000.000-00 | Senha: admin</span>
                       </div>
                       <div 
                         className="quick-login-card" 
                         onClick={() => setLoginData({ cpf: '111.111.111-11', password: 'senha' })}
                       >
-                        <span className="quick-login-role">💼 Diretor(a)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <span className="quick-login-role">💼 Diretor(a)</span>
+                          <button
+                            type="button"
+                            className="help-role-badge"
+                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTutorialSelectedRole('diretor');
+                              setTutorialSubTab('overview');
+                              setShowRoleTutorialModal(true);
+                            }}
+                          >
+                            ❓
+                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Diretor</span>
+                          </button>
+                        </div>
                         <span className="quick-login-creds">CPF: 111.111.111-11 | Senha: senha</span>
                       </div>
                       <div 
                         className="quick-login-card" 
                         onClick={() => setLoginData({ cpf: '222.222.222-22', password: 'senha' })}
                       >
-                        <span className="quick-login-role">✏️ Pedagogo(a)</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <span className="quick-login-role">✏️ Pedagogo(a)</span>
+                          <button
+                            type="button"
+                            className="help-role-badge"
+                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTutorialSelectedRole('pedagogo');
+                              setTutorialSubTab('overview');
+                              setShowRoleTutorialModal(true);
+                            }}
+                          >
+                            ❓
+                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Pedagogo</span>
+                          </button>
+                        </div>
                         <span className="quick-login-creds">CPF: 222.222.222-22 | Senha: senha</span>
                       </div>
                     </div>
@@ -1541,8 +1791,23 @@ function App() {
         <div className="navbar-user">
           <div className="user-info">
             <div className="user-name">{user.name}</div>
-            <div className="user-role">
-              {user.role === 'superadmin' ? '👑 SUPER ADMIN' : user.role.toUpperCase()} {user.schoolName ? `| ${user.schoolName}` : ''}
+            <div className="user-role" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>{user.role === 'superadmin' ? '👑 SUPER ADMIN' : user.role.toUpperCase()} {user.schoolName ? `| ${user.schoolName}` : ''}</span>
+              <button
+                type="button"
+                className="help-role-badge"
+                title={`Tutorial e Permissões do perfil: ${ROLE_TUTORIALS_DATA[user.role]?.name || user.role}`}
+                onClick={() => {
+                  setTutorialSelectedRole(user.role === 'seduc' ? 'seduc' : user.role);
+                  setTutorialSubTab('overview');
+                  setShowRoleTutorialModal(true);
+                }}
+              >
+                ❓
+                <span className="tooltip-role-text">
+                  💡 Tutorial e Permissões do Perfil ({ROLE_TUTORIALS_DATA[user.role]?.name || user.role})
+                </span>
+              </button>
             </div>
           </div>
           
@@ -1556,7 +1821,11 @@ function App() {
 
           <button 
             className="btn btn-secondary" 
-            onClick={() => setShowTutorialModal(true)}
+            onClick={() => {
+              setTutorialSelectedRole(user.role === 'seduc' ? 'seduc' : user.role);
+              setTutorialSubTab('overview');
+              setShowRoleTutorialModal(true);
+            }}
             style={{ padding: '0.5rem 0.85rem', marginRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
           >
             💡 Tutorial
@@ -3066,10 +3335,27 @@ function App() {
                               <td>{u.cpf}</td>
                               <td>
                                 <span className={`badge ${
+                                  u.role === 'superadmin' ? 'badge-primary' :
                                   u.role === 'gestor' || u.role === 'seduc' ? 'badge-danger' : 
                                   u.role === 'diretor' ? 'badge-primary' : 'badge-success'
-                                }`}>
+                                }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                   {u.role}
+                                  <button
+                                    type="button"
+                                    className="help-role-badge"
+                                    style={{ width: '18px', height: '18px', fontSize: '0.65rem', marginLeft: '4px' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setTutorialSelectedRole(u.role === 'seduc' ? 'seduc' : u.role);
+                                      setTutorialSubTab('overview');
+                                      setShowRoleTutorialModal(true);
+                                    }}
+                                  >
+                                    ❓
+                                    <span className="tooltip-role-text">
+                                      💡 Tutorial e Permissões ({ROLE_TUTORIALS_DATA[u.role]?.name || u.role})
+                                    </span>
+                                  </button>
                                 </span>
                               </td>
                               <td style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -3656,8 +3942,24 @@ function App() {
                                   u.role === 'superadmin' ? 'badge-danger' :
                                   u.role === 'gestor' || u.role === 'seduc' ? 'badge-warning' : 
                                   u.role === 'diretor' ? 'badge-primary' : 'badge-success'
-                                }`}>
+                                }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                   {u.role.toUpperCase()}
+                                  <button
+                                    type="button"
+                                    className="help-role-badge"
+                                    style={{ width: '18px', height: '18px', fontSize: '0.65rem', marginLeft: '4px' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setTutorialSelectedRole(u.role === 'seduc' ? 'seduc' : u.role);
+                                      setTutorialSubTab('overview');
+                                      setShowRoleTutorialModal(true);
+                                    }}
+                                  >
+                                    ❓
+                                    <span className="tooltip-role-text">
+                                      💡 Tutorial e Permissões ({ROLE_TUTORIALS_DATA[u.role]?.name || u.role})
+                                    </span>
+                                  </button>
                                 </span>
                               </td>
                               <td style={{ fontSize: '0.85rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -4139,7 +4441,7 @@ function App() {
         </div>
       )}
 
-      {/* TUTORIAL MODAL */}
+      {/* TUTORIAL MODAL (GERAL) */}
       {showTutorialModal && (
         <div className="modal-overlay" onClick={() => setShowTutorialModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -4169,7 +4471,240 @@ function App() {
                 </div>
               </div>
 
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  onClick={() => {
+                    setShowTutorialModal(false);
+                    setTutorialSelectedRole(user?.role === 'seduc' ? 'seduc' : user?.role || 'pedagogo');
+                    setShowRoleTutorialModal(true);
+                  }}
+                >
+                  ❓ Abrir Guia de Permissões & Tutorial por Perfil
+                </button>
+              </div>
+
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- DYNAMIC ROLE TUTORIAL & PERMISSIONS MODAL ----------------- */}
+      {showRoleTutorialModal && (
+        <div className="modal-overlay" onClick={() => setShowRoleTutorialModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px', width: '95%' }}>
+            
+            {/* Modal Header */}
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.6rem' }}>{ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.icon || '💡'}</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
+                    Guia de Permissões & Tutorial: <span style={{ color: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color || 'var(--primary)' }}>{ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.name}</span>
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                    {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.tagline}
+                  </p>
+                </div>
+              </div>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowRoleTutorialModal(false)}
+                style={{ padding: '0.35rem 0.75rem', fontSize: '1rem', borderRadius: '50%' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="card-body" style={{ padding: '1.25rem', overflowY: 'auto', maxHeight: '78vh' }}>
+              
+              {/* Role Switcher Tabs (Permite navegar entre todos os perfis) */}
+              <div style={{ marginBottom: '1rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.4rem' }}>
+                  Consultar outro perfil de usuário:
+                </span>
+                <div className="role-tutorial-tabs">
+                  {Object.values(ROLE_TUTORIALS_DATA).map(r => (
+                    <button
+                      key={r.roleKey}
+                      type="button"
+                      className={`role-tutorial-tab-btn ${tutorialSelectedRole === r.roleKey ? 'active' : ''}`}
+                      style={{
+                        backgroundColor: tutorialSelectedRole === r.roleKey ? r.color : undefined,
+                        borderColor: tutorialSelectedRole === r.roleKey ? r.color : undefined
+                      }}
+                      onClick={() => {
+                        setTutorialSelectedRole(r.roleKey);
+                        setTutorialSubTab('overview');
+                      }}
+                    >
+                      <span>{r.icon}</span>
+                      <span>{r.roleKey === 'superadmin' ? 'Super Admin' : r.roleKey === 'pedagogo' ? 'Pedagogo' : r.roleKey === 'diretor' ? 'Diretor' : r.roleKey === 'assistente' ? 'Assistente' : 'Gestor/SEDUC'}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-tabs Internas: Visão Geral | Permissões | Passo a Passo | LGPD */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn ${tutorialSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
+                  onClick={() => setTutorialSubTab('overview')}
+                >
+                  📋 Visão Geral
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${tutorialSubTab === 'permissions' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
+                  onClick={() => setTutorialSubTab('permissions')}
+                >
+                  🛡️ Permissões & Restrições
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${tutorialSubTab === 'steps' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
+                  onClick={() => setTutorialSubTab('steps')}
+                >
+                  🚀 Passo a Passo no Sistema
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${tutorialSubTab === 'lgpd' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
+                  onClick={() => setTutorialSubTab('lgpd')}
+                >
+                  🔒 Diretrizes LGPD & Ética
+                </button>
+              </div>
+
+              {/* CONTEÚDO DA SUB-ABA: VISÃO GERAL */}
+              {tutorialSubTab === 'overview' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', lineHeight: '1.6' }}>
+                    <h4 style={{ color: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.icon} Atribuição Institucional
+                    </h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.overview}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                    <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid #10b98144' }}>
+                      <strong style={{ color: '#059669', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>
+                        ✅ Principais Atribuições
+                      </strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.allowed.length} permissões ativas configuradas no perfil.
+                      </span>
+                    </div>
+                    <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid #ef444444' }}>
+                      <strong style={{ color: '#dc2626', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>
+                        ⛔ Restrições de Segurança
+                      </strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        Proteção de sigilo, hierarquia institucional e conformidade LGPD.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CONTEÚDO DA SUB-ABA: PERMISSÕES & RESTRIÇÕES */}
+              {tutorialSubTab === 'permissions' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {/* O que pode fazer */}
+                  <div>
+                    <h4 style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
+                      ✅ O que este perfil PODE fazer:
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.allowed.map((perm, idx) => (
+                        <div key={idx} className="permission-pill-allowed">
+                          <span>✓</span>
+                          <span>{perm}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* O que NÃO pode fazer */}
+                  <div>
+                    <h4 style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
+                      ⛔ O que este perfil NÃO tem acesso (Restrições):
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.restricted.map((rest, idx) => (
+                        <div key={idx} className="permission-pill-restricted">
+                          <span>✕</span>
+                          <span>{rest}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CONTEÚDO DA SUB-ABA: PASSO A PASSO PRÁTICO */}
+              {tutorialSubTab === 'steps' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.steps.map((st) => (
+                    <div key={st.step} className="tutorial-step-card">
+                      <div className="tutorial-step-number" style={{ backgroundColor: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color }}>
+                        {st.step}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{st.title}</h4>
+                        <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>{st.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* CONTEÚDO DA SUB-ABA: LGPD */}
+              {tutorialSubTab === 'lgpd' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', borderLeft: '4px solid var(--accent-orange)' }}>
+                    <h4 style={{ color: 'var(--accent-orange)', marginBottom: '0.5rem' }}>
+                      ⚖️ Compromisso de Sigilo e Proteção de Dados (Lei 13.709/2018)
+                    </h4>
+                    <p style={{ fontSize: '0.875rem', lineHeight: '1.5', color: 'var(--text-primary)' }}>
+                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.lgpd}
+                    </p>
+                  </div>
+
+                  <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    <p><strong>Boas Práticas Recomendadas:</strong></p>
+                    <ul style={{ paddingLeft: '1.25rem', marginTop: '0.25rem' }}>
+                      <li>Nunca compartilhe sua senha ou deixe o sistema aberto em computadores de uso coletivo.</li>
+                      <li>Utilize o botão de anonimização (LGPD) sempre que projetar dados em telões ou reuniões.</li>
+                      <li>Fichas de atendimento impressas devem ser guardadas em arquivo seguro da secretaria escolar.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', paddingRight: '1.25rem', paddingBottom: '1rem' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={() => setShowRoleTutorialModal(false)}
+                style={{ fontSize: '0.85rem', padding: '0.4rem 1.25rem' }}
+              >
+                Entendi, Fechar Tutorial
+              </button>
+            </div>
+
           </div>
         </div>
       )}
