@@ -541,6 +541,21 @@ function App() {
   const [filterSchool, setFilterSchool] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [dashboardFilter, setDashboardFilter] = useState('all');
+
+  // Advanced Analytical Report Filters State (Diretores, Gestores e Pedagogos)
+  const [reportFilterSchool, setReportFilterSchool] = useState('');
+  const [reportFilterSex, setReportFilterSex] = useState('');
+  const [reportFilterFeeling, setReportFilterFeeling] = useState('');
+  const [reportFilterNature, setReportFilterNature] = useState('');
+  const [reportFilterClassification, setReportFilterClassification] = useState('');
+  const [reportFilterTurn, setReportFilterTurn] = useState('');
+  const [reportFilterGrade, setReportFilterGrade] = useState('');
+  const [reportFilterStatus, setReportFilterStatus] = useState('');
+  const [reportFilterReferral, setReportFilterReferral] = useState('');
+  const [reportFilterDateStart, setReportFilterDateStart] = useState('');
+  const [reportFilterDateEnd, setReportFilterDateEnd] = useState('');
+  const [reportSearchQuery, setReportSearchQuery] = useState('');
+  const [reportActiveChartTab, setReportActiveChartTab] = useState('nature'); // 'nature' | 'feelings' | 'sex' | 'turns' | 'classes' | 'schools'
   
   // Modals & Forms
   const [showForm, setShowForm] = useState(false);
@@ -1022,20 +1037,40 @@ function App() {
   };
 
   // CSV/Excel Export (SPSS Friendly)
-  const handleExportSPSS = () => {
+  // Clear all report filters
+  const handleClearReportFilters = () => {
+    setReportFilterSchool('');
+    setReportFilterSex('');
+    setReportFilterFeeling('');
+    setReportFilterNature('');
+    setReportFilterClassification('');
+    setReportFilterTurn('');
+    setReportFilterGrade('');
+    setReportFilterStatus('');
+    setReportFilterReferral('');
+    setReportFilterDateStart('');
+    setReportFilterDateEnd('');
+    setReportSearchQuery('');
+  };
+
+  // CSV/Excel Export (SPSS Friendly & Filtered Support)
+  const handleExportSPSS = (listToExport = reportFilteredOccurrences) => {
+    const targetList = Array.isArray(listToExport) && listToExport.length > 0 ? listToExport : occurrences;
     const headers = [
       'ID_Ocorrencia',
       'Escola_ID',
       'Escola_Nome',
       'Data_Registro',
       'Estudantes_Nomes',
+      'Sexos_Estudantes',
+      'Turnos_Estudantes',
       'Qtd_Estudantes',
       'Ano_Ciclo_Principal',
       'Turma_Principal',
-      'Turno_Principal',
       'Professor_Principal',
       'Responsavel_Nome',
       'Responsavel_Contato',
+      'Naturezas_Detectadas',
       'Classificacoes_Texto',
       'Sentimentos_Mapeados',
       'Assunto_Descricao',
@@ -1053,13 +1088,20 @@ function App() {
       return `"${str}"`;
     };
 
-    const rows = occurrences.map(o => {
-      const schoolName = schools.find(s => s.id === o.schoolId)?.name || 'Desconhecida';
+    const rows = targetList.map(o => {
+      const schoolName = schools.find(s => s.id === o.schoolId)?.name || 'Rede Geral';
       const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
       const studentNames = studentsList.map(s => s.studentName).join(', ') || o.studentName || '';
+      const sexesStr = studentsList.map(s => s.sex).filter(Boolean).join(', ') || o.sex || '';
+      const turnsStr = studentsList.map(s => s.turn).filter(Boolean).join(', ') || o.turn || '';
       const classificationsStr = Array.isArray(o.classifications) ? o.classifications.join(' | ') : o.type;
       const feelingsStr = Array.isArray(o.feelings) ? o.feelings.join(', ') : '';
       const directionRefStr = Array.isArray(o.direction_referrals) ? o.direction_referrals.join(', ') : '';
+      
+      const natures = [];
+      if (occurrenceHasNature(o, 'Perturbadora')) natures.push('Perturbadora');
+      if (occurrenceHasNature(o, 'Agressiva')) natures.push('Agressiva/Violenta');
+      if (occurrenceHasNature(o, 'Risco')) natures.push('Situação de Risco');
 
       return [
         escape(o.id),
@@ -1067,13 +1109,15 @@ function App() {
         escape(schoolName),
         escape(o.date),
         escape(studentNames),
+        escape(sexesStr),
+        escape(turnsStr),
         studentsList.length || 1,
         escape(o.gradeCycle || studentsList[0]?.gradeCycle),
         escape(o.className || studentsList[0]?.className),
-        escape(studentsList[0]?.turn || ''),
         escape(o.teacherName || studentsList[0]?.teacherName),
         escape(o.guardianName || studentsList[0]?.guardian?.name),
         escape(o.contacts || studentsList[0]?.guardian?.contact),
+        escape(natures.join(' | ')),
         escape(classificationsStr),
         escape(feelingsStr),
         escape(o.subject),
@@ -1092,7 +1136,7 @@ function App() {
     const link = document.createElement('a');
     link.setAttribute('href', url);
     const dateStr = new Date().toISOString().slice(0,10);
-    link.setAttribute('download', `pome_export_ocorrencias_${dateStr}.csv`);
+    link.setAttribute('download', `pome_relatorio_analitico_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1124,7 +1168,7 @@ function App() {
     return list.some(term => getNatureForClassification(term) === natureType);
   };
 
-  // Filter & Search Logic
+  // Filter & Search Logic (Tabela Geral e Dashboard)
   const filteredOccurrences = occurrences.filter(o => {
     const studentNames = (Array.isArray(o.students) ? o.students.map(s => s.studentName).join(' ') : o.studentName) || '';
     const guardianName = o.guardianName || (Array.isArray(o.students) && o.students[0]?.guardian?.name) || '';
@@ -1136,7 +1180,7 @@ function App() {
     const status = o.status || 'finalizado';
     const schoolName = schools.find(s => s.id === o.schoolId)?.name || '';
 
-    const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const normalize = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const normalizedQuery = normalize(searchQuery);
 
     const matchesSearch = 
@@ -1172,26 +1216,115 @@ function App() {
     return matchesSearch && matchesNature && matchesSchool && matchesClass && matchesDashboard;
   });
 
+  // Advanced Report Filters (Filtros Específicos para Relatórios & Gráficos)
+  const reportFilteredOccurrences = occurrences.filter(o => {
+    const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+    const studentNames = studentsList.map(s => s.studentName).join(' ') || o.studentName || '';
+    const sexes = studentsList.map(s => s.sex).filter(Boolean);
+    const turns = studentsList.map(s => s.turn).filter(Boolean);
+    const grades = studentsList.map(s => s.gradeCycle).filter(Boolean);
+    const classifications = Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || ''];
+    const feelings = Array.isArray(o.feelings) ? o.feelings : [];
+    const referrals = Array.isArray(o.direction_referrals) ? o.direction_referrals : [];
+
+    // Filter by School
+    if (reportFilterSchool && o.schoolId !== reportFilterSchool) return false;
+
+    // Filter by Sex
+    if (reportFilterSex) {
+      const matchSex = sexes.some(s => s.toLowerCase() === reportFilterSex.toLowerCase()) || 
+                       (o.sex && o.sex.toLowerCase() === reportFilterSex.toLowerCase());
+      if (!matchSex) return false;
+    }
+
+    // Filter by Feeling
+    if (reportFilterFeeling) {
+      const matchFeeling = feelings.some(f => f.toLowerCase() === reportFilterFeeling.toLowerCase());
+      if (!matchFeeling) return false;
+    }
+
+    // Filter by Nature
+    if (reportFilterNature && !occurrenceHasNature(o, reportFilterNature)) return false;
+
+    // Filter by Specific Classification
+    if (reportFilterClassification) {
+      const matchClassif = classifications.some(c => c.toLowerCase().includes(reportFilterClassification.toLowerCase()));
+      if (!matchClassif) return false;
+    }
+
+    // Filter by Turn
+    if (reportFilterTurn) {
+      const matchTurn = turns.some(t => t.toLowerCase().includes(reportFilterTurn.toLowerCase())) ||
+                        (o.turn && o.turn.toLowerCase().includes(reportFilterTurn.toLowerCase()));
+      if (!matchTurn) return false;
+    }
+
+    // Filter by Grade / Cycle
+    if (reportFilterGrade) {
+      const matchGrade = grades.some(g => g.toLowerCase().includes(reportFilterGrade.toLowerCase())) ||
+                         (o.gradeCycle && o.gradeCycle.toLowerCase().includes(reportFilterGrade.toLowerCase()));
+      if (!matchGrade) return false;
+    }
+
+    // Filter by Status / Visto
+    if (reportFilterStatus) {
+      if (reportFilterStatus === 'com_visto' && !o.directorNotes) return false;
+      if (reportFilterStatus === 'sem_visto' && (o.directorNotes || o.status === 'rascunho')) return false;
+      if (reportFilterStatus === 'rascunho' && o.status !== 'rascunho') return false;
+      if (reportFilterStatus === 'finalizado' && o.status === 'rascunho') return false;
+    }
+
+    // Filter by Referral / Rede de Proteção
+    if (reportFilterReferral) {
+      const matchRef = referrals.some(r => r.toLowerCase().includes(reportFilterReferral.toLowerCase())) ||
+                       (o.referrals && o.referrals.toLowerCase().includes(reportFilterReferral.toLowerCase()));
+      if (!matchRef) return false;
+    }
+
+    // Filter by Date Range
+    if (reportFilterDateStart) {
+      const occDate = new Date(o.date).toISOString().slice(0, 10);
+      if (occDate < reportFilterDateStart) return false;
+    }
+    if (reportFilterDateEnd) {
+      const occDate = new Date(o.date).toISOString().slice(0, 10);
+      if (occDate > reportFilterDateEnd) return false;
+    }
+
+    // Free Text Search in Reports
+    if (reportSearchQuery) {
+      const norm = (s) => (s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const q = norm(reportSearchQuery);
+      const matchText = norm(studentNames).includes(q) ||
+                        norm(o.subject).includes(q) ||
+                        norm(o.createdByName).includes(q) ||
+                        classifications.some(c => norm(c).includes(q)) ||
+                        feelings.some(f => norm(f).includes(q));
+      if (!matchText) return false;
+    }
+
+    return true;
+  });
+
   // Calculate Metrics/Statistics for current context (Real database counts)
-  const getMetrics = () => {
-    const baseOccurrences = occurrences; // Real database list scoped to current school/user
-    const total = baseOccurrences.length;
-    
-    const perturbadoras = baseOccurrences.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
-    const agressivas = baseOccurrences.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
-    const riscos = baseOccurrences.filter(o => occurrenceHasNature(o, 'Risco')).length;
-    const comVisto = baseOccurrences.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length;
-    const rascunhos = baseOccurrences.filter(o => o.status === 'rascunho').length;
+  const getMetrics = (source = occurrences) => {
+    const total = source.length;
+    const perturbadoras = source.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
+    const agressivas = source.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
+    const riscos = source.filter(o => occurrenceHasNature(o, 'Risco')).length;
+    const comVisto = source.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length;
+    const rascunhos = source.filter(o => o.status === 'rascunho').length;
 
     return { total, perturbadoras, agressivas, riscos, comVisto, rascunhos };
   };
 
   const metrics = getMetrics();
+  const reportMetrics = getMetrics(reportFilteredOccurrences);
 
   // Relatórios Analíticos (Pedagogo, Diretor, Gestor e Super Admin)
-  const getTurmasReport = () => {
+  const getTurmasReport = (source = reportFilteredOccurrences) => {
     const map = {};
-    occurrences.forEach(o => {
+    source.forEach(o => {
       const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
       const classKey = (studentsList.length > 0 ? `${studentsList[0].gradeCycle || ''} - ${studentsList[0].className || ''}` : `${o.gradeCycle || ''} - ${o.className || ''}`).trim() || 'Geral / Outros';
       
@@ -1220,9 +1353,9 @@ function App() {
     return Object.values(map).sort((a, b) => b.count - a.count);
   };
 
-  const getSentimentosReport = () => {
+  const getSentimentosReport = (source = reportFilteredOccurrences) => {
     const map = {};
-    occurrences.forEach(o => {
+    source.forEach(o => {
       if (Array.isArray(o.feelings)) {
         o.feelings.forEach(f => {
           if (!f) return;
@@ -1235,9 +1368,9 @@ function App() {
       .sort((a, b) => b.count - a.count);
   };
 
-  const getDisciplinasReport = () => {
+  const getDisciplinasReport = (source = reportFilteredOccurrences) => {
     const map = {};
-    occurrences.forEach(o => {
+    source.forEach(o => {
       const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
       const subj = (studentsList[0]?.subject_matter || o.subject_matter || 'Não especificada').trim();
       const prof = (studentsList[0]?.teacherName || o.teacherName || 'Geral').trim();
@@ -1250,9 +1383,9 @@ function App() {
     return Object.values(map).sort((a, b) => b.count - a.count);
   };
 
-  const getEncaminhamentosReport = () => {
+  const getEncaminhamentosReport = (source = reportFilteredOccurrences) => {
     const map = {};
-    occurrences.forEach(o => {
+    source.forEach(o => {
       if (Array.isArray(o.direction_referrals)) {
         o.direction_referrals.forEach(ref => {
           if (!ref) return;
@@ -1265,9 +1398,9 @@ function App() {
       .sort((a, b) => b.count - a.count);
   };
 
-  const getEscolasReport = () => {
+  const getEscolasReport = (source = reportFilteredOccurrences) => {
     return schools.map(s => {
-      const occs = occurrences.filter(o => o.schoolId === s.id);
+      const occs = source.filter(o => o.schoolId === s.id);
       return {
         id: s.id,
         name: s.name,
@@ -1278,6 +1411,66 @@ function App() {
         riscos: occs.filter(o => occurrenceHasNature(o, 'Risco') || occurrenceHasNature(o, 'Agressiva')).length
       };
     }).sort((a, b) => b.total - a.total);
+  };
+
+  const getSexDistributionReport = (source = reportFilteredOccurrences) => {
+    let masc = 0, fem = 0, outro = 0;
+    source.forEach(o => {
+      const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+      if (studentsList.length > 0) {
+        studentsList.forEach(st => {
+          const s = (st.sex || '').toLowerCase();
+          if (s.includes('masc')) masc += 1;
+          else if (s.includes('fem')) fem += 1;
+          else outro += 1;
+        });
+      } else {
+        const s = (o.sex || '').toLowerCase();
+        if (s.includes('masc')) masc += 1;
+        else if (s.includes('fem')) fem += 1;
+        else outro += 1;
+      }
+    });
+    const total = masc + fem + outro || 1;
+    return {
+      total: masc + fem + outro,
+      masc, fem, outro,
+      mascPct: Math.round((masc / total) * 100),
+      femPct: Math.round((fem / total) * 100),
+      outroPct: Math.round((outro / total) * 100)
+    };
+  };
+
+  const getNaturesDistributionReport = (source = reportFilteredOccurrences) => {
+    const total = source.length || 1;
+    const pert = source.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
+    const agr = source.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
+    const risc = source.filter(o => occurrenceHasNature(o, 'Risco')).length;
+    return {
+      total: source.length,
+      pert, agr, risc,
+      pertPct: Math.round((pert / total) * 100),
+      agrPct: Math.round((agr / total) * 100),
+      riscPct: Math.round((risc / total) * 100)
+    };
+  };
+
+  const getTurnsDistributionReport = (source = reportFilteredOccurrences) => {
+    const map = { 'Manhã': 0, 'Tarde': 0, 'Noite': 0, 'Integral': 0 };
+    source.forEach(o => {
+      const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+      const turn = (studentsList[0]?.turn || o.turn || '').toLowerCase();
+      if (turn.includes('manh')) map['Manhã'] += 1;
+      else if (turn.includes('tard')) map['Tarde'] += 1;
+      else if (turn.includes('noit')) map['Noite'] += 1;
+      else if (turn.includes('integ')) map['Integral'] += 1;
+    });
+    const total = source.length || 1;
+    return Object.entries(map).map(([name, count]) => ({
+      name,
+      count,
+      pct: Math.round((count / total) * 100)
+    }));
   };
 
   // Print PDF function
@@ -3397,406 +3590,865 @@ function App() {
           </div>
         )}
 
-        {/* ----------------- TAB: RELATÓRIOS (ADAPTÁVEL POR PERFIL) ----------------- */}
+        {/* ----------------- TAB: RELATÓRIOS ANALÍTICOS & GRÁFICOS (TODOS OS PERFIS) ----------------- */}
         {activeTab === 'reports' && (
           <div className="fade-in">
-            {/* RELATÓRIO DO PEDAGOGO / ASSISTENTE */}
-            {(user.role === 'pedagogo' || user.role === 'assistente') && (
+            {/* CABEÇALHO DO RELATÓRIO */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <h2>📊 Relatório Pedagógico & Atendimentos da Unidade</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Acompanhamento individual de registros realizados por <strong>{user.name}</strong> | {user.schoolName || 'Escola Municipal'}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={() => window.print()}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Pedagógico</span>
-                    </button>
-                    <button className="btn btn-success" onClick={handleExportSPSS}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV)</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4 Cards de Métricas Pedagógicas */}
-                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconUsers /></div>
-                    <div className="metric-details">
-                      <h4>Cadastrados por Mim</h4>
-                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id).length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Atendimentos registrados por você</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-                    <div className="metric-icon" style={{ color: '#3b82f6' }}><IconSchool /></div>
-                    <div className="metric-details">
-                      <h4>Total na Minha Escola</h4>
-                      <div className="metric-value">{occurrences.length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user.schoolName}</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-orange)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconFolder /></div>
-                    <div className="metric-details">
-                      <h4>Meus Rascunhos</h4>
-                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id && o.status === 'rascunho').length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pendentes de finalização</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconShield /></div>
-                    <div className="metric-details">
-                      <h4>Com Visto da Direção</h4>
-                      <div className="metric-value">{occurrences.filter(o => o.createdById === user.id && Boolean(o.directorNotes && o.directorNotes.trim())).length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Homologados pela diretoria</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quadro 1: Distribuição de Ocorrências por Turma */}
-                <div className="card" style={{ marginBottom: '1.75rem' }}>
-                  <div className="card-header">
-                    <h3>🏫 Distribuição de Atendimentos por Turma & Ciclo</h3>
-                  </div>
-                  <div className="card-body" style={{ padding: 0 }}>
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>Turma / Ciclo</th>
-                            <th>Total na Turma</th>
-                            <th>Cadastrados por Mim</th>
-                            <th>Estudantes Atendidos</th>
-                            <th>Perturbadoras</th>
-                            <th>Agressivas/Violentas</th>
-                            <th>Situações de Risco</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getTurmasReport().map(t => (
-                            <tr key={t.className}>
-                              <td style={{ fontWeight: '700' }}>{t.className}</td>
-                              <td><span className="badge badge-primary">{t.count}</span></td>
-                              <td><span className="badge badge-secondary" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '700' }}>{t.myCount}</span></td>
-                              <td>{t.studentsCount}</td>
-                              <td>{t.perturbadoras}</td>
-                              <td>{t.agressivas}</td>
-                              <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grid 2 Colunas: Sentimentos CNV e Rede de Proteção */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
-                  {/* Sentimentos CNV */}
-                  <div className="card">
-                    <div className="card-header">
-                      <h3>💬 Sentimentos Identificados (Escuta Ativa CNV)</h3>
-                    </div>
-                    <div className="card-body">
-                      {getSentimentosReport().length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum sentimento mapeado nos atendimentos.</p>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          {getSentimentosReport().map(s => (
-                            <span key={s.feeling} className="badge badge-warning" style={{ padding: '0.45rem 0.75rem', fontSize: '0.825rem' }}>
-                              {s.feeling}: <strong>{s.count}</strong>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Encaminhamentos */}
-                  <div className="card">
-                    <div className="card-header">
-                      <h3>🛡️ Rede de Proteção & Encaminhamentos Externos</h3>
-                    </div>
-                    <div className="card-body">
-                      {getEncaminhamentosReport().length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encaminhamento externo registrado.</p>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          {getEncaminhamentosReport().map(e => (
-                            <span key={e.name} className="badge badge-danger" style={{ padding: '0.45rem 0.75rem', fontSize: '0.825rem' }}>
-                              {e.name}: <strong>{e.count}</strong>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
+                <h2>
+                  📊 {user.role === 'diretor' ? 'Relatório de Gestão Escolar & Clima Institucional' :
+                      (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') ? 'Relatório Consolidado de Clima Escolar da Rede Municipal' :
+                      'Relatório Pedagógico & Atendimentos da Unidade'}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  {user.role === 'diretor' ? `Visão administrativa, acompanhamento de vistos e mediação de conflitos da ${user.schoolName || 'Escola Municipal'}` :
+                   (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') ? 'Painel estatístico comparativo, telemetria da rede e monitoramento de indicadores socioemocionais' :
+                   `Acompanhamento dos atendimentos registrados por ${user.name} | ${user.schoolName || 'Escola Municipal'}`}
+                </p>
               </div>
-            )}
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={() => window.print()}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Executivo</span>
+                </button>
+                <button className="btn btn-success" onClick={() => handleExportSPSS(reportFilteredOccurrences)}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV Filtrado)</span>
+                </button>
+                {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                  <button className="btn btn-secondary" onClick={() => handleExportSPSS(occurrences)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconDatabase /> Exportar SPSS Geral</span>
+                  </button>
+                )}
+              </div>
+            </div>
 
-            {/* RELATÓRIO DO DIRETOR */}
-            {user.role === 'diretor' && (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <h2>📊 Relatório de Gestão Escolar & Clima Institucional</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Visão administrativa, homologação de vistos e mediação de conflitos da <strong>{user.schoolName || 'Escola Municipal'}</strong>
-                    </p>
+            {/* PAINEL DE FILTROS AVANÇADOS MULTIDIMENSIONAIS */}
+            <div className="report-filter-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🔍</span>
+                  <strong style={{ fontSize: '0.95rem' }}>Filtros Analíticos de Pesquisa</strong>
+                  <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
+                    {reportFilteredOccurrences.length} de {occurrences.length} registros
+                  </span>
+                </div>
+                {(reportFilterSchool || reportFilterSex || reportFilterFeeling || reportFilterNature || reportFilterClassification || reportFilterTurn || reportFilterGrade || reportFilterStatus || reportFilterReferral || reportFilterDateStart || reportFilterDateEnd || reportSearchQuery) && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                    onClick={handleClearReportFilters}
+                  >
+                    🧹 Limpar Filtros
+                  </button>
+                )}
+              </div>
+
+              <div className="report-filter-grid">
+                {/* Filtro de Escola (Gestores/Seduc/SuperAdmin) */}
+                {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                  <div className="report-filter-group">
+                    <label className="report-filter-label">Escola</label>
+                    <select
+                      className="form-select"
+                      style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                      value={reportFilterSchool}
+                      onChange={(e) => setReportFilterSchool(e.target.value)}
+                    >
+                      <option value="">Todas as Escolas ({schools.length})</option>
+                      {schools.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={() => window.print()}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório da Diretoria</span>
+                )}
+
+                {/* Filtro por Sexo / Gênero */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Sexo do Estudante</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterSex}
+                    onChange={(e) => setReportFilterSex(e.target.value)}
+                  >
+                    <option value="">Todos os Sexos</option>
+                    <option value="Masculino">👨 Masculino</option>
+                    <option value="Feminino">👩 Feminino</option>
+                    <option value="Outro">🧑 Outro / Não informado</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Natureza da Ocorrência */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Natureza (Gravidade)</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterNature}
+                    onChange={(e) => setReportFilterNature(e.target.value)}
+                  >
+                    <option value="">Todas as Naturezas</option>
+                    <option value="Perturbadora">🟡 Perturbadoras (Clima)</option>
+                    <option value="Agressiva">🔴 Agressivas / Violentas</option>
+                    <option value="Risco">🟣 Situações de Risco</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Sentimento CNV */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Sentimento (CNV)</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterFeeling}
+                    onChange={(e) => setReportFilterFeeling(e.target.value)}
+                  >
+                    <option value="">Todos os Sentimentos</option>
+                    <option value="Ansiedade">Ansiedade</option>
+                    <option value="Frustração">Frustração</option>
+                    <option value="Raiva">Raiva</option>
+                    <option value="Tristeza">Tristeza</option>
+                    <option value="Insegurança">Insegurança</option>
+                    <option value="Medo">Medo</option>
+                    <option value="Vergonha">Vergonha</option>
+                    <option value="Alívio">Alívio</option>
+                    <option value="Culpa">Culpa</option>
+                    <option value="Esperança">Esperança</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Turno */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Turno Escolar</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterTurn}
+                    onChange={(e) => setReportFilterTurn(e.target.value)}
+                  >
+                    <option value="">Todos os Turnos</option>
+                    <option value="Manhã">☀️ Manhã</option>
+                    <option value="Tarde">🌤️ Tarde</option>
+                    <option value="Noite">🌙 Noite</option>
+                    <option value="Integral">⏱️ Integral</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Ciclo / Turma */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Ano / Ciclo</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterGrade}
+                    onChange={(e) => setReportFilterGrade(e.target.value)}
+                  >
+                    <option value="">Todos os Anos/Ciclos</option>
+                    <option value="1º Ano">1º Ano</option>
+                    <option value="2º Ano">2º Ano</option>
+                    <option value="3º Ano">3º Ano</option>
+                    <option value="4º Ano">4º Ano</option>
+                    <option value="5º Ano">5º Ano</option>
+                    <option value="6º Ano">6º Ano</option>
+                    <option value="7º Ano">7º Ano</option>
+                    <option value="8º Ano">8º Ano</option>
+                    <option value="9º Ano">9º Ano</option>
+                    <option value="EJA">EJA</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Visto da Diretoria */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Status do Visto</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterStatus}
+                    onChange={(e) => setReportFilterStatus(e.target.value)}
+                  >
+                    <option value="">Todos os Status</option>
+                    <option value="com_visto">✅ Com Visto Homologado</option>
+                    <option value="sem_visto">⏳ Pendente de Visto</option>
+                    <option value="rascunho">📝 Em Rascunho</option>
+                    <option value="finalizado">🔒 Finalizados</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Rede de Proteção */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Rede de Proteção</label>
+                  <select
+                    className="form-select"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportFilterReferral}
+                    onChange={(e) => setReportFilterReferral(e.target.value)}
+                  >
+                    <option value="">Todos os Encaminhamentos</option>
+                    <option value="Conselho Tutelar">Conselho Tutelar</option>
+                    <option value="CAPS">CAPS / Saúde Mental</option>
+                    <option value="CRAS">CRAS / CREAS</option>
+                    <option value="Vara">Vara da Infância</option>
+                    <option value="Polícia">Polícia Comunitária</option>
+                  </select>
+                </div>
+
+                {/* Data Início */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Data Início</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ fontSize: '0.825rem', padding: '0.35rem 0.5rem' }}
+                    value={reportFilterDateStart}
+                    onChange={(e) => setReportFilterDateStart(e.target.value)}
+                  />
+                </div>
+
+                {/* Data Fim */}
+                <div className="report-filter-group">
+                  <label className="report-filter-label">Data Fim</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ fontSize: '0.825rem', padding: '0.35rem 0.5rem' }}
+                    value={reportFilterDateEnd}
+                    onChange={(e) => setReportFilterDateEnd(e.target.value)}
+                  />
+                </div>
+
+                {/* Busca Livre */}
+                <div className="report-filter-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="report-filter-label">Busca por Termo / Aluno / Assunto</label>
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nome de aluno, assunto, professor ou tipo..."
+                    className="form-control"
+                    style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
+                    value={reportSearchQuery}
+                    onChange={(e) => setReportSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* METRICS CARDS (BASEADOS NOS FILTROS ATIVOS) */}
+            <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+              <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
+                <div className="metric-details">
+                  <h4>Total Filtrado</h4>
+                  <div className="metric-value">{reportMetrics.total}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {reportMetrics.total === occurrences.length ? 'Base completa' : 'Conforme filtros ativos'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
+                <div className="metric-icon" style={{ color: 'var(--success)' }}><IconShield /></div>
+                <div className="metric-details">
+                  <h4>Com Visto da Direção</h4>
+                  <div className="metric-value">{reportMetrics.comVisto}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {reportMetrics.total > 0 ? `${Math.round((reportMetrics.comVisto / reportMetrics.total) * 100)}% homologados` : '0%'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+                <div className="metric-icon" style={{ color: '#f59e0b', backgroundColor: '#fef3c7' }}>⚡</div>
+                <div className="metric-details">
+                  <h4>Perturbadoras</h4>
+                  <div className="metric-value">{reportMetrics.perturbadoras}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Clima e dinâmica de aula</span>
+                </div>
+              </div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid var(--danger)' }}>
+                <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconActivity /></div>
+                <div className="metric-details">
+                  <h4>Agressivas / Violentas</h4>
+                  <div className="metric-value">{reportMetrics.agressivas}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Agressões físicas ou verbais</span>
+                </div>
+              </div>
+
+              <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                <div className="metric-icon" style={{ color: '#8b5cf6', backgroundColor: '#ede9fe' }}>🚨</div>
+                <div className="metric-details">
+                  <h4>Situações de Risco</h4>
+                  <div className="metric-value">{reportMetrics.riscos}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vulnerabilidade e risco social</span>
+                </div>
+              </div>
+            </div>
+
+            {/* PAINEL DE GRÁFICOS VISUAIS E INTERATIVOS */}
+            <div className="chart-card" style={{ marginBottom: '1.75rem' }}>
+              <div className="chart-header" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h3>📊 Gráficos & Visualizações Estatísticas</h3>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button"
+                    className={`btn ${reportActiveChartTab === 'nature' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                    onClick={() => setReportActiveChartTab('nature')}
+                  >
+                    ⚖️ Naturezas & Gravidade
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn ${reportActiveChartTab === 'feelings' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                    onClick={() => setReportActiveChartTab('feelings')}
+                  >
+                    💬 Sentimentos (CNV)
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn ${reportActiveChartTab === 'sex' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                    onClick={() => setReportActiveChartTab('sex')}
+                  >
+                    👥 Perfil por Sexo
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn ${reportActiveChartTab === 'turns' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                    onClick={() => setReportActiveChartTab('turns')}
+                  >
+                    ☀️ Turnos
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn ${reportActiveChartTab === 'classes' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                    onClick={() => setReportActiveChartTab('classes')}
+                  >
+                    🏫 Turmas & Ciclos
+                  </button>
+                  {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                    <button 
+                      type="button"
+                      className={`btn ${reportActiveChartTab === 'schools' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                      onClick={() => setReportActiveChartTab('schools')}
+                    >
+                      🌐 Ranking por Escola
                     </button>
-                    <button className="btn btn-success" onClick={handleExportSPSS}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV)</span>
-                    </button>
-                  </div>
+                  )}
                 </div>
+              </div>
 
-                {/* 4 Cards de Métricas da Diretoria */}
-                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
-                    <div className="metric-details">
-                      <h4>Total Ocorrências</h4>
-                      <div className="metric-value">{occurrences.length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Recebidas na escola</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconShield /></div>
-                    <div className="metric-details">
-                      <h4>Vistos Homologados</h4>
-                      <div className="metric-value">{occurrences.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Com visto/parecer assinado</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-orange)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconWarning /></div>
-                    <div className="metric-details">
-                      <h4>Pendentes de Visto</h4>
-                      <div className="metric-value">{occurrences.filter(o => !o.directorNotes && o.status !== 'rascunho').length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Aguardando análise da direção</span>
-                    </div>
-                  </div>
-
-                  <div className="metric-card" style={{ borderLeft: '4px solid var(--danger)' }}>
-                    <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconActivity /></div>
-                    <div className="metric-details">
-                      <h4>Casos Críticos / Risco</h4>
-                      <div className="metric-value">{occurrences.filter(o => occurrenceHasNature(o, 'Risco') || occurrenceHasNature(o, 'Agressiva')).length}</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Agressões e situações de risco</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quadro 1: Acompanhamento de Vistos por Turma */}
-                <div className="card" style={{ marginBottom: '1.75rem' }}>
-                  <div className="card-header">
-                    <h3>🏫 Acompanhamento de Ocorrências e Vistos por Turma</h3>
-                  </div>
-                  <div className="card-body" style={{ padding: 0 }}>
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>Turma / Ciclo</th>
-                            <th>Total Ocorrências</th>
-                            <th>Com Visto Direção</th>
-                            <th>Pendentes de Visto</th>
-                            <th>Casos de Risco</th>
-                            <th>Taxa de Homologação</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getTurmasReport().map(t => {
-                            const taxa = t.count > 0 ? Math.round((t.comVisto / t.count) * 100) : 0;
-                            return (
-                              <tr key={t.className}>
-                                <td style={{ fontWeight: '700' }}>{t.className}</td>
-                                <td><span className="badge badge-primary">{t.count}</span></td>
-                                <td><span className="badge badge-success">{t.comVisto}</span></td>
-                                <td>
-                                  {t.semVisto > 0 ? (
-                                    <span className="badge badge-warning">{t.semVisto} pendentes</span>
-                                  ) : (
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Em dia</span>
-                                  )}
-                                </td>
-                                <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
-                                <td>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ flex: 1, backgroundColor: 'var(--bg-app)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{ width: `${taxa}%`, backgroundColor: taxa === 100 ? 'var(--success)' : 'var(--accent-orange)', height: '100%' }}></div>
-                                    </div>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '700', minWidth: '32px' }}>{taxa}%</span>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grid 2 Colunas: Ocorrências por Disciplina/Professor e Rede de Proteção */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
-                  {/* Conflitos por Disciplina/Professor */}
-                  <div className="card">
-                    <div className="card-header">
-                      <h3>📚 Conflitos por Componente Curricular / Docente</h3>
-                    </div>
-                    <div className="card-body" style={{ padding: 0 }}>
-                      <div className="table-responsive">
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th>Componente / Professor</th>
-                              <th style={{ textAlign: 'right' }}>Registros</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {getDisciplinasReport().map(d => (
-                              <tr key={d.key}>
-                                <td><strong>{d.subject}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({d.teacher})</span></td>
-                                <td style={{ textAlign: 'right', fontWeight: '700' }}><span className="badge badge-primary">{d.count}</span></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rede de Proteção */}
-                  <div className="card">
-                    <div className="card-header">
-                      <h3>⚖️ Encaminhamentos a Órgãos da Rede de Proteção</h3>
-                    </div>
-                    <div className="card-body">
-                      {getEncaminhamentosReport().length === 0 ? (
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encaminhamento oficial para órgãos externos.</p>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {getEncaminhamentosReport().map(e => (
-                            <div key={e.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-                              <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{e.name}</span>
-                              <span className="badge badge-danger">{e.count} acionamentos</span>
+              {/* GRÁFICO 1: NATUREZAS E GRAVIDADE */}
+              {reportActiveChartTab === 'nature' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {(() => {
+                    const nat = getNaturesDistributionReport(reportFilteredOccurrences);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div className="chart-bar-row">
+                            <div className="chart-bar-info">
+                              <span style={{ fontWeight: '600', color: '#d97706' }}>🟡 Condutas Perturbadoras do Clima</span>
+                              <strong>{nat.pert} ({nat.pertPct}%)</strong>
                             </div>
-                          ))}
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${nat.pertPct}%`, backgroundColor: '#f59e0b', backgroundImage: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}></div>
+                            </div>
+                          </div>
+
+                          <div className="chart-bar-row">
+                            <div className="chart-bar-info">
+                              <span style={{ fontWeight: '600', color: '#dc2626' }}>🔴 Condutas Agressivas / Violentas</span>
+                              <strong>{nat.agr} ({nat.agrPct}%)</strong>
+                            </div>
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${nat.agrPct}%`, backgroundColor: '#ef4444', backgroundImage: 'linear-gradient(90deg, #ef4444, #f87171)' }}></div>
+                            </div>
+                          </div>
+
+                          <div className="chart-bar-row">
+                            <div className="chart-bar-info">
+                              <span style={{ fontWeight: '600', color: '#7c3aed' }}>🟣 Situações de Risco & Vulnerabilidade</span>
+                              <strong>{nat.risc} ({nat.riscPct}%)</strong>
+                            </div>
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${nat.riscPct}%`, backgroundColor: '#8b5cf6', backgroundImage: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }}></div>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
-              </div>
-            )}
+                        {/* Donut Indicador */}
+                        <div className="chart-donut-container" style={{ backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                          <div 
+                            className="chart-donut-circle" 
+                            style={{ 
+                              background: `conic-gradient(#f59e0b 0% ${nat.pertPct}%, #ef4444 ${nat.pertPct}% ${nat.pertPct + nat.agrPct}%, #8b5cf6 ${nat.pertPct + nat.agrPct}% 100%)` 
+                            }}
+                          >
+                            <div className="chart-donut-inner">
+                              <span>{reportFilteredOccurrences.length}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: '600', color: 'var(--text-secondary)' }}>TOTAL</span>
+                            </div>
+                          </div>
 
-            {/* RELATÓRIO DO GESTOR / SEDUC / SUPER ADMIN */}
-            {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <h2>📊 Relatório Consolidado de Clima Escolar da Rede Municipal</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Visão analítica completa das ocorrências na rede municipal de ensino
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={() => window.print()}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Geral</span>
-                    </button>
-                    <button className="btn btn-success" onClick={handleExportSPSS}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar SPSS / CSV</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Metrics Grid da Rede */}
-                <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
-                  <div className="metric-card">
-                    <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconSchool /></div>
-                    <div className="metric-details">
-                      <h4>Total Escolas</h4>
-                      <div className="metric-value">{schools.length}</div>
-                    </div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-icon" style={{ color: 'var(--accent-orange)' }}><IconFolder /></div>
-                    <div className="metric-details">
-                      <h4>Total Ocorrências</h4>
-                      <div className="metric-value">{occurrences.length}</div>
-                    </div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-icon" style={{ color: 'var(--success)' }}><IconUsers /></div>
-                    <div className="metric-details">
-                      <h4>Média / Escola</h4>
-                      <div className="metric-value">
-                        {schools.length > 0 ? (occurrences.length / schools.length).toFixed(1) : 0}
+                          <div className="chart-legend">
+                            <div className="chart-legend-item">
+                              <div className="chart-legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
+                              <span>Perturbadoras: <strong>{nat.pert}</strong></span>
+                            </div>
+                            <div className="chart-legend-item">
+                              <div className="chart-legend-color" style={{ backgroundColor: '#ef4444' }}></div>
+                              <span>Agressivas: <strong>{nat.agr}</strong></span>
+                            </div>
+                            <div className="chart-legend-item">
+                              <div className="chart-legend-color" style={{ backgroundColor: '#8b5cf6' }}></div>
+                              <span>Risco: <strong>{nat.risc}</strong></span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconShield /></div>
-                    <div className="metric-details">
-                      <h4>Com Visto Direção</h4>
-                      <div className="metric-value">{occurrences.filter(o => o.directorNotes).length}</div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
+              )}
 
-                {/* Tabela Comparativa por Escola */}
-                <div className="card" style={{ marginBottom: '1.75rem' }}>
-                  <div className="card-header">
-                    <h3>🏫 Quadro Comparativo por Unidade Escolar</h3>
-                  </div>
-                  <div className="card-body" style={{ padding: 0 }}>
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>Unidade Escolar</th>
-                            <th>Total Ocorrências</th>
-                            <th>Com Visto</th>
-                            <th>Pendentes de Visto</th>
-                            <th>Casos Críticos / Risco</th>
-                            <th>Rascunhos</th>
+              {/* GRÁFICO 2: SENTIMENTOS IDENTIFICADOS NA ESCUTA CNV */}
+              {reportActiveChartTab === 'feelings' && (
+                <div>
+                  {getSentimentosReport(reportFilteredOccurrences).length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '1.5rem' }}>
+                      Nenhum sentimento registrado para o filtro selecionado.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                      {getSentimentosReport(reportFilteredOccurrences).map((s, idx) => {
+                        const totalSentimentos = getSentimentosReport(reportFilteredOccurrences).reduce((acc, cur) => acc + cur.count, 0) || 1;
+                        const pct = Math.round((s.count / totalSentimentos) * 100);
+                        const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                        const itemColor = colors[idx % colors.length];
+                        return (
+                          <div key={s.feeling} style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+                              <strong>💬 {s.feeling}</strong>
+                              <span style={{ fontWeight: '700', color: itemColor }}>{s.count} vezes ({pct}%)</span>
+                            </div>
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${pct}%`, backgroundColor: itemColor }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* GRÁFICO 3: DISTRIBUIÇÃO POR SEXO / GÊNERO */}
+              {reportActiveChartTab === 'sex' && (
+                <div>
+                  {(() => {
+                    const sexData = getSexDistributionReport(reportFilteredOccurrences);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div className="chart-bar-row">
+                            <div className="chart-bar-info">
+                              <span style={{ fontWeight: '600', color: '#2563eb' }}>👨 Masculino</span>
+                              <strong>{sexData.masc} estudantes ({sexData.mascPct}%)</strong>
+                            </div>
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${sexData.mascPct}%`, backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(90deg, #3b82f6, #60a5fa)' }}></div>
+                            </div>
+                          </div>
+
+                          <div className="chart-bar-row">
+                            <div className="chart-bar-info">
+                              <span style={{ fontWeight: '600', color: '#db2777' }}>👩 Feminino</span>
+                              <strong>{sexData.fem} estudantes ({sexData.femPct}%)</strong>
+                            </div>
+                            <div className="chart-bar-track">
+                              <div className="chart-bar-fill" style={{ width: `${sexData.femPct}%`, backgroundColor: '#ec4899', backgroundImage: 'linear-gradient(90deg, #ec4899, #f472b6)' }}></div>
+                            </div>
+                          </div>
+
+                          {sexData.outro > 0 && (
+                            <div className="chart-bar-row">
+                              <div className="chart-bar-info">
+                                <span style={{ fontWeight: '600', color: '#6b7280' }}>🧑 Outro / Não Informado</span>
+                                <strong>{sexData.outro} estudantes ({sexData.outroPct}%)</strong>
+                              </div>
+                              <div className="chart-bar-track">
+                                <div className="chart-bar-fill" style={{ width: `${sexData.outroPct}%`, backgroundColor: '#9ca3af' }}></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Donut de Sexo */}
+                        <div className="chart-donut-container" style={{ backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                          <div 
+                            className="chart-donut-circle" 
+                            style={{ 
+                              background: `conic-gradient(#3b82f6 0% ${sexData.mascPct}%, #ec4899 ${sexData.mascPct}% ${sexData.mascPct + sexData.femPct}%, #9ca3af ${sexData.mascPct + sexData.femPct}% 100%)` 
+                            }}
+                          >
+                            <div className="chart-donut-inner">
+                              <span>{sexData.total}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: '600', color: 'var(--text-secondary)' }}>ESTUDANTES</span>
+                            </div>
+                          </div>
+
+                          <div className="chart-legend">
+                            <div className="chart-legend-item">
+                              <div className="chart-legend-color" style={{ backgroundColor: '#3b82f6' }}></div>
+                              <span>Masculino: <strong>{sexData.masc} ({sexData.mascPct}%)</strong></span>
+                            </div>
+                            <div className="chart-legend-item">
+                              <div className="chart-legend-color" style={{ backgroundColor: '#ec4899' }}></div>
+                              <span>Feminino: <strong>{sexData.fem} ({sexData.femPct}%)</strong></span>
+                            </div>
+                            {sexData.outro > 0 && (
+                              <div className="chart-legend-item">
+                                <div className="chart-legend-color" style={{ backgroundColor: '#9ca3af' }}></div>
+                                <span>Outro/Não Inf: <strong>{sexData.outro} ({sexData.outroPct}%)</strong></span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* GRÁFICO 4: DISTRIBUIÇÃO POR TURNO */}
+              {reportActiveChartTab === 'turns' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  {getTurnsDistributionReport(reportFilteredOccurrences).map(turn => {
+                    const icon = turn.name === 'Manhã' ? '☀️' : turn.name === 'Tarde' ? '🌤️' : turn.name === 'Noite' ? '🌙' : '⏱️';
+                    return (
+                      <div key={turn.name} style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{icon} {turn.name}</span>
+                          <span className="badge badge-primary">{turn.count} casos</span>
+                        </div>
+                        <div className="chart-bar-track" style={{ height: '8px' }}>
+                          <div className="chart-bar-fill" style={{ width: `${turn.pct}%`, backgroundColor: 'var(--primary)' }}></div>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>{turn.pct}% do total filtrado</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* GRÁFICO 5: TURMAS E CICLOS */}
+              {reportActiveChartTab === 'classes' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {getTurmasReport(reportFilteredOccurrences).slice(0, 8).map(turma => {
+                    const maxCount = getTurmasReport(reportFilteredOccurrences)[0]?.count || 1;
+                    const pct = Math.round((turma.count / maxCount) * 100);
+                    return (
+                      <div key={turma.className} className="chart-bar-row" style={{ backgroundColor: 'var(--bg-app)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                        <div className="chart-bar-info">
+                          <span style={{ fontWeight: '700', fontSize: '0.875rem' }}>🏫 {turma.className}</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>{turma.comVisto} com visto</span>
+                            {turma.semVisto > 0 && <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{turma.semVisto} pendentes</span>}
+                            <strong style={{ minWidth: '28px', textAlign: 'right' }}>{turma.count}</strong>
+                          </div>
+                        </div>
+                        <div className="chart-bar-track" style={{ height: '8px', marginTop: '0.35rem' }}>
+                          <div className="chart-bar-fill" style={{ width: `${pct}%`, backgroundColor: 'var(--primary)' }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* GRÁFICO 6: RANKING POR ESCOLA (GESTOR / SEDUC / SUPER ADMIN) */}
+              {reportActiveChartTab === 'schools' && (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {getEscolasReport(reportFilteredOccurrences).map(escola => {
+                    const maxTotal = getEscolasReport(reportFilteredOccurrences)[0]?.total || 1;
+                    const pct = Math.round((escola.total / maxTotal) * 100);
+                    return (
+                      <div key={escola.id} style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <div>
+                            <strong style={{ fontSize: '0.9rem' }}>{escola.name}</strong>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                              ({escola.comVisto} com visto | {escola.semVisto} sem visto | {escola.riscos} casos de risco)
+                            </span>
+                          </div>
+                          <span className="badge badge-primary" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>
+                            {escola.total} ocorrências
+                          </span>
+                        </div>
+                        <div className="chart-bar-track">
+                          <div className="chart-bar-fill" style={{ width: `${pct}%`, backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(90deg, #3b82f6, #10b981)' }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* TABELA 1: ACOMPANHAMENTO ANALÍTICO POR TURMA & CICLO */}
+            <div className="card" style={{ marginBottom: '1.75rem' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>🏫 Detalhamento Analítico por Turma & Ciclo</h3>
+                <span className="badge badge-secondary">{getTurmasReport(reportFilteredOccurrences).length} turmas mapeadas</span>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Turma / Ciclo</th>
+                        <th>Total Ocorrências</th>
+                        {(user.role === 'pedagogo' || user.role === 'assistente') && <th>Cadastrados por Mim</th>}
+                        <th>Estudantes Atendidos</th>
+                        <th>Perturbadoras</th>
+                        <th>Agressivas/Violentas</th>
+                        <th>Situações de Risco</th>
+                        <th>Com Visto</th>
+                        <th>Taxa de Homologação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getTurmasReport(reportFilteredOccurrences).map(t => {
+                        const taxa = t.count > 0 ? Math.round((t.comVisto / t.count) * 100) : 0;
+                        return (
+                          <tr key={t.className}>
+                            <td style={{ fontWeight: '700' }}>{t.className}</td>
+                            <td><span className="badge badge-primary">{t.count}</span></td>
+                            {(user.role === 'pedagogo' || user.role === 'assistente') && (
+                              <td><span className="badge badge-secondary" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '700' }}>{t.myCount}</span></td>
+                            )}
+                            <td>{t.studentsCount}</td>
+                            <td>{t.perturbadoras}</td>
+                            <td>{t.agressivas}</td>
+                            <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
+                            <td><span className="badge badge-success">{t.comVisto}</span></td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ flex: 1, backgroundColor: 'var(--bg-app)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${taxa}%`, backgroundColor: taxa === 100 ? 'var(--success)' : taxa >= 50 ? 'var(--accent-orange)' : 'var(--danger)', height: '100%' }}></div>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', fontWeight: '700', minWidth: '32px' }}>{taxa}%</span>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {getEscolasReport().map(escola => (
-                            <tr key={escola.id}>
-                              <td style={{ fontWeight: '600' }}>{escola.name}</td>
-                              <td><span className="badge badge-primary">{escola.total}</span></td>
-                              <td><span className="badge badge-success">{escola.comVisto}</span></td>
-                              <td>{escola.semVisto > 0 ? <span className="badge badge-warning">{escola.semVisto}</span> : '-'}</td>
-                              <td>{escola.riscos > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{escola.riscos}</span> : 0}</td>
-                              <td>{escola.rascunhos > 0 ? <span className="badge badge-secondary">{escola.rascunhos}</span> : '-'}</td>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* GRID 2 COLUNAS: CONFLITOS POR DISCIPLINA & REDE DE PROTEÇÃO */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+              {/* Disciplinas & Docentes */}
+              <div className="card">
+                <div className="card-header">
+                  <h3>📚 Ocorrências por Componente Curricular / Docente</h3>
+                </div>
+                <div className="card-body" style={{ padding: 0 }}>
+                  <div className="table-responsive">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Componente / Professor</th>
+                          <th style={{ textAlign: 'right' }}>Registros</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getDisciplinasReport(reportFilteredOccurrences).length === 0 ? (
+                          <tr><td colSpan="2" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum dado encontrado</td></tr>
+                        ) : (
+                          getDisciplinasReport(reportFilteredOccurrences).map(d => (
+                            <tr key={d.key}>
+                              <td><strong>{d.subject}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({d.teacher})</span></td>
+                              <td style={{ textAlign: 'right', fontWeight: '700' }}><span className="badge badge-primary">{d.count}</span></td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+              </div>
 
+              {/* Rede de Proteção */}
+              <div className="card">
+                <div className="card-header">
+                  <h3>🛡️ Encaminhamentos a Órgãos da Rede de Proteção</h3>
+                </div>
+                <div className="card-body">
+                  {getEncaminhamentosReport(reportFilteredOccurrences).length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encaminhamento oficial para órgãos externos no filtro atual.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {getEncaminhamentosReport(reportFilteredOccurrences).map(e => (
+                        <div key={e.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                          <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{e.name}</span>
+                          <span className="badge badge-danger">{e.count} acionamentos</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* TABELA COMPARATIVA DE ESCOLAS (GESTOR / SEDUC / SUPER ADMIN) */}
+            {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+              <div className="card" style={{ marginBottom: '1.75rem' }}>
+                <div className="card-header">
+                  <h3>🏫 Quadro Comparativo Consolidado por Unidade Escolar</h3>
+                </div>
+                <div className="card-body" style={{ padding: 0 }}>
+                  <div className="table-responsive">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Unidade Escolar</th>
+                          <th>Total Ocorrências</th>
+                          <th>Com Visto</th>
+                          <th>Pendentes de Visto</th>
+                          <th>Casos Críticos / Risco</th>
+                          <th>Rascunhos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getEscolasReport(reportFilteredOccurrences).map(escola => (
+                          <tr key={escola.id}>
+                            <td style={{ fontWeight: '600' }}>{escola.name}</td>
+                            <td><span className="badge badge-primary">{escola.total}</span></td>
+                            <td><span className="badge badge-success">{escola.comVisto}</span></td>
+                            <td>{escola.semVisto > 0 ? <span className="badge badge-warning">{escola.semVisto}</span> : '-'}</td>
+                            <td>{escola.riscos > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{escola.riscos}</span> : 0}</td>
+                            <td>{escola.rascunhos > 0 ? <span className="badge badge-secondary">{escola.rascunhos}</span> : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* LISTA COMPLETA DAS OCORRÊNCIAS FILTRADAS */}
+            <div className="card">
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>📋 Ocorrências Filtradas ({reportFilteredOccurrences.length})</h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Clique em Detalhes para emitir visto ou imprimir folha A4</span>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Estudante(s)</th>
+                        <th>Escola / Turma</th>
+                        <th>Classificação</th>
+                        <th>Sentimentos</th>
+                        <th>Visto Direção</th>
+                        <th style={{ textAlign: 'right' }}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportFilteredOccurrences.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            Nenhum registro encontrado para os filtros selecionados. Tente ajustar os parâmetros de busca acima.
+                          </td>
+                        </tr>
+                      ) : (
+                        reportFilteredOccurrences.map(o => {
+                          const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
+                          const studentNames = studentsList.map(s => s.studentName).join(', ') || o.studentName || 'Não informado';
+                          const className = (studentsList.length > 0 ? `${studentsList[0].gradeCycle || ''} ${studentsList[0].className || ''}` : `${o.gradeCycle || ''} ${o.className || ''}`).trim();
+                          const schoolName = schools.find(s => s.id === o.schoolId)?.name || 'Rede Geral';
+                          const classifications = Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || 'Geral'];
+                          const hasNotes = Boolean(o.directorNotes && o.directorNotes.trim());
+
+                          return (
+                            <tr key={o.id}>
+                              <td style={{ fontSize: '0.825rem', whiteSpace: 'nowrap' }}>{new Date(o.date).toLocaleDateString('pt-BR')}</td>
+                              <td style={{ fontWeight: '600' }}>{studentNames}</td>
+                              <td style={{ fontSize: '0.825rem' }}>
+                                <div>{schoolName}</div>
+                                <span style={{ color: 'var(--text-muted)' }}>{className}</span>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                                  {classifications.map((c, i) => (
+                                    <span key={i} className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{c}</span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td>
+                                {Array.isArray(o.feelings) && o.feelings.length > 0 ? (
+                                  <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                                    {o.feelings.map((f, i) => (
+                                      <span key={i} className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{f}</span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
+                                )}
+                              </td>
+                              <td>
+                                {hasNotes ? (
+                                  <span className="badge badge-success" style={{ fontSize: '0.725rem' }}>✅ Homologado</span>
+                                ) : o.status === 'rascunho' ? (
+                                  <span className="badge badge-secondary" style={{ fontSize: '0.725rem' }}>📝 Rascunho</span>
+                                ) : (
+                                  <span className="badge badge-warning" style={{ fontSize: '0.725rem' }}>⏳ Pendente</span>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', gap: '4px' }}>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                    onClick={() => {
+                                      setSelectedOccurrence(o);
+                                      setDirectorNotes(o.directorNotes || '');
+                                      setShowDetailModal(true);
+                                    }}
+                                  >
+                                    Detalhes
+                                  </button>
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                    onClick={() => handlePrint(o)}
+                                  >
+                                    <IconPrinter />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
