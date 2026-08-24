@@ -1677,7 +1677,7 @@ select:-webkit-autofill {
 }
 
 /* =========================================================================
-   POME LANDING & LOGIN PAGE - ESTILOS VISUAIS E RESPONSIVIDADE
+   POME LANDING & LOGIN PAGE - ESTILOS VISUAIS E RESPONSIVIDADE ULTRA FIEL
    ========================================================================= */
 
 .pome-landing-page {
@@ -1686,40 +1686,41 @@ select:-webkit-autofill {
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1rem;
   box-sizing: border-box;
 }
 
 .pome-landing-container {
-  max-width: 1300px;
+  max-width: 1240px;
   width: 100%;
   margin: 0 auto;
-  padding: 2rem 2rem 1.5rem 2rem;
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 3.5rem;
-  align-items: start;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 2.5rem;
+  align-items: stretch;
   box-sizing: border-box;
-  flex: 1;
 }
 
 .pome-landing-left {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
+  justify-content: space-between;
+  gap: 1.25rem;
 }
 
 .landing-main-split-row {
   display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: 2.25rem;
+  grid-template-columns: 1fr 190px;
+  gap: 1.75rem;
   align-items: start;
 }
 
 .landing-content-column {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1.15rem;
 }
 
 .landing-pome-logo-wrap {
@@ -1728,7 +1729,7 @@ select:-webkit-autofill {
 }
 
 .pome-main-logo {
-  width: 390px;
+  width: 375px;
   max-width: 100%;
   height: auto;
   display: block;
@@ -1737,52 +1738,50 @@ select:-webkit-autofill {
 .landing-hero-text {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .hero-title {
-  font-size: 2.45rem;
+  font-size: 2.35rem;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
   margin: 0;
+  font-family: var(--font-heading), 'Inter', sans-serif;
 }
 
 .hero-line-navy {
   color: #0c1b33;
-  font-weight: 800;
 }
 
 .hero-line-teal {
-  color: #0d5c63;
-  font-weight: 800;
+  color: #005a48;
 }
 
 .hero-line-green {
-  color: #107038;
-  font-weight: 800;
+  color: #0b7337;
 }
 
 .hero-subtitle {
-  font-size: 1.05rem;
-  color: #1d4ed8;
+  font-size: 0.98rem;
+  color: #005bb5;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.4;
   margin: 0.25rem 0 0 0;
 }
 
 .benefit-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .benefit-card {
   background: #ffffff;
-  border-radius: 14px;
-  padding: 1.05rem 0.9rem;
+  border-radius: 16px;
+  padding: 0.95rem 0.8rem;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -1790,29 +1789,30 @@ select:-webkit-autofill {
 
 .benefit-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
 }
 
 .benefit-icon-badge {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.7rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0.65rem;
 }
 
 .benefit-title {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0c1b33;
+  line-height: 1.25;
   margin: 0 0 0.35rem 0;
+  font-family: var(--font-heading), 'Inter', sans-serif;
 }
 
 .benefit-desc {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #64748b;
   line-height: 1.35;
   margin: 0;
@@ -1822,7 +1822,7 @@ select:-webkit-autofill {
 .landing-partner-and-metrics-column {
   display: flex;
   flex-direction: column;
-  gap: 1.35rem;
+  gap: 1.15rem;
   align-items: stretch;
 }
 
@@ -1830,55 +1830,59 @@ select:-webkit-autofill {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
   background: #ffffff;
-  padding: 1.15rem 1rem;
-  border-radius: 20px;
+  padding: 0.95rem 0.75rem;
+  border-radius: 18px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   text-align: center;
 }
 
 .partner-label {
-  font-size: 0.85rem;
-  color: #1d4ed8;
+  font-size: 0.8rem;
+  color: #005bb5;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .prefeitura-logo-main {
-  height: 56px;
+  height: 48px;
   width: auto;
   object-fit: contain;
 }
 
 .pilot-pill-badge {
-  background: #00647e;
+  background: #006072;
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  padding: 5px 14px;
-  border-radius: 16px;
+  padding: 4px 14px;
+  border-radius: 9999px;
   white-space: nowrap;
 }
 
 .pilot-metrics-vertical-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
 }
 
-.metric-item-row {
+.metric-item-centered {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.95rem;
-  padding: 0.35rem 0;
+  text-align: center;
+  gap: 0.25rem;
+  width: 100%;
 }
 
 .metric-icon-circle {
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1895,25 +1899,22 @@ select:-webkit-autofill {
 }
 
 .metric-icon-circle.cream {
-  background: #fef3d6;
+  background: #fef6e2;
 }
 
-.metric-content-box {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-}
-
-.metric-prefix.blue-link {
-  font-size: 0.825rem;
-  color: #1d4ed8;
+.metric-prefix {
+  font-size: 0.78rem;
+  color: #005bb5;
   font-weight: 500;
+  line-height: 1;
 }
 
 .metric-value {
-  font-size: 2rem;
+  font-size: 2.15rem;
   font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.02em;
+  font-family: var(--font-heading), 'Inter', sans-serif;
 }
 
 .metric-value.green {
@@ -1924,42 +1925,45 @@ select:-webkit-autofill {
   color: #0077a8;
 }
 
-.metric-label.blue-link {
-  font-size: 0.85rem;
-  color: #1d4ed8;
+.metric-label {
+  font-size: 0.8rem;
+  color: #005bb5;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .metric-label-highlight {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #0c1b33;
-  line-height: 1.3;
+  line-height: 1.25;
+  font-family: var(--font-heading), 'Inter', sans-serif;
 }
 
 .metric-divider-line {
   border-bottom: 1px solid #e2e8f0;
-  width: 100%;
-  margin: 0.25rem 0;
+  width: 80%;
+  margin: 0.2rem auto;
 }
 
+/* Imagem Panorâmica */
 .landing-illustration-wrap {
-  margin-top: 0.25rem;
   border-radius: 18px;
   overflow: hidden;
   height: 230px;
+  width: 100%;
   position: relative;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
 }
 
 .caminho-escola-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 38%;
+  object-position: center 32%;
   display: block;
-  border-radius: 18px;
+  border-radius: 17px;
 }
 
 /* Coluna Direita - Card de Login */
@@ -1967,31 +1971,60 @@ select:-webkit-autofill {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding-top: 0.35rem;
 }
 
 .login-card-elevated {
   background: #ffffff;
   border-radius: 22px;
-  padding: 2.25rem 2rem;
   width: 100%;
-  max-width: 450px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+  max-width: 440px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
   box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-card-banner {
+  width: 100%;
+  height: 205px;
+  background: #ffffff;
+  overflow: hidden;
+  border-top-left-radius: 21px;
+  border-top-right-radius: 21px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.login-classroom-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.login-card-content {
+  padding: 1.5rem 1.75rem 1.65rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .login-card-title {
-  font-size: 1.7rem;
+  font-size: 1.55rem;
   font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 0.35rem 0;
+  color: #0c1b33;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.01em;
+  font-family: var(--font-heading), 'Inter', sans-serif;
 }
 
 .login-card-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   color: #64748b;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1.25rem 0;
   line-height: 1.4;
 }
 
@@ -2011,17 +2044,17 @@ select:-webkit-autofill {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
+  gap: 1.05rem;
 }
 
 .login-form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .login-field-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #334155;
 }
@@ -2035,17 +2068,18 @@ select:-webkit-autofill {
 .input-leading-icon {
   position: absolute;
   left: 12px;
-  color: #94a3b8;
+  color: #64748b;
   display: flex;
   pointer-events: none;
 }
 
 .login-input-field {
   width: 100%;
-  padding: 0.75rem 2.4rem 0.75rem 2.4rem;
+  height: 44px;
+  padding: 0 2.4rem 0 2.4rem;
   border: 1.5px solid #cbd5e1;
   border-radius: 10px;
-  font-size: 0.925rem;
+  font-size: 0.9rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   background: #ffffff;
   color: #0f172a;
@@ -2053,9 +2087,9 @@ select:-webkit-autofill {
 }
 
 .login-input-field:focus {
-  border-color: #15803d;
+  border-color: #0e6b34;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+  box-shadow: 0 0 0 3px rgba(14, 107, 52, 0.12);
 }
 
 .input-trailing-action {
@@ -2064,7 +2098,7 @@ select:-webkit-autofill {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: #64748b;
   padding: 4px;
   display: flex;
   align-items: center;
@@ -2078,32 +2112,61 @@ select:-webkit-autofill {
 .login-options-row {
   display: flex;
   align-items: center;
-  font-size: 0.825rem;
-  color: #475569;
+  margin-top: -0.15rem;
 }
 
 .remember-me-label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   user-select: none;
+  font-size: 0.82rem;
+  color: #334155;
+  font-weight: 500;
 }
 
 .remember-checkbox {
-  accent-color: #15803d;
+  appearance: none;
+  -webkit-appearance: none;
   width: 16px;
   height: 16px;
+  border: 1.5px solid #0e6b34;
+  border-radius: 3px;
+  background: #0e6b34;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.remember-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.remember-checkbox:not(:checked) {
+  background: #ffffff;
+  border-color: #cbd5e1;
 }
 
 .btn-login-submit {
-  background: #0f5132;
+  background: #0a4d2e;
   color: #ffffff;
   border: none;
   border-radius: 10px;
-  padding: 0.85rem 1.25rem;
-  font-size: 1rem;
+  height: 46px;
+  padding: 0 1.25rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -2115,8 +2178,8 @@ select:-webkit-autofill {
 }
 
 .btn-login-submit:hover:not(:disabled) {
-  background: #14532d;
-  box-shadow: 0 4px 12px rgba(15, 81, 50, 0.25);
+  background: #073a23;
+  box-shadow: 0 4px 12px rgba(10, 77, 46, 0.25);
 }
 
 .btn-login-submit:disabled {
@@ -2128,9 +2191,9 @@ select:-webkit-autofill {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 0.35rem 0;
+  margin: 0.2rem 0;
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .login-divider::before,
@@ -2146,10 +2209,11 @@ select:-webkit-autofill {
 
 .btn-register-outline {
   background: transparent;
-  color: #0f5132;
-  border: 1.5px solid #0f5132;
+  color: #0a4d2e;
+  border: 1.5px solid #0a4d2e;
   border-radius: 10px;
-  padding: 0.75rem 1.25rem;
+  height: 44px;
+  padding: 0 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
@@ -2166,7 +2230,7 @@ select:-webkit-autofill {
 }
 
 .pilot-disclaimer-box {
-  margin-top: 1.25rem;
+  margin-top: 1.15rem;
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 10px;
@@ -2182,20 +2246,10 @@ select:-webkit-autofill {
 }
 
 .disclaimer-text {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #0369a1;
   line-height: 1.35;
   margin: 0;
-}
-
-.pome-landing-footer {
-  width: 100%;
-  text-align: center;
-  padding: 1.15rem 1rem;
-  font-size: 0.825rem;
-  color: #0284c7;
-  border-top: 1px solid #e2e8f0;
-  background: transparent;
 }
 
 /* Responsividade Mobile & Tablet */
@@ -2203,7 +2257,7 @@ select:-webkit-autofill {
   .pome-landing-container {
     grid-template-columns: 1fr;
     gap: 2.5rem;
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.5rem;
   }
 
   .landing-main-split-row {
@@ -2212,30 +2266,10 @@ select:-webkit-autofill {
   }
 
   .pilot-metrics-vertical-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-around;
-  }
-
-  .hero-title {
-    font-size: 1.85rem;
-  }
-
-  .pome-main-logo {
-    width: 280px;
-  }
-}
-
-@media (max-width: 640px) {
-  .benefit-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pilot-metrics-vertical-list {
     flex-direction: column;
   }
 
-  .login-card-elevated {
-    padding: 1.75rem 1.25rem;
+  .login-card-content {
+    padding: 1.5rem 1.25rem;
   }
 }
