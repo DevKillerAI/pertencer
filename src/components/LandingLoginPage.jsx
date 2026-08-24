@@ -278,7 +278,7 @@ export default function LandingLoginPage({
                     <input
                       id="input-username"
                       type="text"
-                      placeholder="111.111.111-11"
+                      placeholder="seu.email@edu.contagem.mg.gov.br"
                       className="login-input-field"
                       value={credentials.username}
                       onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
