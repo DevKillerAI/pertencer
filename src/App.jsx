@@ -261,6 +261,30 @@ const IconTag = (props) => (
   </svg>
 );
 
+const IconAlertCircle = (props) => (
+  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+const IconFileText = (props) => (
+  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+  </svg>
+);
+
+const IconClock = (props) => (
+  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
 // Constants: Grade Cycles / Anos
 const GRADE_CYCLES = [
   '3 anos', '4 anos', '5 anos',
@@ -1870,15 +1894,22 @@ function MainApp() {
   const metrics = getMetrics();
   const reportMetrics = getMetrics(reportFilteredOccurrences);
 
-  // Status & Badge Helper
+  // Status & Badge Helper (Ícones SVG monocromáticos e cores elegantes)
   const getOccurrenceStatus = (occ) => {
-    if (!occ) return { label: 'Registrado', badgeClass: 'badge-primary', icon: '📋', style: {} };
+    if (!occ) {
+      return {
+        label: 'Registrado',
+        badgeClass: 'table-status-badge',
+        icon: <IconFileText style={{ width: '11px', height: '11px', flexShrink: 0 }} />,
+        style: { backgroundColor: '#f0f9ff', color: '#0369a1', borderColor: '#bae6fd' }
+      };
+    }
     if (occ.status === 'rascunho') {
       return {
         label: 'Rascunho',
-        badgeClass: 'badge-secondary',
-        icon: '📝',
-        style: { backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }
+        badgeClass: 'table-status-badge',
+        icon: <IconClock style={{ width: '11px', height: '11px', flexShrink: 0 }} />,
+        style: { backgroundColor: '#f8fafc', color: '#475569', borderColor: '#cbd5e1' }
       };
     }
     const hasDirectionRef = Array.isArray(occ.direction_referrals) && occ.direction_referrals.length > 0;
@@ -1887,24 +1918,24 @@ function MainApp() {
     if (hasVisto) {
       return {
         label: 'Visto Confirmado',
-        badgeClass: 'badge-success',
-        icon: '✅',
-        style: { backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }
+        badgeClass: 'table-status-badge',
+        icon: <IconCheckCircle style={{ width: '11px', height: '11px', flexShrink: 0 }} />,
+        style: { backgroundColor: '#f0fdf4', color: '#15803d', borderColor: '#bbf7d0' }
       };
     }
     if (hasDirectionRef) {
       return {
         label: 'Visto Obrigatório',
-        badgeClass: 'badge-warning',
-        icon: '⚠️',
-        style: { backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d' }
+        badgeClass: 'table-status-badge',
+        icon: <IconAlertCircle style={{ width: '11px', height: '11px', flexShrink: 0 }} />,
+        style: { backgroundColor: '#fffbeb', color: '#b45309', borderColor: '#fde68a' }
       };
     }
     return {
       label: 'Registrado',
-      badgeClass: 'badge-primary',
-      icon: '📋',
-      style: { backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }
+      badgeClass: 'table-status-badge',
+      icon: <IconFileText style={{ width: '11px', height: '11px', flexShrink: 0 }} />,
+      style: { backgroundColor: '#f0f9ff', color: '#0369a1', borderColor: '#bae6fd' }
     };
   };
 
@@ -2742,13 +2773,13 @@ function MainApp() {
                       <thead>
                         <tr>
                           <th style={{ width: '75px' }}>Data</th>
-                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '120px' }}>Escola</th>}
-                          <th style={{ minWidth: '120px' }}>Estudante(s)</th>
-                          <th style={{ width: '45px', textAlign: 'center' }}>Turma</th>
-                          <th style={{ minWidth: '120px' }}>Classificação</th>
-                          <th style={{ minWidth: '95px' }}>Criado Por</th>
-                          <th style={{ width: '100px' }}>Status</th>
-                          <th style={{ textAlign: 'right', width: '135px' }}>Ações</th>
+                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '110px' }}>Escola</th>}
+                          <th style={{ minWidth: '150px' }}>Estudante(s)</th>
+                          <th style={{ width: '40px', textAlign: 'center' }}>Turma</th>
+                          <th style={{ minWidth: '110px' }}>Classificação</th>
+                          <th style={{ minWidth: '90px' }}>Criado Por</th>
+                          <th style={{ width: '110px' }}>Status</th>
+                          <th style={{ textAlign: 'right', width: '115px' }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2773,11 +2804,11 @@ function MainApp() {
                             <tr key={o.id}>
                               <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{formatDisplayDate(o.date)}</td>
                               {(user.role === 'gestor' || user.role === 'seduc') && (
-                                <td style={{ maxWidth: '120px', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
+                                <td style={{ maxWidth: '110px', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
                                   {schoolName}
                                 </td>
                               )}
-                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.81rem' }}>
+                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.82rem', lineHeight: '1.3' }}>
                                 {displayedStudent}
                               </td>
                               <td style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: '600' }}>
@@ -2788,53 +2819,56 @@ function MainApp() {
                                   {primaryType}
                                 </span>
                               </td>
-                              <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
+                              <td style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
                                 {anonymizeText(o.createdByName, anonymizeView)}
                               </td>
                               <td>
                                 {(() => {
                                   const st = getOccurrenceStatus(o);
-                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.71rem', padding: '0.2rem 0.5rem' }}>{st.label}</span>;
+                                  return (
+                                    <span className={st.badgeClass} style={st.style}>
+                                      {st.icon}
+                                      <span>{st.label}</span>
+                                    </span>
+                                  );
                                 })()}
                               </td>
                               <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
+                                <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', justifyContent: 'flex-end' }}>
                                   <button 
-                                    className="btn btn-secondary action-btn-compact" 
+                                    className="action-icon-btn action-icon-view" 
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
                                       setShowDetailModal(true);
                                     }}
-                                    title="Ver detalhes completos"
+                                    title="Ver detalhes completos do atendimento"
                                   >
-                                    <IconEye style={{ width: '12px', height: '12px' }} /> Ver
+                                    <IconEye style={{ width: '14px', height: '14px' }} />
                                   </button>
                                   <button 
-                                    className="btn btn-primary action-btn-compact" 
+                                    className="action-icon-btn action-icon-print" 
                                     onClick={() => handlePrint(o)}
                                     title="Imprimir Ficha Oficial A4"
                                   >
-                                    <IconPrinter style={{ width: '12px', height: '12px' }} /> A4
+                                    <IconPrinter style={{ width: '14px', height: '14px' }} />
                                   </button>
                                   {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-warning action-btn-compact" 
-                                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      className="action-icon-btn action-icon-edit" 
                                       onClick={() => handleEditOccurrence(o)}
-                                      title="Editar Ocorrência"
+                                      title="Editar ocorrência"
                                     >
-                                      <IconEdit style={{ width: '12px', height: '12px' }} />
+                                      <IconEdit style={{ width: '14px', height: '14px' }} />
                                     </button>
                                   )}
                                   {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-danger action-btn-compact" 
-                                      style={{ backgroundColor: 'var(--danger)', color: 'white' }}
+                                      className="action-icon-btn action-icon-delete" 
                                       onClick={() => handleDeleteOccurrence(o.id)}
-                                      title="Excluir Ocorrência"
+                                      title="Excluir ocorrência"
                                     >
-                                      <IconTrash style={{ width: '12px', height: '12px' }} />
+                                      <IconTrash style={{ width: '14px', height: '14px' }} />
                                     </button>
                                   )}
                                 </div>
@@ -2923,14 +2957,14 @@ function MainApp() {
                       <thead>
                         <tr>
                           <th style={{ width: '75px' }}>Data</th>
-                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '120px' }}>Escola</th>}
-                          <th style={{ minWidth: '115px' }}>Estudante(s)</th>
-                          <th style={{ width: '45px', textAlign: 'center' }}>Turma</th>
-                          <th style={{ minWidth: '100px' }}>Responsável</th>
-                          <th style={{ minWidth: '115px' }}>Classificação</th>
-                          <th style={{ minWidth: '90px' }}>Criado Por</th>
-                          <th style={{ width: '100px' }}>Status</th>
-                          <th style={{ textAlign: 'right', width: '135px' }}>Ações</th>
+                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '110px' }}>Escola</th>}
+                          <th style={{ minWidth: '140px' }}>Estudante(s)</th>
+                          <th style={{ width: '40px', textAlign: 'center' }}>Turma</th>
+                          <th style={{ minWidth: '95px' }}>Responsável</th>
+                          <th style={{ minWidth: '105px' }}>Classificação</th>
+                          <th style={{ minWidth: '85px' }}>Criado Por</th>
+                          <th style={{ width: '110px' }}>Status</th>
+                          <th style={{ textAlign: 'right', width: '115px' }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2956,17 +2990,17 @@ function MainApp() {
                             <tr key={o.id}>
                               <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{formatDisplayDate(o.date)}</td>
                               {(user.role === 'gestor' || user.role === 'seduc') && (
-                                <td style={{ maxWidth: '120px', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
+                                <td style={{ maxWidth: '110px', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
                                   {schoolName}
                                 </td>
                               )}
-                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.81rem' }}>
+                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.82rem', lineHeight: '1.3' }}>
                                 {displayedStudent}
                               </td>
                               <td style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: '600' }}>
                                 {o.className || studentsList[0]?.className || '-'}
                               </td>
-                              <td style={{ fontSize: '0.78rem', wordBreak: 'break-word' }}>
+                              <td style={{ fontSize: '0.76rem', wordBreak: 'break-word', color: 'var(--text-secondary)' }}>
                                 {anonymizeText(guardianName, anonymizeView)}
                               </td>
                               <td>
@@ -2974,53 +3008,56 @@ function MainApp() {
                                   {primaryType}
                                 </span>
                               </td>
-                              <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
+                              <td style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
                                 {anonymizeText(o.createdByName, anonymizeView)}
                               </td>
                               <td>
                                 {(() => {
                                   const st = getOccurrenceStatus(o);
-                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.71rem', padding: '0.2rem 0.5rem' }}>{st.label}</span>;
+                                  return (
+                                    <span className={st.badgeClass} style={st.style}>
+                                      {st.icon}
+                                      <span>{st.label}</span>
+                                    </span>
+                                  );
                                 })()}
                               </td>
                               <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
+                                <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', justifyContent: 'flex-end' }}>
                                   <button 
-                                    className="btn btn-secondary action-btn-compact" 
+                                    className="action-icon-btn action-icon-view" 
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
                                       setShowDetailModal(true);
                                     }}
-                                    title="Ver detalhes completos"
+                                    title="Ver detalhes completos do atendimento"
                                   >
-                                    <IconEye style={{ width: '12px', height: '12px' }} /> Ver
+                                    <IconEye style={{ width: '14px', height: '14px' }} />
                                   </button>
                                   <button 
-                                    className="btn btn-primary action-btn-compact" 
+                                    className="action-icon-btn action-icon-print" 
                                     onClick={() => handlePrint(o)}
                                     title="Imprimir Ficha Oficial A4"
                                   >
-                                    <IconPrinter style={{ width: '12px', height: '12px' }} /> A4
+                                    <IconPrinter style={{ width: '14px', height: '14px' }} />
                                   </button>
                                   {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-warning action-btn-compact" 
-                                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      className="action-icon-btn action-icon-edit" 
                                       onClick={() => handleEditOccurrence(o)}
-                                      title="Editar Ocorrência"
+                                      title="Editar ocorrência"
                                     >
-                                      <IconEdit style={{ width: '12px', height: '12px' }} />
+                                      <IconEdit style={{ width: '14px', height: '14px' }} />
                                     </button>
                                   )}
                                   {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-danger action-btn-compact" 
-                                      style={{ backgroundColor: 'var(--danger)', color: 'white' }}
+                                      className="action-icon-btn action-icon-delete" 
                                       onClick={() => handleDeleteOccurrence(o.id)}
-                                      title="Excluir Ocorrência"
+                                      title="Excluir ocorrência"
                                     >
-                                      <IconTrash style={{ width: '12px', height: '12px' }} />
+                                      <IconTrash style={{ width: '14px', height: '14px' }} />
                                     </button>
                                   )}
                                 </div>
@@ -4957,13 +4994,13 @@ function MainApp() {
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Data</th>
-                        <th>Estudante(s)</th>
-                        <th>Escola / Turma</th>
-                        <th>Classificação</th>
-                        <th>Sentimentos</th>
-                        <th>Visto Direção</th>
-                        <th style={{ textAlign: 'right' }}>Ações</th>
+                        <th style={{ width: '75px' }}>Data</th>
+                        <th style={{ minWidth: '140px' }}>Estudante(s)</th>
+                        <th style={{ minWidth: '120px' }}>Escola / Turma</th>
+                        <th style={{ minWidth: '110px' }}>Classificação</th>
+                        <th style={{ minWidth: '100px' }}>Sentimentos</th>
+                        <th style={{ width: '110px' }}>Status</th>
+                        <th style={{ textAlign: 'right', width: '80px' }}>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4982,20 +5019,21 @@ function MainApp() {
                           const className = (studentsList.length > 0 ? `${studentsList[0].gradeCycle || ''} ${studentsList[0].className || ''}` : `${o.gradeCycle || ''} ${o.className || ''}`).trim();
                           const schoolName = schools.find(s => s.id === o.schoolId)?.name || 'Rede Geral';
                           const classifications = Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || 'Geral'];
-                          const hasNotes = Boolean(o.directorNotes && o.directorNotes.trim());
 
                           return (
                             <tr key={o.id}>
-                              <td style={{ fontSize: '0.825rem', whiteSpace: 'nowrap' }}>{formatDisplayDate(o.date)}</td>
-                              <td style={{ fontWeight: '600' }}>{studentNames}</td>
-                              <td style={{ fontSize: '0.825rem' }}>
-                                <div>{schoolName}</div>
+                              <td style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{formatDisplayDate(o.date)}</td>
+                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.82rem', lineHeight: '1.3' }}>
+                                {studentNames}
+                              </td>
+                              <td style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                                <div style={{ fontWeight: '500' }}>{schoolName}</div>
                                 <span style={{ color: 'var(--text-muted)' }}>{className}</span>
                               </td>
                               <td>
                                 <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                                   {classifications.map((c, i) => (
-                                    <span key={i} className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{c}</span>
+                                    <span key={i} className="table-classification-badge" title={c}>{c}</span>
                                   ))}
                                 </div>
                               </td>
@@ -5003,7 +5041,7 @@ function MainApp() {
                                 {Array.isArray(o.feelings) && o.feelings.length > 0 ? (
                                   <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                                     {o.feelings.map((f, i) => (
-                                      <span key={i} className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{f}</span>
+                                      <span key={i} className="badge badge-warning" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>{f}</span>
                                     ))}
                                   </div>
                                 ) : (
@@ -5013,28 +5051,33 @@ function MainApp() {
                               <td>
                                 {(() => {
                                   const st = getOccurrenceStatus(o);
-                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.725rem' }}>{st.label}</span>;
+                                  return (
+                                    <span className={st.badgeClass} style={st.style}>
+                                      {st.icon}
+                                      <span>{st.label}</span>
+                                    </span>
+                                  );
                                 })()}
                               </td>
                               <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ display: 'inline-flex', gap: '4px' }}>
+                                <div style={{ display: 'inline-flex', gap: '4px', justifyContent: 'flex-end' }}>
                                   <button
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                    className="action-icon-btn action-icon-view"
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
                                       setShowDetailModal(true);
                                     }}
+                                    title="Ver detalhes completos do atendimento"
                                   >
-                                    Detalhes
+                                    <IconEye style={{ width: '14px', height: '14px' }} />
                                   </button>
                                   <button
-                                    className="btn btn-primary"
-                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                    className="action-icon-btn action-icon-print"
                                     onClick={() => handlePrint(o)}
+                                    title="Imprimir Ficha Oficial A4"
                                   >
-                                    <IconPrinter />
+                                    <IconPrinter style={{ width: '14px', height: '14px' }} />
                                   </button>
                                 </div>
                               </td>

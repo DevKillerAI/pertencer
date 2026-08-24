@@ -647,20 +647,102 @@ select:-webkit-autofill {
 }
 
 .table-classification-badge {
-  max-width: 155px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: inline-block;
   vertical-align: middle;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.71rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 12px;
   background-color: var(--primary-light);
   color: var(--primary);
   border: 1px solid #bae6fd;
   line-height: 1.25;
+}
+
+.table-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.18rem 0.48rem;
+  font-size: 0.70rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.table-status-badge svg {
+  flex-shrink: 0;
+}
+
+/* Action Icon Buttons (Compact, Modern, Monochromatic) */
+.action-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background-color: transparent;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.action-icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.action-icon-view {
+  background-color: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+.action-icon-view:hover {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border-color: #7dd3fc;
+}
+
+.action-icon-print {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+.action-icon-print:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.action-icon-edit {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+.action-icon-edit:hover {
+  background-color: #fef3c7;
+  color: #b45309;
+  border-color: #fcd34d;
+}
+
+.action-icon-delete {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+.action-icon-delete:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 .action-btn-compact {
