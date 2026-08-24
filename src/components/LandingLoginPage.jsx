@@ -162,7 +162,6 @@ export default function LandingLoginPage({
               
               {/* Card da Prefeitura de Contagem + PROJETO PILOTO */}
               <div className="landing-partner-badge-card">
-                <span className="partner-label">Em parceria com</span>
                 <img 
                   src="/prefeitura-contagem.png" 
                   alt="Prefeitura de Contagem" 
