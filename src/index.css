@@ -757,7 +757,7 @@ select:-webkit-autofill {
 }
 
 /* PRINT RELATORIO LAYOUT (Standard A4 Paper Template matching the image) */
-.printable-report, .printable-report-summary {
+.printable-report, .printable-report-summary, .printable-executive-report {
   display: none; /* Hidden by default in web app */
 }
 
@@ -766,23 +766,29 @@ select:-webkit-autofill {
   body {
     background-color: #ffffff !important;
     color: #000000 !important;
-    font-size: 12pt;
+    font-size: 11pt;
     font-family: 'Times New Roman', Times, serif;
+    margin: 0;
+    padding: 0;
   }
   
-  .navbar, .main-content, .btn, .step-indicator, .filters-bar, .modal-overlay, .theme-toggle, .splash-screen-wrapper {
+  .navbar, .main-content, .btn, .step-indicator, .filters-bar, .modal-overlay, .theme-toggle, .splash-screen-wrapper, .card-footer {
     display: none !important;
   }
   
-  .printable-report, .printable-report-summary {
+  .printable-report, .printable-report-summary, .printable-executive-report {
     display: block !important;
     width: 21cm;
     min-height: 29.7cm;
-    padding: 1.5cm 2cm;
-    margin: 0;
+    padding: 1.2cm 1.5cm;
+    margin: 0 auto;
     box-sizing: border-box;
     position: relative;
     background-color: #ffffff !important;
+  }
+
+  .printable-executive-report {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
   }
 
   .print-watermark {
@@ -808,7 +814,7 @@ select:-webkit-autofill {
   .print-header {
     border-bottom: 2px solid #000000;
     padding-bottom: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -825,7 +831,7 @@ select:-webkit-autofill {
   
   .print-school-name {
     font-family: 'Arial', sans-serif;
-    font-size: 14pt;
+    font-size: 13pt;
     font-weight: bold;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -833,7 +839,7 @@ select:-webkit-autofill {
   
   .print-doc-title {
     font-family: 'Arial', sans-serif;
-    font-size: 16pt;
+    font-size: 15pt;
     font-weight: bold;
     letter-spacing: 0.5px;
     margin-top: 5px;
@@ -842,15 +848,15 @@ select:-webkit-autofill {
   .print-fields-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    row-gap: 15px;
+    row-gap: 12px;
     column-gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
   
   .print-field {
     border-bottom: 1px solid #000000;
     padding-bottom: 2px;
-    font-size: 11pt;
+    font-size: 10.5pt;
   }
   
   .print-field-label {
@@ -865,45 +871,45 @@ select:-webkit-autofill {
   .print-field.col-2 { grid-column: span 2; }
   
   .print-section {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
   
   .print-section-title {
     font-family: 'Arial', sans-serif;
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: bold;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border-bottom: 1px solid #000000;
     padding-bottom: 2px;
   }
   
   .print-section-content {
-    font-size: 11pt;
-    line-height: 1.6;
-    min-height: 100px;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    min-height: 70px;
     text-align: justify;
     word-wrap: break-word;
     white-space: pre-wrap;
   }
 
   .print-section-content.short {
-    min-height: 60px;
+    min-height: 45px;
   }
   
   .print-signatures-block {
-    margin-top: 50px;
+    margin-top: 35px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    row-gap: 40px;
-    column-gap: 50px;
+    row-gap: 30px;
+    column-gap: 40px;
     page-break-inside: avoid;
   }
   
   .print-signature-line {
     border-top: 1px solid #000000;
     text-align: center;
-    font-size: 10pt;
+    font-size: 9.5pt;
     padding-top: 5px;
   }
 }

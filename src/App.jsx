@@ -195,7 +195,6 @@ const SUBJECT_OPTIONS = [
   'Ensino Religioso',
   'Filosofia',
   'Sociologia',
-  'Geral / Polivalente',
   'Outro'
 ];
 
@@ -380,6 +379,7 @@ const createDefaultStudent = () => ({
   className: '',
   teacherName: '',
   subject_matter: '',
+  customSubject: '',
   guardian: {
     name: '',
     bond: 'Mãe',
@@ -727,6 +727,8 @@ function MainApp() {
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [anonymizeView, setAnonymizeView] = useState(false);
+  const [printMode, setPrintMode] = useState('occurrence'); // 'occurrence' | 'executive'
+  const [printOccurrence, setPrintOccurrence] = useState(null);
   
   // Director Observation Temp State
   const [directorNotes, setDirectorNotes] = useState('');
@@ -1126,15 +1128,37 @@ function MainApp() {
 
   // Handler: Save Occurrence (5 Steps com Ultra-Resistência e Backup Offline)
   const handleSaveOccurrence = async (status = 'finalizado') => {
-    const firstStudent = formData.students[0] || createDefaultStudent();
-    const studentNameVal = (firstStudent.studentName || '').trim();
-
     if (status === 'finalizado') {
-      if (!studentNameVal) {
-        alert('Por favor, informe o nome do estudante (Passo 1) antes de finalizar o atendimento.');
+      const invalidStudent = (formData.students || []).find(s => 
+        !(s?.studentName || '').trim() ||
+        !(s?.guardian?.name || '').trim() ||
+        !(s?.teacherName || '').trim() ||
+        !(s?.subject_matter || '').trim() ||
+        (s?.subject_matter === 'Outro' && !(s?.customSubject || '').trim())
+      );
+
+      if (invalidStudent) {
+        if (!(invalidStudent.studentName || '').trim()) {
+          alert('Por favor, informe o Nome Completo do Estudante (Passo 1) antes de finalizar o atendimento.');
+        } else if (!(invalidStudent.guardian?.name || '').trim()) {
+          alert('Por favor, informe o Nome do Responsável (Passo 1) antes de finalizar o atendimento.');
+        } else if (!(invalidStudent.teacherName || '').trim()) {
+          alert('Por favor, informe o Nome do Professor (Passo 1) antes de finalizar o atendimento.');
+        } else if (invalidStudent.subject_matter === 'Outro' && !(invalidStudent.customSubject || '').trim()) {
+          alert('Por favor, informe manualmente a matéria/componente curricular (Passo 1).');
+        } else {
+          alert('Por favor, preencha todos os campos obrigatórios do estudante (Passo 1).');
+        }
         setFormStep(1);
         return;
       }
+
+      if ((user?.role === 'gestor' || user?.role === 'seduc' || user?.role === 'superadmin') && !formData.schoolId && !user.schoolId) {
+        alert('Por favor, selecione a Escola Municipal Vinculada (Passo 1) antes de finalizar.');
+        setFormStep(1);
+        return;
+      }
+
       if (!(formData.subject || '').trim()) {
         alert('Por favor, descreva o relato/assunto da ocorrência (Passo 2) antes de finalizar.');
         setFormStep(2);
@@ -1146,8 +1170,23 @@ function MainApp() {
       ? formData.classifications[0]
       : 'Atendimento Geral';
 
-    const safeStudentName = studentNameVal || 'Estudante em Atendimento (Rascunho)';
-    firstStudent.studentName = safeStudentName;
+    const resolvedSchoolId = (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin')
+      ? (formData.schoolId || user.schoolId || schools[0]?.id || 'esc-1')
+      : (user.schoolId || formData.schoolId || schools[0]?.id || 'esc-1');
+
+    const mappedStudents = (formData.students && formData.students.length > 0 ? formData.students : [createDefaultStudent()]).map(st => {
+      const finalSubject = st.subject_matter === 'Outro' && (st.customSubject || '').trim()
+        ? st.customSubject.trim()
+        : (st.subject_matter || 'Não especificada');
+      return {
+        ...st,
+        studentName: (st.studentName || '').trim() || (status === 'rascunho' ? 'Estudante em Atendimento (Rascunho)' : 'Estudante'),
+        subject_matter: finalSubject
+      };
+    });
+
+    const firstStudent = mappedStudents[0] || createDefaultStudent();
+    const safeStudentName = firstStudent.studentName;
 
     const isNew = !formData.id;
     const nowIso = new Date().toISOString();
@@ -1171,6 +1210,8 @@ function MainApp() {
       id: occId,
       type: primaryType,
       status: status,
+      schoolId: resolvedSchoolId,
+      students: mappedStudents,
       studentName: safeStudentName,
       gradeCycle: firstStudent.gradeCycle || '',
       className: firstStudent.className || '',
@@ -1178,7 +1219,6 @@ function MainApp() {
       subject_matter: firstStudent.subject_matter || '',
       guardianName: firstStudent.guardian?.name || '',
       contacts: firstStudent.guardian?.contact || '',
-      schoolId: user.schoolId || formData.schoolId || schools[0]?.id || 'esc-1',
       createdAt: formData.createdAt || (formData.date ? `${formData.date}T12:00:00.000Z` : nowIso),
       createdById: formData.createdById || user.id,
       createdByName: formData.createdByName || user.name,
@@ -1225,7 +1265,7 @@ function MainApp() {
     });
 
     setShowForm(false);
-    setFormData(initialFormState);
+    setFormData({ ...initialFormState, schoolId: user.schoolId || (schools[0]?.id || '') });
     setFormStep(1);
     setActiveTab('occurrences');
   };
@@ -1233,7 +1273,20 @@ function MainApp() {
   // Handler: Load Occurrence for Editing
   const handleEditOccurrence = (occ) => {
     const studentsList = Array.isArray(occ.students) && occ.students.length > 0
-      ? occ.students
+      ? occ.students.map(st => {
+          const isStandard = SUBJECT_OPTIONS.includes(st.subject_matter);
+          return {
+            ...st,
+            subject_matter: isStandard ? st.subject_matter : (st.subject_matter ? 'Outro' : ''),
+            customSubject: isStandard ? '' : (st.subject_matter || ''),
+            guardian: st.guardian || {
+              name: occ.guardianName || (occ.attended_people?.[0]?.name || ''),
+              bond: occ.attended_people?.[0]?.bond || 'Mãe',
+              customBond: '',
+              contact: occ.contacts || (occ.attended_people?.[0]?.contact || '')
+            }
+          };
+        })
       : [{
           studentName: occ.studentName || '',
           sex: occ.sex || '',
@@ -1241,7 +1294,8 @@ function MainApp() {
           gradeCycle: occ.gradeCycle || '',
           className: occ.className || '',
           teacherName: occ.teacherName || '',
-          subject_matter: occ.subject_matter || '',
+          subject_matter: SUBJECT_OPTIONS.includes(occ.subject_matter) ? occ.subject_matter : (occ.subject_matter ? 'Outro' : ''),
+          customSubject: SUBJECT_OPTIONS.includes(occ.subject_matter) ? '' : (occ.subject_matter || ''),
           guardian: {
             name: occ.guardianName || (occ.attended_people?.[0]?.name || ''),
             bond: occ.attended_people?.[0]?.bond || 'Mãe',
@@ -1252,31 +1306,33 @@ function MainApp() {
 
     setFormData({
       id: occ.id,
-      schoolId: occ.schoolId,
+      schoolId: occ.schoolId || user.schoolId || (schools[0]?.id || ''),
       students: studentsList,
-      date: occ.date || new Date().toISOString().split('T')[0],
+      date: occ.date ? occ.date.split('T')[0] : getLocalDateString(),
       subject: occ.subject || '',
       classifications: Array.isArray(occ.classifications) ? occ.classifications : (occ.type ? [occ.type] : []),
       type: occ.type || '',
       feelings: Array.isArray(occ.feelings) ? occ.feelings : [],
-      customFeeling: '',
+      customFeeling: occ.customFeeling || '',
       feelings_observations: occ.feelings_observations || '',
       referrals: occ.referrals || '',
       observations: occ.observations || '',
       direction_referrals: Array.isArray(occ.direction_referrals) ? occ.direction_referrals : [],
-      customDirectionReferral: '',
+      customDirectionReferral: occ.customDirectionReferral || '',
       directorNotes: occ.directorNotes || '',
       status: occ.status || 'finalizado',
-      createdAt: occ.createdAt || (occ.date ? `${occ.date}T12:00:00.000Z` : new Date().toISOString()),
-      createdById: occ.createdById,
-      createdByName: occ.createdByName,
+      createdAt: occ.createdAt || '',
+      createdById: occ.createdById || '',
+      createdByName: occ.createdByName || '',
       updatedAt: occ.updatedAt || '',
       updatedById: occ.updatedById || '',
       updatedByName: occ.updatedByName || '',
       editHistory: Array.isArray(occ.editHistory) ? occ.editHistory : []
     });
-    setShowForm(true);
+
     setFormStep(1);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handler: Save Director Notes (com Registro de Auditoria e Ultra-Resistência)
@@ -1831,29 +1887,46 @@ function MainApp() {
     }));
   };
 
-  // Print PDF function
-  const handlePrint = (occ) => {
-    setSelectedOccurrence(occ);
+  // Print Occurrence Ficha A4 function
+  const handlePrintOccurrence = (occ) => {
+    const targetOcc = occ || selectedOccurrence;
+    if (!targetOcc) return;
+    setPrintMode('occurrence');
+    setPrintOccurrence(targetOcc);
+    setSelectedOccurrence(targetOcc);
     setTimeout(() => {
       window.print();
-    }, 200);
+    }, 150);
   };
+
+  // Print Executive / Analytical Report function
+  const handlePrintExecutiveReport = () => {
+    setPrintMode('executive');
+    setPrintOccurrence(null);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  // Backwards-compatible alias for printing
+  const handlePrint = (occ) => handlePrintOccurrence(occ);
 
   // Helper validation for Step 1
   const isStep1Valid = Boolean(
     Array.isArray(formData?.students) && 
     formData.students.length > 0 &&
     formData.students.every(s => 
-      (s?.studentName || '').trim().length >= 3 && 
+      (s?.studentName || '').trim().length >= 2 && 
       s?.sex && 
       (s?.turn || '').trim() && 
       s?.gradeCycle && 
       (s?.className || '').trim() &&
-      (s?.teacherName || '').trim() &&
+      (s?.teacherName || '').trim().length >= 2 &&
       (s?.subject_matter || '').trim() &&
-      (s?.guardian?.name || '').trim() &&
+      (s?.subject_matter !== 'Outro' || (s?.customSubject || '').trim().length >= 2) &&
+      (s?.guardian?.name || '').trim().length >= 2 &&
       (s?.guardian?.contact || '').trim()
-    ) && (user?.role !== 'gestor' && user?.role !== 'seduc' ? true : Boolean(formData?.schoolId))
+    ) && (user?.role !== 'gestor' && user?.role !== 'seduc' && user?.role !== 'superadmin' ? true : Boolean(formData?.schoolId || user?.schoolId))
   );
 
   // Helper validation for Step 2
@@ -2849,21 +2922,32 @@ function MainApp() {
                     Passo 1: Identificação
                   </h4>
 
-                  {/* Escola designada (para Gestor / Seduc) */}
-                  {(user.role === 'gestor' || user.role === 'seduc') && (
+                  {/* Escola vinculada */}
+                  {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin' || !user.schoolId) ? (
                     <div className="form-group full-width" style={{ marginBottom: '1.25rem' }}>
-                      <label className="form-label">Escola Municipal Vinculada</label>
+                      <label className="form-label" style={{ fontWeight: '700' }}>Escola Municipal Vinculada *</label>
                       <select
                         className="form-select"
-                        value={formData.schoolId || ''}
+                        value={formData.schoolId || user.schoolId || ''}
                         onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
                         required
                       >
-                        <option value="">Selecione a escola...</option>
+                        <option value="">Selecione a escola vinculada...</option>
                         {schools.map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
+                    </div>
+                  ) : (
+                    <div className="form-group full-width" style={{ marginBottom: '1.25rem' }}>
+                      <label className="form-label" style={{ fontWeight: '700' }}>Escola Vinculada</label>
+                      <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>🏫</span>
+                        <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                          {user.schoolName || schools.find(s => s.id === (formData.schoolId || user.schoolId))?.name || 'Escola Municipal'}
+                        </span>
+                        <span className="badge badge-success" style={{ marginLeft: 'auto', fontSize: '0.75rem' }}>Unidade Oficial</span>
+                      </div>
                     </div>
                   )}
 
@@ -2893,10 +2977,10 @@ function MainApp() {
                       <div className="form-grid">
                         {/* Nome Completo */}
                         <div className="form-group full-width">
-                          <label className="form-label">Nome Completo do Estudante</label>
+                          <label className="form-label">Nome Completo do(a) Estudante *</label>
                           <input
                             type="text"
-                            placeholder="Nome do estudante..."
+                            placeholder="Nome completo do(a) estudante..."
                             className="form-control"
                             value={student.studentName}
                             onChange={(e) => {
@@ -2910,7 +2994,7 @@ function MainApp() {
 
                         {/* Sexo & Turno */}
                         <div className="form-group">
-                          <label className="form-label">Sexo</label>
+                          <label className="form-label">Sexo *</label>
                           <select
                             className="form-select"
                             value={student.sex}
@@ -2928,7 +3012,7 @@ function MainApp() {
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Turno</label>
+                          <label className="form-label">Turno *</label>
                           <select
                             className="form-select"
                             value={student.turn}
@@ -2948,7 +3032,7 @@ function MainApp() {
 
                         {/* Ano/Ciclo & Turma */}
                         <div className="form-group">
-                          <label className="form-label">Ano / Ciclo</label>
+                          <label className="form-label">Ano / Ciclo *</label>
                           <select
                             className="form-select"
                             value={student.gradeCycle}
@@ -2967,7 +3051,7 @@ function MainApp() {
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Turma</label>
+                          <label className="form-label">Turma *</label>
                           <input
                             type="text"
                             placeholder="Ex: 5º Ano A"
@@ -2984,7 +3068,7 @@ function MainApp() {
 
                         {/* Professor(a) & Componente Curricular */}
                         <div className="form-group">
-                          <label className="form-label">Professor(a)</label>
+                          <label className="form-label">Professor(a) *</label>
                           <input
                             type="text"
                             placeholder="Nome do(a) professor(a)..."
@@ -3000,13 +3084,17 @@ function MainApp() {
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Componente Curricular / Matéria</label>
+                          <label className="form-label">Componente Curricular / Matéria *</label>
                           <select
                             className="form-select"
                             value={student.subject_matter}
                             onChange={(e) => {
+                              const val = e.target.value;
                               const updated = [...formData.students];
-                              updated[sIdx].subject_matter = e.target.value;
+                              updated[sIdx].subject_matter = val;
+                              if (val !== 'Outro') {
+                                updated[sIdx].customSubject = '';
+                              }
                               setFormData({ ...formData, students: updated });
                             }}
                             required
@@ -3016,12 +3104,27 @@ function MainApp() {
                               <option key={subj} value={subj}>{subj}</option>
                             ))}
                           </select>
+                          {(student.subject_matter === 'Outro' || (student.customSubject && !SUBJECT_OPTIONS.includes(student.subject_matter))) && (
+                            <input
+                              type="text"
+                              placeholder="Informe a matéria manualmente..."
+                              className="form-control"
+                              style={{ marginTop: '0.4rem' }}
+                              value={student.customSubject || ''}
+                              onChange={(e) => {
+                                const updated = [...formData.students];
+                                updated[sIdx].customSubject = e.target.value;
+                                setFormData({ ...formData, students: updated });
+                              }}
+                              required
+                            />
+                          )}
                         </div>
 
                         {/* Bloco Responsável (Abaixo dos dados do estudante) */}
                         <div className="form-group full-width" style={{ marginTop: '0.5rem', backgroundColor: 'var(--bg-card)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                           <label className="form-label" style={{ fontWeight: '700', color: 'var(--primary)', marginBottom: '0.5rem' }}>
-                            Responsável pelo(a) Estudante
+                            Responsável pelo(a) Estudante *
                           </label>
                           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.5fr', gap: '0.75rem' }}>
                             <div>
@@ -3500,9 +3603,9 @@ function MainApp() {
                       </strong>
                       {formData.students.map((st, i) => (
                         <div key={i} style={{ padding: '0.5rem', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', marginBottom: '0.35rem' }}>
-                          <p><strong>{st.studentName}</strong> ({st.sex || 'Não informado'} | Turno: {st.turn || 'Não informado'})</p>
+                          <p><strong>{st.studentName}</strong> • {st.sex || 'Não informado'} • Turno: {st.turn || 'Não informado'}</p>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                            {st.gradeCycle} - {st.className} | Prof: {st.teacherName} ({st.subject_matter})
+                            {st.gradeCycle} - {st.className} | Prof: {st.teacherName} ({st.subject_matter === 'Outro' && st.customSubject ? st.customSubject : (st.subject_matter || 'Não informada')})
                           </p>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                             Responsável: {st.guardian.name} ({st.guardian.bond}) - Contato: {st.guardian.contact}
@@ -3545,18 +3648,30 @@ function MainApp() {
                     {/* Assunto */}
                     <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--border-color)', paddingTop: '0.75rem' }}>
                       <strong>Assunto (Relato do Ocorrido):</strong>
-                      <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
+                      <p style={{ color: 'var(--text-primary)', marginTop: '0.35rem', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
                         {formData.subject}
                       </p>
                     </div>
 
                     {/* Encaminhamentos */}
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <strong>Encaminhamentos Tomados:</strong>
-                      <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
-                        {formData.referrals}
-                      </p>
-                    </div>
+                    {formData.referrals && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <strong>Encaminhamentos e Ações Tomadas:</strong>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
+                          {formData.referrals}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Observações */}
+                    {formData.observations && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <strong>Observações Pedagógicas:</strong>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
+                          {formData.observations}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Rede de Proteção */}
                     {formData.direction_referrals.length > 0 && (
@@ -3567,15 +3682,6 @@ function MainApp() {
                             <span key={r} className="badge badge-danger">{r}</span>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    {formData.observations && (
-                      <div style={{ marginTop: '0.75rem' }}>
-                        <strong>Observações Adicionais:</strong>
-                        <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '0.25rem' }}>
-                          {formData.observations}
-                        </p>
                       </div>
                     )}
                   </div>
@@ -3597,7 +3703,7 @@ function MainApp() {
                             createdByName: user.name,
                             status: 'rascunho'
                           };
-                          handlePrint(tempOcc);
+                          handlePrintOccurrence(tempOcc);
                         }}
                       >
                         🖨️ Imprimir Prévia (Rascunho)
@@ -4014,7 +4120,7 @@ function MainApp() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary" onClick={() => window.print()}>
+                <button className="btn btn-primary" onClick={handlePrintExecutiveReport}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> Imprimir Relatório Executivo</span>
                 </button>
                 <button className="btn btn-success" onClick={() => handleExportSPSS(reportFilteredOccurrences)}>
@@ -5297,9 +5403,9 @@ function MainApp() {
                   }
                 ]).map((st, i) => (
                   <div key={i} style={{ backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', marginTop: '0.35rem' }}>
-                    <p><strong>{anonymizeText(st.studentName, anonymizeView)}</strong> ({st.sex || 'Não informado'} | Turno: {st.turn || 'Não informado'})</p>
+                    <p><strong>{anonymizeText(st.studentName, anonymizeView)}</strong> • {st.sex || 'Não informado'} • Turno: {st.turn || 'Não informado'}</p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
-                      {st.gradeCycle} - {st.className} | Prof: {anonymizeText(st.teacherName, anonymizeView)} ({st.subject_matter})
+                      {st.gradeCycle} - {st.className} | Prof: {anonymizeText(st.teacherName, anonymizeView)} ({st.subject_matter || 'Não informada'})
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
                       Responsável: {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond || 'Responsável'}) - Contato: {anonymizeView ? '(XX) XXXXX-XXXX' : (st.guardian?.contact || 'Não informado')}
@@ -5492,127 +5598,300 @@ function MainApp() {
         </div>
       )}
 
-      {/* ----------------- TEMPLATE DE IMPRESSÃO A4 COM CONFORMIDADE LGPD ----------------- */}
-      {selectedOccurrence && (
-        <div className="printable-report">
-          {selectedOccurrence.status === 'rascunho' && (
-            <div className="print-watermark">Rascunho</div>
-          )}
-          <div className="print-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ flex: 1 }}>
-              <div className="print-school-name">
-                {schools.find(s => s.id === selectedOccurrence.schoolId)?.name || 'REDE MUNICIPAL DE ENSINO'}
+      {/* ----------------- TEMPLATE DE IMPRESSÃO A4: FICHA DE ATENDIMENTO ----------------- */}
+      {printMode === 'occurrence' && (printOccurrence || selectedOccurrence) && (() => {
+        const occ = printOccurrence || selectedOccurrence;
+        return (
+          <div className="printable-report">
+            {occ.status === 'rascunho' && (
+              <div className="print-watermark">Rascunho</div>
+            )}
+            <div className="print-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <div className="print-school-name">
+                  {schools.find(s => s.id === occ.schoolId)?.name || (user.schoolName || 'REDE MUNICIPAL DE ENSINO')}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>POME</span>
+                  <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>PLATAFORMA DE OBSERVAÇÃO DOS NÚCLEOS DE MEDIAÇÃO PARA MELHORIA DO CLIMA ESCOLAR</span>
+                </div>
+                <div className="print-doc-title">REGISTRO DE ATENDIMENTO</div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', margin: '4px 0', lineHeight: '1.1' }}>
-                <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>POME</span>
-                <span style={{ fontSize: '7pt', fontWeight: 'bold', color: '#246949' }}>PLATAFORMA DE OBSERVAÇÃO DOS NÚCLEOS DE MEDIAÇÃO PARA MELHORIA DO CLIMA ESCOLAR</span>
-              </div>
-              <div className="print-doc-title">REGISTRO DE ATENDIMENTO</div>
+              <Logo style={{ height: '55px', width: 'auto' }} />
             </div>
-            <Logo style={{ height: '55px', width: 'auto' }} />
+
+            {/* Estudantes na Impressão */}
+            <div className="print-fields-grid">
+              <div className="print-field col-12" style={{ gridColumn: 'span 12' }}>
+                <span className="print-field-label" style={{ display: 'block', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px' }}>
+                  Estudante(s) e Responsável(is):
+                </span>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #000' }}>
+                      <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Estudante</th>
+                      <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Sexo / Turno</th>
+                      <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Ano / Turma</th>
+                      <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Responsável / Contato</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(Array.isArray(occ.students) && occ.students.length > 0 ? occ.students : [
+                      {
+                        studentName: occ.studentName,
+                        sex: occ.sex || 'Não inf.',
+                        turn: occ.turn || 'Não inf.',
+                        gradeCycle: occ.gradeCycle,
+                        className: occ.className,
+                        guardian: {
+                          name: occ.guardianName || 'Não informado',
+                          bond: 'Responsável',
+                          contact: occ.contacts || 'Não informado'
+                        }
+                      }
+                    ]).map((st, i) => (
+                      <tr key={i} style={{ borderBottom: '1px dashed #ddd' }}>
+                        <td style={{ fontSize: '8.5pt', padding: '3px 2px', fontWeight: 'bold' }}>{anonymizeText(st.studentName, anonymizeView)}</td>
+                        <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.sex} / {st.turn}</td>
+                        <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.gradeCycle} - {st.className}</td>
+                        <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>
+                          {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond}) - {anonymizeView ? '(XX) XXXXX-XXXX' : st.guardian?.contact}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="print-field col-6">
+                <span className="print-field-label">Data da Ocorrência:</span> {formatDisplayDate(occ.date)}
+              </div>
+              <div className="print-field col-6">
+                <span className="print-field-label">Classificação(ões):</span> {(Array.isArray(occ.classifications) ? occ.classifications : [occ.type]).filter(Boolean).join(', ')}
+              </div>
+
+              {Array.isArray(occ.feelings) && occ.feelings.length > 0 && (
+                <div className="print-field col-12" style={{ gridColumn: 'span 12' }}>
+                  <span className="print-field-label">Sentimentos Identificados (CNV):</span> {occ.feelings.join(', ')}
+                  {occ.feelings_observations && ` — "${occ.feelings_observations}"`}
+                </div>
+              )}
+            </div>
+
+            <div className="print-section">
+              <div className="print-section-title">ASSUNTO (RELATO DO OCORRIDO)</div>
+              <div className="print-section-content">{occ.subject}</div>
+            </div>
+
+            <div className="print-section">
+              <div className="print-section-title">ENCAMINHAMENTOS E AÇÕES TOMADAS</div>
+              <div className="print-section-content">{occ.referrals}</div>
+            </div>
+
+            {Array.isArray(occ.direction_referrals) && occ.direction_referrals.length > 0 && (
+              <div className="print-section">
+                <div className="print-section-title">ENCAMINHAMENTO DIREÇÃO / REDE DE PROTEÇÃO</div>
+                <div className="print-section-content">{occ.direction_referrals.join(', ')}</div>
+              </div>
+            )}
+
+            {occ.observations && (
+              <div className="print-section">
+                <div className="print-section-title">OBSERVAÇÕES PEDAGÓGICAS ADICIONAIS</div>
+                <div className="print-section-content">{occ.observations}</div>
+              </div>
+            )}
+
+            {occ.directorNotes && (
+              <div className="print-section">
+                <div className="print-section-title">ACOMPANHAMENTO / VISTO DA DIRETORIA</div>
+                <div className="print-section-content">{occ.directorNotes}</div>
+              </div>
+            )}
+
+            <div className="print-signatures-block" style={{ marginTop: '35px' }}>
+              <div className="print-signature-line">
+                <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
+                Pedagogo(a) / Responsável pelo Registro
+              </div>
+              <div className="print-signature-line">
+                <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
+                Direção Escolar
+              </div>
+              <div className="print-signature-line">
+                <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
+                Responsável(is) Atendido(s)
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ----------------- TEMPLATE DE IMPRESSÃO A4: RELATÓRIO ANALÍTICO EXECUTIVO ----------------- */}
+      {printMode === 'executive' && (
+        <div className="printable-executive-report">
+          <div className="print-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <div className="print-school-name" style={{ fontSize: '13pt', fontWeight: 'bold' }}>
+                {reportFilterSchool ? (schools.find(s => s.id === reportFilterSchool)?.name || 'ESCOLA MUNICIPAL') : (user.schoolName || 'REDE MUNICIPAL DE ENSINO DE CONTAGEM')}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', margin: '2px 0', lineHeight: '1.1' }}>
+                <span style={{ fontSize: '10pt', fontWeight: 'bold', letterSpacing: '0.05em', color: '#1c355e' }}>POME — PLATAFORMA DE CLIMA ESCOLAR</span>
+                <span style={{ fontSize: '7.5pt', fontWeight: 'bold', color: '#246949' }}>SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEDUC)</span>
+              </div>
+              <div className="print-doc-title" style={{ fontSize: '13pt', fontWeight: 'bold', marginTop: '3px' }}>
+                {user.role === 'diretor' ? 'RELATÓRIO DE GESTÃO ESCOLAR E CLIMA INSTITUCIONAL' :
+                 (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') ? 'RELATÓRIO CONSOLIDADO DE CLIMA ESCOLAR' :
+                 'RELATÓRIO PEDAGÓGICO DE ATENDIMENTOS'}
+              </div>
+            </div>
+            <Logo style={{ height: '50px', width: 'auto' }} />
           </div>
 
-          {/* Estudantes na Impressão */}
-          <div className="print-fields-grid">
-            <div className="print-field col-12" style={{ gridColumn: 'span 12' }}>
-              <span className="print-field-label" style={{ display: 'block', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px' }}>
-                Estudante(s) e Responsável(is):
-              </span>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #000' }}>
-                    <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Estudante</th>
-                    <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Sexo/Turno</th>
-                    <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Ano / Turma</th>
-                    <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Responsável / Contato</th>
-                  </tr>
-                </thead>
+          {/* Metadados da Emissão */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8pt', borderBottom: '1px solid #ddd', paddingBottom: '4px', marginBottom: '10px' }}>
+            <div><strong>Emissão:</strong> {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div><strong>Responsável pela Extração:</strong> {user.name} ({user.role?.toUpperCase()})</div>
+            <div><strong>Total de Registros:</strong> {reportFilteredOccurrences.length} ocorrência(s)</div>
+          </div>
+
+          {/* Filtros Aplicados */}
+          <div style={{ backgroundColor: '#f8f9fa', padding: '5px 8px', borderRadius: '4px', marginBottom: '12px', fontSize: '8pt', border: '1px solid #ddd' }}>
+            <strong>Filtros Ativos: </strong>
+            <span>Escola: {reportFilterSchool ? (schools.find(s => s.id === reportFilterSchool)?.name || reportFilterSchool) : 'Todas'} | </span>
+            <span>Período: {reportFilterStartDate || reportFilterEndDate ? `${formatDisplayDate(reportFilterStartDate)} a ${formatDisplayDate(reportFilterEndDate)}` : 'Todo o período'} | </span>
+            <span>Turno: {reportFilterTurn || 'Todos'} | </span>
+            <span>Ciclo: {reportFilterGrade || 'Todos'} | </span>
+            <span>Classificação: {reportFilterClass || 'Todas'} | </span>
+            <span>Sentimento: {reportFilterFeeling || 'Todos'} | </span>
+            <span>Status: {reportFilterStatus || 'Todos'}</span>
+          </div>
+
+          {/* Indicadores Resumidos (KPIs) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '12px' }}>
+            <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Atendimentos</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#1c355e' }}>{reportFilteredOccurrences.length}</div>
+            </div>
+            <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Com Visto</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#2b8a3e' }}>{reportFilteredOccurrences.filter(o => o.directorNotes).length}</div>
+            </div>
+            <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Sem Visto</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#e67700' }}>{reportFilteredOccurrences.filter(o => !o.directorNotes && o.status !== 'rascunho').length}</div>
+            </div>
+            <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Casos de Risco</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#c92a2a' }}>{reportFilteredOccurrences.filter(o => { const cls = Array.isArray(o.classifications) ? o.classifications : [o.type]; return cls.some(c => getNatureForClassification(c) === 'Risco'); }).length}</div>
+            </div>
+            <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Rascunhos</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#495057' }}>{reportFilteredOccurrences.filter(o => o.status === 'rascunho').length}</div>
+            </div>
+          </div>
+
+          {/* Distribuição por Classificação e Turno */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ border: '1px solid #000', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '8.5pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                Classificações Principais
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
                 <tbody>
-                  {(Array.isArray(selectedOccurrence.students) && selectedOccurrence.students.length > 0 ? selectedOccurrence.students : [
-                    {
-                      studentName: selectedOccurrence.studentName,
-                      sex: selectedOccurrence.sex || 'Não inf.',
-                      turn: selectedOccurrence.turn || 'Não inf.',
-                      gradeCycle: selectedOccurrence.gradeCycle,
-                      className: selectedOccurrence.className,
-                      guardian: {
-                        name: selectedOccurrence.guardianName || 'Não informado',
-                        bond: 'Responsável',
-                        contact: selectedOccurrence.contacts || 'Não informado'
-                      }
-                    }
-                  ]).map((st, i) => (
-                    <tr key={i} style={{ borderBottom: '1px dashed #ddd' }}>
-                      <td style={{ fontSize: '8.5pt', padding: '3px 2px', fontWeight: 'bold' }}>{anonymizeText(st.studentName, anonymizeView)}</td>
-                      <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.sex} / {st.turn}</td>
-                      <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.gradeCycle} - {st.className}</td>
-                      <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>
-                        {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond}) - {anonymizeView ? '(XX) XXXXX-XXXX' : st.guardian?.contact}
-                      </td>
+                  {getClassificationReport(reportFilteredOccurrences).slice(0, 5).map(c => (
+                    <tr key={c.name} style={{ borderBottom: '1px dashed #eee' }}>
+                      <td style={{ padding: '2px 0' }}>{c.name}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 'bold', width: '35px' }}>{c.count}</td>
+                      <td style={{ textAlign: 'right', color: '#666', width: '30px' }}>{c.pct}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="print-field col-6">
-              <span className="print-field-label">Data da Ocorrência:</span> {formatDisplayDate(selectedOccurrence.date)}
-            </div>
-            <div className="print-field col-6">
-              <span className="print-field-label">Classificação(ões):</span> {(Array.isArray(selectedOccurrence.classifications) ? selectedOccurrence.classifications : [selectedOccurrence.type]).filter(Boolean).join(', ')}
-            </div>
-
-            {Array.isArray(selectedOccurrence.feelings) && selectedOccurrence.feelings.length > 0 && (
-              <div className="print-field col-12" style={{ gridColumn: 'span 12' }}>
-                <span className="print-field-label">Sentimentos Identificados (CNV):</span> {selectedOccurrence.feelings.join(', ')}
-                {selectedOccurrence.feelings_observations && ` — "${selectedOccurrence.feelings_observations}"`}
+            <div style={{ border: '1px solid #000', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '8.5pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                Distribuição por Turno
               </div>
-            )}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
+                <tbody>
+                  {getTurnoReport(reportFilteredOccurrences).map(t => (
+                    <tr key={t.name} style={{ borderBottom: '1px dashed #eee' }}>
+                      <td style={{ padding: '2px 0' }}>{t.name}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 'bold', width: '35px' }}>{t.count}</td>
+                      <td style={{ textAlign: 'right', color: '#666', width: '30px' }}>{t.pct}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="print-section">
-            <div className="print-section-title">ASSUNTO (RELATO DO OCORRIDO)</div>
-            <div className="print-section-content">{selectedOccurrence.subject}</div>
+          {/* Listagem Analítica de Ocorrências */}
+          <div style={{ marginTop: '8px' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '9pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '6px', textTransform: 'uppercase' }}>
+              Listagem Analítica dos Atendimentos ({reportFilteredOccurrences.length})
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
+              <thead>
+                <tr style={{ borderBottom: '1.5px solid #000', backgroundColor: '#f0f0f0' }}>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Data</th>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Estudante(s)</th>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Ano / Turma</th>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Matéria / Docente</th>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Classificação</th>
+                  <th style={{ textAlign: 'left', padding: '3px 2px' }}>Escola</th>
+                  <th style={{ textAlign: 'center', padding: '3px 2px' }}>Visto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportFilteredOccurrences.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '8px', color: '#666' }}>Nenhuma ocorrência encontrada para os filtros selecionados.</td>
+                  </tr>
+                ) : (
+                  reportFilteredOccurrences.map((o, idx) => {
+                    const stNames = Array.isArray(o.students) && o.students.length > 0
+                      ? o.students.map(s => anonymizeText(s.studentName, anonymizeView)).join(', ')
+                      : (anonymizeText(o.studentName, anonymizeView) || '-');
+                    const classes = Array.isArray(o.students) && o.students.length > 0
+                      ? o.students.map(s => `${s.gradeCycle || ''} ${s.className || ''}`).filter(Boolean).join(', ')
+                      : `${o.gradeCycle || ''} ${o.className || ''}`;
+                    const subjects = Array.isArray(o.students) && o.students.length > 0
+                      ? o.students.map(s => `${s.subject_matter || ''} (${anonymizeText(s.teacherName, anonymizeView)})`).filter(Boolean).join(', ')
+                      : `${o.subject_matter || ''} (${anonymizeText(o.teacherName, anonymizeView)})`;
+                    const classifications = (Array.isArray(o.classifications) ? o.classifications : [o.type]).filter(Boolean).join(', ');
+                    const schName = schools.find(s => s.id === o.schoolId)?.name || 'Rede Geral';
+
+                    return (
+                      <tr key={o.id || idx} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '2px', whiteSpace: 'nowrap' }}>{formatDisplayDate(o.date)}</td>
+                        <td style={{ padding: '2px', fontWeight: 'bold' }}>{stNames}</td>
+                        <td style={{ padding: '2px' }}>{classes || '-'}</td>
+                        <td style={{ padding: '2px' }}>{subjects || '-'}</td>
+                        <td style={{ padding: '2px' }}>{classifications || '-'}</td>
+                        <td style={{ padding: '2px' }}>{schName}</td>
+                        <td style={{ padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>
+                          {o.directorNotes ? '✅ Sim' : (o.status === 'rascunho' ? '📝 Rasc.' : '⏳ Não')}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
 
-          <div className="print-section">
-            <div className="print-section-title">ENCAMINHAMENTOS E AÇÕES TOMADAS</div>
-            <div className="print-section-content">{selectedOccurrence.referrals}</div>
-          </div>
-
-          {Array.isArray(selectedOccurrence.direction_referrals) && selectedOccurrence.direction_referrals.length > 0 && (
-            <div className="print-section">
-              <div className="print-section-title">ENCAMINHAMENTO DIREÇÃO / REDE DE PROTEÇÃO</div>
-              <div className="print-section-content">{selectedOccurrence.direction_referrals.join(', ')}</div>
+          {/* Bloco de Assinaturas */}
+          <div className="print-signatures-block" style={{ marginTop: '25px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+            <div className="print-signature-line" style={{ borderTop: '1px solid #000', textAlign: 'center', fontSize: '8pt', paddingTop: '3px' }}>
+              {user.name}<br />
+              <strong>{user.role === 'diretor' ? 'Direção Escolar' : (user.role === 'pedagogo' ? 'Coordenação Pedagógica' : 'Gestão SEDUC')}</strong>
             </div>
-          )}
-
-          {selectedOccurrence.observations && (
-            <div className="print-section">
-              <div className="print-section-title">OBSERVAÇÕES PEDAGÓGICAS ADICIONAIS</div>
-              <div className="print-section-content">{selectedOccurrence.observations}</div>
-            </div>
-          )}
-
-          {selectedOccurrence.directorNotes && (
-            <div className="print-section">
-              <div className="print-section-title">ACOMPANHAMENTO / VISTO DA DIRETORIA</div>
-              <div className="print-section-content">{selectedOccurrence.directorNotes}</div>
-            </div>
-          )}
-
-          <div className="print-signatures-block" style={{ marginTop: '35px' }}>
-            <div className="print-signature-line">
-              <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
-              Pedagogo(a) / Responsável pelo Registro
-            </div>
-            <div className="print-signature-line">
-              <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
-              Direção Escolar
-            </div>
-            <div className="print-signature-line">
-              <div style={{ borderTop: '1px solid #000', width: '200px', margin: '0 auto' }}></div>
-              Responsável(is) Atendido(s)
+            <div className="print-signature-line" style={{ borderTop: '1px solid #000', textAlign: 'center', fontSize: '8pt', paddingTop: '3px' }}>
+              Visto / Homologação SEDUC Contagem<br />
+              <strong>Secretaria Municipal de Educação</strong>
             </div>
           </div>
         </div>
