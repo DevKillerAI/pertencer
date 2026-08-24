@@ -64,7 +64,7 @@
     {
       "id": "usr-seduc",
       "name": "Gestão Central SEDUC",
-      "cpf": "11111111111",
+      "cpf": "55555555555",
       "email": "gestor@edu.contagem.mg.gov.br",
       "password": "seduc",
       "role": "seduc",
@@ -75,7 +75,7 @@
     {
       "id": "usr-2",
       "name": "Diretor(a) Wancleber",
-      "cpf": "22222222222",
+      "cpf": "11111111111",
       "email": "diretor@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "diretor",
@@ -86,7 +86,7 @@
     {
       "id": "usr-3",
       "name": "Pedagoga Maria Silva",
-      "cpf": "33333333333",
+      "cpf": "22222222222",
       "email": "pedagogo@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "pedagogo",
@@ -101,7 +101,7 @@
     {
       "id": "usr-4",
       "name": "Pedagoga Ana Costa",
-      "cpf": "33333333334",
+      "cpf": "33333333333",
       "email": "pedagoga2@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "pedagogo",
@@ -157,8 +157,8 @@
       "students": [
         {
           "studentName": "Gabriel Souza Lima",
-          "sex": "",
-          "turn": "",
+          "sex": "Masculino",
+          "turn": "Manhã",
           "gradeCycle": "5º Ano",
           "className": "5º Ano A",
           "teacherName": "Profª Cláudia Mendes",
@@ -170,102 +170,57 @@
           }
         }
       ],
-      "feelings": [],
-      "feelings_observations": "",
+      "feelings": [
+        "Frustração",
+        "Insegurança"
+      ],
+      "feelings_observations": "O estudante demonstrou abatimento ao relatar as brincadeiras.",
       "direction_referrals": [],
       "updatedAt": "2026-08-23T16:20:37.127Z"
     },
     {
-      "id": "occ-1787501621089",
-      "schoolId": "esc-2",
+      "id": "occ-test-1787544369018",
+      "schoolId": "esc-1",
       "students": [
         {
-          "studentName": "Estudante Teste 337",
+          "studentName": "Lucas Gabriel",
           "sex": "Masculino",
-          "turn": "Tarde",
-          "gradeCycle": "4º Ano",
-          "className": "A",
-          "teacherName": "Michel Gomes da Silva",
-          "subject_matter": "Matematica",
+          "turn": "Manhã",
+          "gradeCycle": "Ensino Fundamental II",
+          "className": "7º Ano A",
+          "teacherName": "Prof. Marcos",
+          "subject_matter": "Matemática",
           "guardian": {
-            "name": "MAria Silva",
-            "bond": "Mãe",
-            "customBond": "",
-            "contact": "(31) 99422-6598"
+            "name": "Mariana Gabriel",
+            "contact": "(31) 98888-7777",
+            "bond": "Mãe"
           }
         }
       ],
-      "date": "2026-08-23",
-      "subject": "\"Pobreminha\" na escola",
+      "date": "2026-08-24",
+      "subject": "Desentendimento durante a aula de matemática sobre materiais",
       "classifications": [
-        "Indisciplina recorrente",
-        "Intimidação (ato isolado, não sistemático)",
-        "Perseguição (stalking)",
-        "Discriminação regional",
-        "Incêndio ou tentativa de incêndio",
-        "Uso, porte ou consumo de álcool e outras drogas"
+        "Conflito interpessoal / Discussão"
       ],
-      "type": "Indisciplina recorrente",
+      "type": "Conflito interpessoal / Discussão",
       "feelings": [
-        "Alívio"
+        "Frustração",
+        "Raiva"
       ],
-      "customFeeling": "",
-      "feelings_observations": "",
-      "referrals": "foi pra la",
-      "observations": "foi pra ca",
+      "feelings_observations": "Aluno demonstrou irritação inicial, mas acolheu o diálogo.",
+      "referrals": "Realizada escuta ativa e combinados pedagógicos com ambos os estudantes.",
+      "observations": "Acompanhamento previsto para a próxima semana.",
       "direction_referrals": [
-        "Conselho tutelar"
-      ],
-      "customDirectionReferral": "",
-      "directorNotes": "",
-      "status": "finalizado",
-      "studentName": "Estudante Teste 337",
-      "gradeCycle": "4º Ano",
-      "className": "A",
-      "teacherName": "Michel Gomes da Silva",
-      "subject_matter": "Matematica",
-      "guardianName": "MAria Silva",
-      "contacts": "(31) 99422-6598",
-      "createdById": "usr-4",
-      "createdByName": "Pedagoga Ana Costa",
-      "updatedAt": "2026-08-23T16:13:41.086Z",
-      "updatedById": "usr-4",
-      "updatedByName": "Pedagoga Ana Costa"
-    },
-    {
-      "schoolId": "esc-1",
-      "studentName": "Aluno Teste 1",
-      "subject": "Teste de persistência normal",
-      "classifications": [
-        "Incivilidade"
-      ],
-      "status": "finalizado",
-      "id": "occ-1787539071008"
-    },
-    {
-      "schoolId": "esc-2",
-      "studentName": "Aluno Teste 2",
-      "subject": "Teste sem ID prévio",
-      "classifications": [],
-      "id": "occ-1787539071045"
-    },
-    {
-      "schoolId": "esc-1",
-      "studentName": "Aluno Teste 3",
-      "subject": "Teste com encaminhamento de direção",
-      "direction_referrals": [
-        "Direção da Escola",
         "Conselho Tutelar"
       ],
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T02:37:51.048Z",
-          "userId": "test",
-          "userName": "Tester",
-          "action": "Criação"
-        }
-      ],
-      "id": "occ-1787539071048"
+      "status": "finalizado",
+      "createdById": "usr-3",
+      "createdByName": "Pedagoga Maria Silva",
+      "createdAt": "2026-08-24T04:06:09.018Z",
+      "directorNotes": "Visto da diretoria registrado. Agendada reunião com responsáveis.",
+      "updatedAt": "2026-08-24T04:06:09.241Z",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor(a) Wancleber"
     }
   ]
 }

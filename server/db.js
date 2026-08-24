@@ -707,6 +707,20 @@ export const db = {
         }
         
         const payload = { ...occurrence };
+        const firstStudent = Array.isArray(occurrence.students) && occurrence.students.length > 0
+          ? occurrence.students[0]
+          : {};
+        
+        payload.studentName = payload.studentName || firstStudent.studentName || 'Estudante';
+        payload.gradeCycle = payload.gradeCycle || firstStudent.gradeCycle || '';
+        payload.className = payload.className || firstStudent.className || '';
+        payload.teacherName = payload.teacherName || firstStudent.teacherName || '';
+        payload.guardianName = payload.guardianName || firstStudent.guardian?.name || '';
+        payload.contacts = payload.contacts || firstStudent.guardian?.contact || '';
+        payload.type = payload.type || (Array.isArray(payload.classifications) && payload.classifications[0]) || 'Atendimento Geral';
+        payload.subject = payload.subject || '';
+        payload.referrals = payload.referrals || '';
+        payload.directorNotes = payload.directorNotes || '';
         
         // If schema is missing columns, serialize them into observations
         if (!schemaCache.occurrences.hasSubjectMatter || 
