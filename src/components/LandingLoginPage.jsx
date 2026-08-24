@@ -26,7 +26,7 @@ export const IconSeguranca = () => (
 
 // Ícone 1: Escola Municipal (exato da imagem 2)
 export const IconEscolaVertical = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="#0e6b34" xmlns="http://www.w3.org/2000/svg">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="#0e6b34" xmlns="http://www.w3.org/2000/svg">
     <path d="M11 2v3h3l-1-1.5 1-1.5h-3z" fill="#0e6b34"/>
     <path d="M11 2v4" stroke="#0e6b34" strokeWidth="1.5" strokeLinecap="round"/>
     <polygon points="12,5 3,10 21,10" fill="#0e6b34"/>
@@ -40,7 +40,7 @@ export const IconEscolaVertical = () => (
 
 // Ícone 2: Grupo de Alunos (exato da imagem 2)
 export const IconAlunosVertical = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="#00647e" xmlns="http://www.w3.org/2000/svg">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="#00647e" xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="7" r="2.5" />
     <path d="M12 10.5c-2.3 0-4.5 1.1-4.5 3.3V16h9v-2.2c0-2.2-2.2-3.3-4.5-3.3z" />
     <circle cx="6" cy="9" r="2" />
@@ -52,7 +52,7 @@ export const IconAlunosVertical = () => (
 
 // Ícone 3: Expansão com Barras e Seta (exato da imagem 2)
 export const IconExpansaoVertical = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="15" width="3.5" height="6" rx="1" fill="#0e6b34" />
     <rect x="10.25" y="11" width="3.5" height="10" rx="1" fill="#0e6b34" />
     <rect x="16.5" y="7" width="3.5" height="14" rx="1" fill="#0e6b34" />
