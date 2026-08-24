@@ -5930,11 +5930,13 @@ function MainApp() {
             <strong>Filtros Ativos: </strong>
             <span>Escola: {reportFilterSchool ? (schools.find(s => s.id === reportFilterSchool)?.name || reportFilterSchool) : 'Todas'} | </span>
             <span>Período: {reportFilterDateStart || reportFilterDateEnd ? `${formatDisplayDate(reportFilterDateStart)} a ${formatDisplayDate(reportFilterDateEnd)}` : 'Todo o período'} | </span>
+            <span>Sexo: {reportFilterSex || 'Todos'} | </span>
             <span>Turno: {reportFilterTurn || 'Todos'} | </span>
             <span>Ciclo: {reportFilterGrade || 'Todos'} | </span>
-            <span>Classificação: {reportFilterClassification || reportFilterClass || 'Todas'} | </span>
+            <span>Natureza: {reportFilterNature || 'Todas'} | </span>
+            <span>Classificação: {reportFilterClassification || 'Todas'} | </span>
             <span>Sentimento: {reportFilterFeeling || 'Todos'} | </span>
-            <span>Status: {reportFilterStatus || 'Todos'}</span>
+            <span>Status: {reportFilterStatus === 'com_visto' ? 'Com Visto' : reportFilterStatus === 'sem_visto' ? 'Pendente de Visto' : reportFilterStatus === 'rascunho' ? 'Em Rascunho' : (reportFilterStatus || 'Todos')}</span>
           </div>
 
           {/* Indicadores Resumidos (KPIs) */}
