@@ -580,7 +580,56 @@ const ROLE_TUTORIALS_DATA = {
   }
 };
 
-function App() {
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--bg-app, #f8fafc)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ color: 'var(--danger, #dc2626)', marginBottom: '1rem' }}>⚠️ Ocorreu uma instabilidade na exibição da tela</h2>
+          <p style={{ color: 'var(--text-secondary, #64748b)', maxWidth: '500px', marginBottom: '1.5rem' }}>
+            {this.state.error?.message || 'Erro inesperado de renderização.'}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button 
+              className="btn btn-primary"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+            >
+              🔄 Recarregar Página
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => {
+                localStorage.removeItem('user');
+                window.location.reload();
+              }}
+            >
+              🚪 Voltar ao Login
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function MainApp() {
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
@@ -1675,23 +1724,27 @@ function App() {
   };
 
   // Helper validation for Step 1
-  const isStep1Valid = formData.students.every(s => 
-    s.studentName.trim().length >= 3 && 
-    s.sex && 
-    s.turn.trim() && 
-    s.gradeCycle && 
-    s.className.trim() &&
-    s.teacherName.trim() &&
-    s.subject_matter.trim() &&
-    s.guardian.name.trim() &&
-    s.guardian.contact.trim()
-  ) && (user?.role !== 'gestor' && user?.role !== 'seduc' ? true : Boolean(formData.schoolId));
+  const isStep1Valid = Boolean(
+    Array.isArray(formData?.students) && 
+    formData.students.length > 0 &&
+    formData.students.every(s => 
+      (s?.studentName || '').trim().length >= 3 && 
+      s?.sex && 
+      (s?.turn || '').trim() && 
+      s?.gradeCycle && 
+      (s?.className || '').trim() &&
+      (s?.teacherName || '').trim() &&
+      (s?.subject_matter || '').trim() &&
+      (s?.guardian?.name || '').trim() &&
+      (s?.guardian?.contact || '').trim()
+    ) && (user?.role !== 'gestor' && user?.role !== 'seduc' ? true : Boolean(formData?.schoolId))
+  );
 
   // Helper validation for Step 2
-  const isStep2Valid = formData.subject.trim().length >= 10 && formData.classifications.length > 0;
+  const isStep2Valid = Boolean((formData?.subject || '').trim().length >= 10 && Array.isArray(formData?.classifications) && formData.classifications.length > 0);
 
   // Helper validation for Step 4 (Encaminhamentos)
-  const isStep4Valid = formData.referrals.trim().length >= 5;
+  const isStep4Valid = Boolean((formData?.referrals || '').trim().length >= 5);
 
   // Render Loading Splash Screen
   if (loading) {
@@ -2071,11 +2124,11 @@ function App() {
           <div className="user-info">
             <div className="user-name">{user.name}</div>
             <div className="user-role" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>{user.role === 'superadmin' ? '👑 SUPER ADMIN' : user.role.toUpperCase()} {user.schoolName ? `| ${user.schoolName}` : ''}</span>
+              <span>{user.role === 'superadmin' ? '👑 SUPER ADMIN' : (user.role?.toUpperCase() || 'USUÁRIO')} {user.schoolName ? `| ${user.schoolName}` : ''}</span>
               <button
                 type="button"
                 className="help-role-badge"
-                title={`Tutorial e Permissões do perfil: ${ROLE_TUTORIALS_DATA[user.role]?.name || user.role}`}
+                title={`Tutorial e Permissões do perfil: ${ROLE_TUTORIALS_DATA[user.role]?.name || user.role || 'Perfil'}`}
                 onClick={() => {
                   setTutorialSelectedRole(user.role === 'seduc' ? 'seduc' : user.role);
                   setTutorialSubTab('overview');
@@ -2084,7 +2137,7 @@ function App() {
               >
                 ❓
                 <span className="tooltip-role-text">
-                  💡 Tutorial e Permissões do Perfil ({ROLE_TUTORIALS_DATA[user.role]?.name || user.role})
+                  💡 Tutorial e Permissões do Perfil ({ROLE_TUTORIALS_DATA[user.role]?.name || user.role || 'Perfil'})
                 </span>
               </button>
             </div>
@@ -2183,7 +2236,7 @@ function App() {
               <div>
                 <h2>Dashboard de Acompanhamento</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  {user.role === 'gestor' || user.role === 'seduc' ? 'Visão global da rede municipal' : `Visão geral: ${user.schoolName}`} | Hoje {new Date().toLocaleDateString('pt-BR')}
+                  {user.role === 'gestor' || user.role === 'seduc' ? 'Visão global da rede municipal' : `Visão geral: ${user.schoolName || 'Escola Municipal'}`} | Hoje {new Date().toLocaleDateString('pt-BR')}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -2191,7 +2244,7 @@ function App() {
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconSchool /> Novo Atendimento</span>
                 </button>
                 {(user.role === 'gestor' || user.role === 'seduc') && (
-                  <button className="btn btn-success" onClick={handleExportSPSS}>
+                  <button className="btn btn-success" onClick={() => handleExportSPSS()}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
                   </button>
                 )}
@@ -5537,4 +5590,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
+  );
+}
