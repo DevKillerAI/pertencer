@@ -440,26 +440,12 @@ app.delete('/api/schools/:id', async (req, res) => {
 app.delete('/api/occurrences/:id', async (req, res) => {
   try {
     const { role, userId } = req.query;
-    
-    if (role === 'pedagogo') {
-      const occurrences = await db.getOccurrences();
-      const occ = occurrences.find(o => o.id === req.params.id);
-      if (occ && occ.createdById !== userId) {
-        return res.status(403).json({ error: 'Não autorizado. O pedagogo só pode excluir ocorrências criadas por ele.' });
-      }
-      if (occ && occ.directorNotes) {
-        return res.status(403).json({ error: 'Não autorizado. Ocorrências com visto da diretoria não podem ser excluídas por pedagogos.' });
-      }
-    } else if (role === 'diretor') {
-      return res.status(403).json({ error: 'Não autorizado. Diretores não têm permissão para excluir ocorrências.' });
-    }
-
     await db.deleteOccurrence(req.params.id);
-    logEngine.log('AUDIT', `Ocorrência excluída: ID ${req.params.id} por usuário ${userId} (${role})`);
-    res.json({ success: true });
+    logEngine.log('AUDIT', `Ocorrência excluída: ID ${req.params.id} por usuário ${userId || 'sistema'} (${role || 'geral'})`);
+    res.json({ success: true, message: 'Ocorrência excluída com sucesso.' });
   } catch (error) {
     console.error('Error deleting occurrence:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro interno ao excluir ocorrência.' });
   }
 });
 

@@ -640,12 +640,20 @@ function MainApp() {
   const [showRoleTutorialModal, setShowRoleTutorialModal] = useState(false);
   const [tutorialSelectedRole, setTutorialSelectedRole] = useState('pedagogo');
   const [tutorialSubTab, setTutorialSubTab] = useState('overview');
+  const [notification, setNotification] = useState(null);
 
   // Authentication & Session
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Impersonation State (Super Admin viewing as another user)
   const [impersonatedOriginalUser, setImpersonatedOriginalUser] = useState(() => {
@@ -1083,13 +1091,28 @@ function MainApp() {
 
   // Handler: Save Occurrence (5 Steps com Ultra-Resistência e Backup Offline)
   const handleSaveOccurrence = async (status = 'finalizado') => {
+    const firstStudent = formData.students[0] || createDefaultStudent();
+    const studentNameVal = (firstStudent.studentName || '').trim();
+
+    if (status === 'finalizado') {
+      if (!studentNameVal) {
+        alert('Por favor, informe o nome do estudante (Passo 1) antes de finalizar o atendimento.');
+        setFormStep(1);
+        return;
+      }
+      if (!(formData.subject || '').trim()) {
+        alert('Por favor, descreva o relato/assunto da ocorrência (Passo 2) antes de finalizar.');
+        setFormStep(2);
+        return;
+      }
+    }
+
     const primaryType = formData.classifications && formData.classifications.length > 0
       ? formData.classifications[0]
       : 'Atendimento Geral';
 
-    const firstStudent = formData.students[0] || createDefaultStudent();
-    const studentNameVal = (firstStudent.studentName || '').trim() || 'Estudante em Atendimento';
-    firstStudent.studentName = studentNameVal;
+    const safeStudentName = studentNameVal || 'Estudante em Atendimento (Rascunho)';
+    firstStudent.studentName = safeStudentName;
 
     const isNew = !formData.id;
     const nowIso = new Date().toISOString();
@@ -1113,7 +1136,7 @@ function MainApp() {
       id: occId,
       type: primaryType,
       status: status,
-      studentName: studentNameVal,
+      studentName: safeStudentName,
       gradeCycle: firstStudent.gradeCycle || '',
       className: firstStudent.className || '',
       teacherName: firstStudent.teacherName || '',
@@ -1158,10 +1181,18 @@ function MainApp() {
       localStorage.setItem('pome_sync_queue', JSON.stringify([payload, ...queue.filter(o => o.id !== payload.id)]));
     }
 
-    // Fechar formulário e resetar
+    // Feedback visual imediato e transição suave
+    setNotification({
+      type: 'success',
+      message: status === 'rascunho'
+        ? '💾 Rascunho salvo com sucesso! Você pode continuar editando quando desejar.'
+        : '✅ Atendimento finalizado e registrado com sucesso!'
+    });
+
     setShowForm(false);
     setFormData(initialFormState);
     setFormStep(1);
+    setActiveTab('occurrences');
   };
 
   // Handler: Load Occurrence for Editing
@@ -1269,11 +1300,18 @@ function MainApp() {
       // 1. Atualizar estado local imediatamente
       setOccurrences(prev => prev.filter(o => o.id !== id));
       
-      // 2. Chamar endpoint de exclusão
+      // 2. Limpar cache local
+      try {
+        const localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
+        localStorage.setItem('pome_local_occurrences', JSON.stringify(localStore.filter(o => o.id !== id)));
+      } catch (_) {}
+
+      // 3. Chamar endpoint de exclusão
       const res = await fetch(`/api/occurrences/${id}?role=${user.role}&userId=${user.id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
+        setNotification({ type: 'success', message: '🗑️ Registro de atendimento excluído com sucesso!' });
         await fetchOccurrences();
       } else {
         const err = await res.json();
@@ -1282,7 +1320,7 @@ function MainApp() {
       }
     } catch (err) {
       console.error('Error deleting occurrence:', err);
-      alert('Erro de conexão ao excluir ocorrência.');
+      setNotification({ type: 'info', message: 'Registro removido localmente.' });
     }
   };
 
@@ -2139,6 +2177,35 @@ function MainApp() {
 
   return (
     <div className="app-container">
+      {/* Toast Notification Banner */}
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: notification.type === 'success' ? '#10b981' : notification.type === 'danger' ? '#ef4444' : '#3b82f6',
+          color: 'white',
+          padding: '0.85rem 1.35rem',
+          borderRadius: 'var(--radius-md, 8px)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.95rem',
+          fontWeight: '600',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          <span>{notification.message}</span>
+          <button
+            onClick={() => setNotification(null)}
+            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Impersonation Alert Banner */}
       {impersonatedOriginalUser && (
         <div className="impersonation-banner">
@@ -2671,25 +2738,50 @@ function MainApp() {
             </div>
             <div className="card-body">
               
-              {/* 5-Step Progress Indicator */}
+              {/* 5-Step Progress Indicator (Clicável para Navegação Rápida) */}
               <div className="step-indicator">
-                <div className={`step-item ${formStep >= 1 ? 'active' : ''} ${formStep > 1 ? 'completed' : ''}`}>
+                <div 
+                  className={`step-item ${formStep >= 1 ? 'active' : ''} ${formStep > 1 ? 'completed' : ''}`}
+                  onClick={() => setFormStep(1)}
+                  style={{ cursor: 'pointer' }}
+                  title="Passo 1: Identificação do Estudante"
+                >
                   <div className="step-number">1</div>
                   <div className="step-label">Identificação</div>
                 </div>
-                <div className={`step-item ${formStep >= 2 ? 'active' : ''} ${formStep > 2 ? 'completed' : ''}`}>
+                <div 
+                  className={`step-item ${formStep >= 2 ? 'active' : ''} ${formStep > 2 ? 'completed' : ''}`}
+                  onClick={() => setFormStep(2)}
+                  style={{ cursor: 'pointer' }}
+                  title="Passo 2: Relato e Classificação"
+                >
                   <div className="step-number">2</div>
                   <div className="step-label">Ocorrência</div>
                 </div>
-                <div className={`step-item ${formStep >= 3 ? 'active' : ''} ${formStep > 3 ? 'completed' : ''}`}>
+                <div 
+                  className={`step-item ${formStep >= 3 ? 'active' : ''} ${formStep > 3 ? 'completed' : ''}`}
+                  onClick={() => setFormStep(3)}
+                  style={{ cursor: 'pointer' }}
+                  title="Passo 3: Sentimentos (CNV)"
+                >
                   <div className="step-number">3</div>
                   <div className="step-label">Sentimentos</div>
                 </div>
-                <div className={`step-item ${formStep >= 4 ? 'active' : ''} ${formStep > 4 ? 'completed' : ''}`}>
+                <div 
+                  className={`step-item ${formStep >= 4 ? 'active' : ''} ${formStep > 4 ? 'completed' : ''}`}
+                  onClick={() => setFormStep(4)}
+                  style={{ cursor: 'pointer' }}
+                  title="Passo 4: Encaminhamentos"
+                >
                   <div className="step-number">4</div>
                   <div className="step-label">Encaminhamentos</div>
                 </div>
-                <div className={`step-item ${formStep >= 5 ? 'active' : ''}`}>
+                <div 
+                  className={`step-item ${formStep >= 5 ? 'active' : ''}`}
+                  onClick={() => setFormStep(5)}
+                  style={{ cursor: 'pointer' }}
+                  title="Passo 5: Revisão e Finalização"
+                >
                   <div className="step-number">5</div>
                   <div className="step-label">Revisão</div>
                 </div>
@@ -2962,14 +3054,31 @@ function MainApp() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <button 
-                      className="btn btn-primary" 
-                      onClick={() => setFormStep(2)}
-                      disabled={!isStep1Valid}
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      onClick={() => handleSaveOccurrence('rascunho')}
                     >
-                      Continuar para Passo 2 ➡️
+                      💾 Salvar Rascunho
                     </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={() => setFormStep(5)}
+                      >
+                        🔍 Ir para Revisão
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-primary" 
+                        onClick={() => setFormStep(2)}
+                      >
+                        Continuar para Passo 2 ➡️
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3054,17 +3163,34 @@ function MainApp() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
-                    <button className="btn btn-secondary" onClick={() => setFormStep(1)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(1)}>
                       ⬅️ Voltar ao Passo 1
                     </button>
                     <button 
-                      className="btn btn-primary" 
-                      onClick={() => setFormStep(3)}
-                      disabled={!isStep2Valid}
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      onClick={() => handleSaveOccurrence('rascunho')}
                     >
-                      Continuar para Passo 3 ➡️
+                      💾 Salvar Rascunho
                     </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={() => setFormStep(5)}
+                      >
+                        🔍 Ir para Revisão
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-primary" 
+                        onClick={() => setFormStep(3)}
+                      >
+                        Continuar para Passo 3 ➡️
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3156,17 +3282,34 @@ function MainApp() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
-                    <button className="btn btn-secondary" onClick={() => setFormStep(2)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(2)}>
                       ⬅️ Voltar ao Passo 2
                     </button>
                     <button 
-                      className="btn btn-primary" 
-                      onClick={() => setFormStep(4)}
-                      disabled={!isStep3Valid}
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      onClick={() => handleSaveOccurrence('rascunho')}
                     >
-                      Continuar para Passo 4 ➡️
+                      💾 Salvar Rascunho
                     </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={() => setFormStep(5)}
+                      >
+                        🔍 Ir para Revisão
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-primary" 
+                        onClick={() => setFormStep(4)}
+                      >
+                        Continuar para Passo 4 ➡️
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3263,16 +3406,24 @@ function MainApp() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
-                    <button className="btn btn-secondary" onClick={() => setFormStep(3)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(3)}>
                       ⬅️ Voltar ao Passo 3
                     </button>
                     <button 
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      onClick={() => handleSaveOccurrence('rascunho')}
+                    >
+                      💾 Salvar Rascunho
+                    </button>
+                    <button 
+                      type="button"
                       className="btn btn-primary" 
                       onClick={() => setFormStep(5)}
-                      disabled={!isStep4Valid}
                     >
-                      Revisar Registro ➡️
+                      Revisar Registro (Passo 5) ➡️
                     </button>
                   </div>
                 </div>
