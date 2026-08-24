@@ -606,3 +606,5 @@ app.listen(PORT, () => {
   backupEngine.createBackup('startup').catch(() => {});
 });
 
+export default app;
+

@@ -881,6 +881,17 @@ function MainApp() {
     }
   };
 
+  // Handler: Logout
+  const handleLogout = () => {
+    setUser(null);
+    setImpersonatedOriginalUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('impersonatedOriginalUser');
+    setActiveTab('dashboard');
+    setShowForm(false);
+    setSelectedOccurrence(null);
+  };
+
   // Handler: Self-Registration (Itens 8, 9, 10, 11, 12)
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -1249,6 +1260,30 @@ function MainApp() {
 
     setShowDetailModal(false);
     setSelectedOccurrence(null);
+  };
+
+  // Handler: Delete Occurrence
+  const handleDeleteOccurrence = async (id) => {
+    if (!confirm('Tem certeza de que deseja excluir permanentemente este registro de atendimento?')) return;
+    try {
+      // 1. Atualizar estado local imediatamente
+      setOccurrences(prev => prev.filter(o => o.id !== id));
+      
+      // 2. Chamar endpoint de exclusão
+      const res = await fetch(`/api/occurrences/${id}?role=${user.role}&userId=${user.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await fetchOccurrences();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erro ao excluir ocorrência.');
+        await fetchOccurrences();
+      }
+    } catch (err) {
+      console.error('Error deleting occurrence:', err);
+      alert('Erro de conexão ao excluir ocorrência.');
+    }
   };
 
   // Format CPF Input
