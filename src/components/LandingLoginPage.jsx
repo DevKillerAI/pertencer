@@ -113,9 +113,7 @@ export default function LandingLoginPage({
                   <span className="hero-line-green">acompanhamento.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Uma plataforma para apoiar o registro de<br />
-                  ocorrências, a mediação e a análise do clima<br />
-                  escolar.
+                  Uma plataforma para apoiar o registro de ocorrências, a mediação e a análise do clima escolar.
                 </p>
               </div>
 
