@@ -245,6 +245,18 @@
       "updatedByName": "",
       "createdAt": "2026-07-31T12:00:00.000Z",
       "editHistory": []
+    },
+    {
+      "id": "occ-visto-test",
+      "schoolId": "esc-1",
+      "date": "2026-08-24",
+      "studentName": "Aluno Teste",
+      "subject": "Assunto Teste",
+      "type": "Conflito",
+      "direction_referrals": [
+        "Conselho Tutelar"
+      ],
+      "directorNotes": "Visto testado com sucesso!"
     }
   ]
 }

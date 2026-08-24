@@ -936,13 +936,31 @@ function MainApp() {
             localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
           } catch (_) {}
           
-          const merged = [...data];
+          const mergedMap = new Map();
+          data.forEach(item => mergedMap.set(item.id, { ...item }));
+          
           localStore.forEach(loc => {
-            if (!merged.some(m => m.id === loc.id)) {
-              merged.unshift(loc);
+            const existing = mergedMap.get(loc.id);
+            if (!existing) {
+              mergedMap.set(loc.id, loc);
+            } else {
+              const mergedRecord = { ...existing };
+              // Preserve director notes from localStore if server didn't have it yet
+              if (loc.directorNotes && loc.directorNotes.trim() && (!existing.directorNotes || !existing.directorNotes.trim())) {
+                mergedRecord.directorNotes = loc.directorNotes;
+              }
+              if (loc.updatedAt && (!existing.updatedAt || new Date(loc.updatedAt) > new Date(existing.updatedAt))) {
+                if (loc.directorNotes) mergedRecord.directorNotes = loc.directorNotes;
+              }
+              mergedMap.set(loc.id, mergedRecord);
             }
           });
+
+          const merged = Array.from(mergedMap.values());
           setOccurrences(merged);
+          try {
+            localStorage.setItem('pome_local_occurrences', JSON.stringify(merged));
+          } catch (_) {}
           return merged;
         }
       }
@@ -1460,20 +1478,28 @@ function MainApp() {
       action: 'Visto e parecer da diretoria'
     });
 
+    const noteToSave = (directorNotes && directorNotes.trim()) ? directorNotes.trim() : 'Visto confirmado e acompanhado pela Direção Escolar.';
+
     const updated = {
       ...selectedOccurrence,
-      directorNotes: directorNotes,
+      directorNotes: noteToSave,
       updatedAt: nowIso,
       updatedById: user.id,
       updatedByName: user.name,
       editHistory: history
     };
 
-    // 1. Atualizar imediatamente no estado local
+    // 1. Atualizar imediatamente no estado local da interface
     setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o));
     setSelectedOccurrence(updated);
 
-    // 2. Salvar no backend com fila de sincronização
+    // 2. Gravar imediatamente no LocalStorage (pome_local_occurrences)
+    try {
+      const localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
+      localStorage.setItem('pome_local_occurrences', JSON.stringify([updated, ...localStore.filter(o => o.id !== updated.id)]));
+    } catch (_) {}
+
+    // 3. Salvar no backend com fila de sincronização
     try {
       const res = await fetch('/api/occurrences', {
         method: 'POST',
@@ -1491,6 +1517,11 @@ function MainApp() {
       const queue = JSON.parse(localStorage.getItem('pome_sync_queue') || '[]');
       localStorage.setItem('pome_sync_queue', JSON.stringify([updated, ...queue.filter(o => o.id !== updated.id)]));
     }
+
+    setNotification({
+      type: 'success',
+      message: '✅ Visto da diretoria registrado e confirmado com sucesso!'
+    });
 
     setShowDetailModal(false);
     setSelectedOccurrence(null);
@@ -5538,29 +5569,51 @@ function MainApp() {
               )}
 
               {/* Observações da Diretoria */}
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
-                <strong>Observações da Diretoria (Visto / Acompanhamento)</strong>
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    Observações da Diretoria (Visto / Acompanhamento)
+                  </strong>
+                  {Boolean(selectedOccurrence.directorNotes && selectedOccurrence.directorNotes.trim()) && (
+                    <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac', fontSize: '0.75rem' }}>
+                      <IconCheckCircle style={{ width: '12px', height: '12px', display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }} />
+                      Visto Confirmado
+                    </span>
+                  )}
+                </div>
                 
-                {(user.role === 'diretor' || user.role === 'gestor' || user.role === 'seduc') ? (
+                {(user.role === 'diretor' || user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') ? (
                   selectedOccurrence.status === 'rascunho' ? (
                     <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic', fontSize: '0.875rem' }}>
                       Esta ocorrência está em modo de Rascunho. Aguarde a finalização pelo pedagogo para registrar o visto da diretoria.
                     </p>
                   ) : (
-                    <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      {Boolean(selectedOccurrence.directorNotes && selectedOccurrence.directorNotes.trim()) && (
+                        <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '0.65rem 0.85rem', fontSize: '0.84rem', color: '#166534' }}>
+                          <div style={{ fontWeight: '700', marginBottom: '2px' }}>Parecer Atual da Diretoria:</div>
+                          <div style={{ whiteSpace: 'pre-wrap' }}>{selectedOccurrence.directorNotes}</div>
+                        </div>
+                      )}
                       <textarea
                         className="form-textarea"
                         placeholder="Escreva aqui observações do diretor, visto ou plano de acompanhamento..."
                         value={directorNotes}
                         onChange={(e) => setDirectorNotes(e.target.value)}
+                        rows={3}
                       />
-                      <button className="btn btn-primary" onClick={handleSaveDirectorNotes}>
-                        Confirmar Visto da Diretoria
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleSaveDirectorNotes}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: '600' }}
+                      >
+                        <IconCheckCircle style={{ width: '16px', height: '16px' }} />
+                        {selectedOccurrence.directorNotes ? 'Atualizar Visto / Parecer da Diretoria' : 'Confirmar Visto da Diretoria'}
                       </button>
                     </div>
                   )
                 ) : (
-                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.35rem', fontStyle: selectedOccurrence.directorNotes ? 'normal' : 'italic', fontSize: '0.85rem' }}>
                     {selectedOccurrence.directorNotes || 'Nenhuma observação cadastrada pela diretoria ainda.'}
                   </p>
                 )}

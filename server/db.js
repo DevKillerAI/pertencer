@@ -27,7 +27,8 @@ export const schemaCache = {
     hasStatus: false,
     hasUpdatedAt: false,
     hasUpdatedById: false,
-    hasUpdatedByName: false
+    hasUpdatedByName: false,
+    hasDirectorNotes: false
   },
   users: {
     hasEmail: false,
@@ -77,6 +78,9 @@ async function detectSchema() {
 
     const { error: errEditHistory } = await supabase.from('occurrences').select('editHistory').limit(1);
     schemaCache.occurrences.hasEditHistory = !errEditHistory;
+
+    const { error: errDirectorNotes } = await supabase.from('occurrences').select('directorNotes').limit(1);
+    schemaCache.occurrences.hasDirectorNotes = !errDirectorNotes;
 
     const { error: errEmail } = await supabase.from('users').select('email').limit(1);
     schemaCache.users.hasEmail = !errEmail;
@@ -625,6 +629,9 @@ export const db = {
                   if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
                   if (!schemaCache.occurrences.hasCreatedAt && meta.createdAt !== undefined) decoded.createdAt = meta.createdAt;
                   if (!schemaCache.occurrences.hasEditHistory && meta.editHistory !== undefined) decoded.editHistory = meta.editHistory;
+                  if (meta.directorNotes !== undefined && (!decoded.directorNotes || !decoded.directorNotes.trim())) {
+                    decoded.directorNotes = meta.directorNotes;
+                  }
                 } catch (e) {
                   console.error("Failed to parse serialized occurrence metadata:", e);
                 }
@@ -744,6 +751,7 @@ export const db = {
             feelings_observations: occurrence.feelings_observations || '',
             direction_referrals: occurrence.direction_referrals || [],
             status: occurrence.status || 'finalizado',
+            directorNotes: occurrence.directorNotes || '',
             createdAt: occurrence.createdAt || (occurrence.date ? `${occurrence.date}T12:00:00.000Z` : new Date().toISOString()),
             updatedAt: occurrence.updatedAt || '',
             updatedById: occurrence.updatedById || '',
@@ -776,6 +784,24 @@ export const db = {
           .upsert(payload)
           .select());
         if (error) throw error;
+        
+        // Also update local db.json mirror
+        try {
+          const data = readDb();
+          if (occurrence.id) {
+            const exists = data.occurrences.some(o => o.id === occurrence.id);
+            if (exists) {
+              data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
+            } else {
+              data.occurrences.push(occurrence);
+            }
+          } else {
+            occurrence.id = 'occ-' + Date.now();
+            data.occurrences.push(occurrence);
+          }
+          writeDb(data);
+        } catch (_) {}
+
         return occurrence;
       } catch (err) {
         console.warn('Supabase saveOccurrence failed, using local fallback:', err.message || err);
