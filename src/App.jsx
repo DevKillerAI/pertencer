@@ -485,7 +485,7 @@ const ROLE_TUTORIALS_DATA = {
   pedagogo: {
     roleKey: 'pedagogo',
     name: 'Pedagogo(a) / Coordenação Pedagógica',
-    icon: '🎓',
+    iconType: 'book',
     color: '#d97706',
     tagline: 'Atendimento direto, escuta ativa (CNV), mediação e registro de ocorrências escolares.',
     overview: 'O perfil de Pedagogo(a) é o coração da mediação escolar. Ele é responsável pelo acolhimento de estudantes e responsáveis, realização de escuta qualificada sem julgamentos morais, registro das ocorrências com a taxonomia de 3 níveis, aplicação de práticas restaurativas e acompanhamento contínuo.',
@@ -519,7 +519,7 @@ const ROLE_TUTORIALS_DATA = {
   diretor: {
     roleKey: 'diretor',
     name: 'Diretor(a) Escolar',
-    icon: '🏫',
+    iconType: 'school',
     color: '#059669',
     tagline: 'Gestão institucional, homologação de vistos, pareceres diretivos e articulação da rede de proteção.',
     overview: 'A Direção Escolar possui a atribuição de acompanhar o clima da unidade, analisar todos os atendimentos registrados pelos pedagogos, emitir pareceres formais (Vistos da Diretoria), acionar os órgãos de garantia de direitos e liderar as ações preventivas na escola.',
@@ -540,7 +540,7 @@ const ROLE_TUTORIALS_DATA = {
       ]
     },
     steps: [
-      { step: '1', title: 'Filtrar Pendências', desc: 'No Painel Principal, localize as ocorrências com badge amarelo "Pendente" ou use o filtro do dashboard.' },
+      { step: '1', title: 'Filtrar Pendências', desc: 'No Painel Principal, localize as ocorrências com badge "Visto Obrigatório" ou use os filtros analíticos.' },
       { step: '2', title: 'Analisar o Atendimento', desc: 'Clique no botão "Detalhes" para ler o relato dos fatos, sentimentos mapeados e ações tomadas pela equipe pedagógica.' },
       { step: '3', title: 'Emitir o Visto Oficial', desc: 'No bloco "Observações da Diretoria", registre o parecer formal e clique em "Confirmar Visto da Diretoria".' },
       { step: '4', title: 'Acionar Rede Externa', desc: 'Em casos de violação de direitos ou risco, articule o encaminhamento formal junto ao Conselho Tutelar/CAPS.' },
@@ -550,9 +550,9 @@ const ROLE_TUTORIALS_DATA = {
   },
   assistente: {
     roleKey: 'assistente',
-    name: 'Assistente / Mediador(a) de Conflitos',
-    icon: '🤝',
-    color: '#0ea5e9',
+    name: 'Assistente / Mediador(a) Escolar',
+    iconType: 'users',
+    color: '#0284c7',
     tagline: 'Apoio ao acolhimento, escuta inicial e colaboração no registro de mediações escolares.',
     overview: 'O(A) Assistente ou Mediador(a) atua no suporte operacional e acolhimento direto dos estudantes, auxiliando na identificação precoce de conflitos, registro de atendimentos preliminares e articulação com a coordenação pedagógica.',
     permissions: {
@@ -577,10 +577,10 @@ const ROLE_TUTORIALS_DATA = {
     ],
     lgpd: 'Mantenha total discrição e sigilo funcional em relação a qualquer conversa ou dado sociofamiliar obtido no atendimento.'
   },
-  gestor: {
-    roleKey: 'gestor',
-    name: 'Gestor(a) SEDUC / Secretaria Municipal de Educação',
-    icon: '🌐',
+  seduc: {
+    roleKey: 'seduc',
+    name: 'Gestor(a) SEDUC / Secretaria de Educação',
+    iconType: 'school',
     color: '#1e40af',
     tagline: 'Supervisão macro da rede, formulação de políticas públicas e governança educacional.',
     overview: 'A equipe gestora da SEDUC possui visão analítica panorâmica sobre todas as unidades escolares do município. Utiliza os dados de clima escolar para identificar demandas regionais, apoiar equipes pedagógicas e subsidiar formações continuadas.',
@@ -596,7 +596,7 @@ const ROLE_TUTORIALS_DATA = {
       ],
       restricted: [
         'Não possui acesso ao módulo de infraestrutura técnica/backups (exclusivo do Super Admin)',
-        'Não possui funcionalidade de impersonação de contas'
+        'Não possui funcionalidade de impersonação de contas de usuários'
       ]
     },
     steps: [
@@ -605,43 +605,19 @@ const ROLE_TUTORIALS_DATA = {
       { step: '3', title: 'Exportar para Pesquisa (SPSS)', desc: 'Na aba "Relatórios de Gestão", clique em "Exportar SPSS" para obter a base estruturada para análise acadêmica.' },
       { step: '4', title: 'Planejamento Estratégico', desc: 'Utilize os indicadores de situações de risco para direcionar equipes de apoio psicossocial às escolas prioritárias.' }
     ],
-    lgpd: 'Tratamento de dados em conformidade com o Art. 7º e 11 da LGPD para execução de políticas públicas educacionais.'
-  },
-  seduc: {
-    roleKey: 'seduc',
-    name: 'SEDUC / Equipe Técnica da Secretaria',
-    icon: '🌐',
-    color: '#1e40af',
-    tagline: 'Acompanhamento pedagógico regional e monitoramento de indicadores de clima escolar.',
-    overview: 'Membros da equipe técnica da Secretaria de Educação possuem acesso analítico a todas as unidades escolares para suporte, orientação formativa e articulação com órgãos do município.',
-    permissions: {
-      allowed: [
-        'Visualização de ocorrências de toda a rede municipal de ensino',
-        'Emissão de relatórios consolidados em SPSS e CSV',
-        'Gestão de unidades escolares e contas pedagógicas',
-        'Filtro dinâmico por dimensões, escolas e turmas'
-      ],
-      restricted: [
-        'Não possui acesso ao módulo de backups e telemetria do Super Admin'
-      ]
-    },
-    steps: [
-      { step: '1', title: 'Diagnóstico da Rede', desc: 'Acesse o Painel Principal e Relatórios de Gestão para monitorar ocorrências em toda a rede.' },
-      { step: '2', title: 'Apoio às Unidades', desc: 'Identifique escolas com maior taxa de casos críticos e organize intervenções preventivas.' }
-    ],
-    lgpd: 'Uso estritamente institucional dos dados estatísticos conforme a legislação vigente.'
+    lgpd: 'Tratamento de dados em conformidade com os Arts. 7º e 11 da LGPD para execução de políticas públicas educacionais.'
   },
   superadmin: {
     roleKey: 'superadmin',
     name: 'Super Administrador (Master Admin)',
-    icon: '👑',
+    iconType: 'shield',
     color: '#7c3aed',
     tagline: 'Acesso total, telemetria em tempo real, auditoria, impersonação e recuperação de desastres.',
     overview: 'O perfil de Super Administrador Master detém privilégios totais sobre a plataforma. É responsável pela governança técnica, segurança da informação, auditoria em tempo real, suporte através de impersonação e execução de backups contínuos.',
     permissions: {
       allowed: [
         'Acesso irrestrito a todas as páginas, escolas, usuários e ocorrências da plataforma',
-        'Aba exclusiva "⚡ Administração do Sistema" com telemetria de CPU, RAM, Uptime e Banco',
+        'Aba exclusiva "Administração do Sistema" com telemetria de CPU, RAM, Uptime e Banco',
         'Impersonação instantânea de qualquer conta para auditoria e suporte técnico em 1 clique',
         'Geração manual e automática de snapshots de Backup com download JSON e restauração completa',
         'Console de Logs de Auditoria LGPD e Erros do Sistema em tempo real',
@@ -658,6 +634,38 @@ const ROLE_TUTORIALS_DATA = {
       { step: '4', title: 'Análise de Logs', desc: 'Filtre os logs de severidade ERROR e AUDIT para garantir conformidade e rastreabilidade total.' }
     ],
     lgpd: 'Responsabilidade primária pela segurança técnica da base, criptografia e guarda dos backups em conformidade com a LGPD.'
+  }
+};
+
+// Hierarchy levels for tutorial viewing (superadmin: all; others: current role and below, never above)
+const ROLE_HIERARCHY_LEVELS = {
+  superadmin: 5,
+  seduc: 4,
+  gestor: 4,
+  diretor: 3,
+  pedagogo: 2,
+  assistente: 1
+};
+
+const ROLE_HIERARCHY_ORDER = ['superadmin', 'seduc', 'diretor', 'pedagogo', 'assistente'];
+
+const getVisibleTutorialRoles = (userRole) => {
+  const currentLevel = ROLE_HIERARCHY_LEVELS[userRole] || 1;
+  return ROLE_HIERARCHY_ORDER.filter(r => (ROLE_HIERARCHY_LEVELS[r] || 1) <= currentLevel);
+};
+
+const renderRoleIconComponent = (iconType, props = {}) => {
+  switch (iconType) {
+    case 'shield':
+      return <IconShield {...props} />;
+    case 'school':
+      return <IconSchool {...props} />;
+    case 'book':
+      return <IconBookOpen {...props} />;
+    case 'users':
+      return <IconUsers {...props} />;
+    default:
+      return <IconShield {...props} />;
   }
 };
 
@@ -5926,48 +5934,74 @@ function MainApp() {
       {/* TUTORIAL MODAL (GERAL) */}
       {showTutorialModal && (
         <div className="modal-overlay" onClick={() => setShowTutorialModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>💡 Tutorial e Guia do Sistema POME</h3>
-              <button className="btn btn-secondary" onClick={() => setShowTutorialModal(false)}>
-                ✕
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', maxHeight: '88vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                  <IconBookOpen style={{ width: '20px', height: '20px' }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--primary)', fontWeight: '800' }}>
+                    Tutorial e Guia do Sistema POME
+                  </h3>
+                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Plataforma Oficial de Monitoramento do Clima Escolar
+                  </p>
+                </div>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setShowTutorialModal(false)} style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
+                <IconX />
               </button>
             </div>
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', maxHeight: '75vh', padding: '1.5rem' }}>
-              
+
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', flex: 1, padding: '1.25rem 1.5rem' }}>
               <div>
-                <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Apresentação</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <h4 style={{ color: 'var(--primary)', marginBottom: '0.35rem', fontSize: '0.95rem', fontWeight: '700' }}>Apresentação Institucional</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.55', margin: 0 }}>
                   A plataforma <strong>POME</strong> é uma ferramenta de monitoramento do clima escolar desenvolvida para registro estruturado, escuta com base na Comunicação Não-Violenta (CNV), acompanhamento diretivo e integração com a rede de proteção da infância e adolescência.
                 </p>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Fluxo do Atendimento em 5 Passos</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
-                  <p><strong>1. Identificação:</strong> Inclusão de um ou múltiplos estudantes envolvidos com sexo, turno, ciclo/EJA e responsável direto.</p>
-                  <p><strong>2. Ocorrência:</strong> Relato detalhado do assunto primeiro e seleção da classificação pela nova taxonomia em 3 níveis (Perturbadoras, Agressivas/Violentas, Risco).</p>
-                  <p><strong>3. Sentimentos (CNV):</strong> Mapeamento das emoções expressas na escuta qualificada sem rótulos.</p>
-                  <p><strong>4. Encaminhamentos:</strong> Registro das ações tomadas na escola e encaminhamentos para Conselho Tutelar, CAPS, CRAS/CREAS se necessário.</p>
-                  <p><strong>5. Revisão & Emissão:</strong> Conferência geral, salvamento de rascunho/finalização e emissão em A4 com suporte à anonimização LGPD.</p>
+                <h4 style={{ color: 'var(--primary)', marginBottom: '0.65rem', fontSize: '0.95rem', fontWeight: '700' }}>Fluxo do Atendimento em 5 Etapas</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.84rem' }}>
+                  <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <strong>1. Identificação:</strong> Inclusão de um ou múltiplos estudantes atendidos, turnos, ciclos e dados de responsáveis.
+                  </div>
+                  <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <strong>2. Ocorrência:</strong> Relato descritivo dos fatos e classificação pelas 3 dimensões (Perturbadoras, Agressivas, Risco).
+                  </div>
+                  <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <strong>3. Sentimentos (CNV):</strong> Mapeamento das emoções expressas na escuta qualificada sem rótulos ou julgamentos.
+                  </div>
+                  <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <strong>4. Encaminhamentos:</strong> Registro de medidas escolares internas e articulação com a rede de proteção externa (Conselho Tutelar, CAPS, CRAS).
+                  </div>
+                  <div style={{ padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <strong>5. Revisão & Emissão:</strong> Validação geral, salvamento de rascunho ou finalização e impressão em folha A4 com conformidade LGPD.
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  onClick={() => {
-                    setShowTutorialModal(false);
-                    setTutorialSelectedRole(user?.role === 'seduc' ? 'seduc' : user?.role || 'pedagogo');
-                    setShowRoleTutorialModal(true);
-                  }}
-                >
-                  ❓ Abrir Guia de Permissões & Tutorial por Perfil
-                </button>
-              </div>
-
+            <div className="card-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '0.85rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}
+                onClick={() => {
+                  setShowTutorialModal(false);
+                  const initialRole = user?.role === 'gestor' ? 'seduc' : (user?.role || 'pedagogo');
+                  setTutorialSelectedRole(initialRole);
+                  setTutorialSubTab('overview');
+                  setShowRoleTutorialModal(true);
+                }}
+              >
+                <IconShield style={{ width: '16px', height: '16px' }} /> Guia de Permissões do Meu Perfil
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowTutorialModal(false)}>
+                Fechar
+              </button>
             </div>
           </div>
         </div>
@@ -5976,216 +6010,242 @@ function MainApp() {
       {/* ----------------- DYNAMIC ROLE TUTORIAL & PERMISSIONS MODAL ----------------- */}
       {showRoleTutorialModal && (
         <div className="modal-overlay" onClick={() => setShowRoleTutorialModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px', width: '95%' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
             
-            {/* Modal Header */}
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.6rem' }}>{ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.icon || '💡'}</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
-                    Guia de Permissões & Tutorial: <span style={{ color: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color || 'var(--primary)' }}>{ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.name}</span>
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-                    {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.tagline}
-                  </p>
-                </div>
-              </div>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => setShowRoleTutorialModal(false)}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '1rem', borderRadius: '50%' }}
-              >
-                ✕
-              </button>
-            </div>
+            {(() => {
+              const visibleRoles = getVisibleTutorialRoles(user?.role);
+              const activeRoleKey = visibleRoles.includes(tutorialSelectedRole) 
+                ? tutorialSelectedRole 
+                : (visibleRoles[0] || 'pedagogo');
+              const rData = ROLE_TUTORIALS_DATA[activeRoleKey] || ROLE_TUTORIALS_DATA.pedagogo;
 
-            <div className="card-body" style={{ padding: '1.25rem', overflowY: 'auto', maxHeight: '78vh' }}>
-              
-              {/* Role Switcher Tabs (Permite navegar entre todos os perfis) */}
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.4rem' }}>
-                  Consultar outro perfil de usuário:
-                </span>
-                <div className="role-tutorial-tabs">
-                  {Object.values(ROLE_TUTORIALS_DATA).map(r => (
-                    <button
-                      key={r.roleKey}
-                      type="button"
-                      className={`role-tutorial-tab-btn ${tutorialSelectedRole === r.roleKey ? 'active' : ''}`}
-                      style={{
-                        backgroundColor: tutorialSelectedRole === r.roleKey ? r.color : undefined,
-                        borderColor: tutorialSelectedRole === r.roleKey ? r.color : undefined
-                      }}
-                      onClick={() => {
-                        setTutorialSelectedRole(r.roleKey);
-                        setTutorialSubTab('overview');
-                      }}
+              return (
+                <>
+                  {/* Modal Header */}
+                  <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', padding: '1.25rem 1.5rem', backgroundColor: 'var(--bg-card)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '10px', backgroundColor: `${rData.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: rData.color, flexShrink: 0 }}>
+                        {renderRoleIconComponent(rData.iconType, { style: { width: '22px', height: '22px' } })}
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: '800' }}>
+                          Guia de Permissões: <span style={{ color: rData.color }}>{rData.name}</span>
+                        </h3>
+                        <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                          {rData.tagline}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => setShowRoleTutorialModal(false)}
+                      style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}
                     >
-                      <span>{r.icon}</span>
-                      <span>{r.roleKey === 'superadmin' ? 'Super Admin' : r.roleKey === 'pedagogo' ? 'Pedagogo' : r.roleKey === 'diretor' ? 'Diretor' : r.roleKey === 'assistente' ? 'Assistente' : 'Gestor/SEDUC'}</span>
+                      <IconX />
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sub-tabs Internas: Visão Geral | Permissões | Passo a Passo | LGPD */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn ${tutorialSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
-                  onClick={() => setTutorialSubTab('overview')}
-                >
-                  📋 Visão Geral
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${tutorialSubTab === 'permissions' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
-                  onClick={() => setTutorialSubTab('permissions')}
-                >
-                  🛡️ Permissões & Restrições
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${tutorialSubTab === 'steps' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
-                  onClick={() => setTutorialSubTab('steps')}
-                >
-                  🚀 Passo a Passo no Sistema
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${tutorialSubTab === 'lgpd' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.825rem', padding: '0.35rem 0.75rem' }}
-                  onClick={() => setTutorialSubTab('lgpd')}
-                >
-                  🔒 Diretrizes LGPD & Ética
-                </button>
-              </div>
-
-              {/* CONTEÚDO DA SUB-ABA: VISÃO GERAL */}
-              {tutorialSubTab === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', lineHeight: '1.6' }}>
-                    <h4 style={{ color: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.icon} Atribuição Institucional
-                    </h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.overview}
-                    </p>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid #10b98144' }}>
-                      <strong style={{ color: '#059669', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>
-                        ✅ Principais Atribuições
-                      </strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.allowed.length} permissões ativas configuradas no perfil.
-                      </span>
-                    </div>
-                    <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid #ef444444' }}>
-                      <strong style={{ color: '#dc2626', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>
-                        ⛔ Restrições de Segurança
-                      </strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        Proteção de sigilo, hierarquia institucional e conformidade LGPD.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* CONTEÚDO DA SUB-ABA: PERMISSÕES & RESTRIÇÕES */}
-              {tutorialSubTab === 'permissions' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {/* O que pode fazer */}
-                  <div>
-                    <h4 style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
-                      ✅ O que este perfil PODE fazer:
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.allowed.map((perm, idx) => (
-                        <div key={idx} className="permission-pill-allowed">
-                          <span>✓</span>
-                          <span>{perm}</span>
+                  <div className="card-body" style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    
+                    {/* Role Switcher Tabs (Mostra APENAS o perfil atual e perfis hierarquicamente abaixo; Super Admin vê todos) */}
+                    {visibleRoles.length > 1 && (
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
+                          Consultar perfis institucionais permitidos:
+                        </span>
+                        <div className="role-tutorial-tabs">
+                          {visibleRoles.map(roleKey => {
+                            const r = ROLE_TUTORIALS_DATA[roleKey];
+                            if (!r) return null;
+                            const isActive = activeRoleKey === roleKey;
+                            return (
+                              <button
+                                key={r.roleKey}
+                                type="button"
+                                className={`role-tutorial-tab-btn ${isActive ? 'active' : ''}`}
+                                style={{
+                                  backgroundColor: isActive ? r.color : 'var(--bg-app)',
+                                  borderColor: isActive ? r.color : 'var(--border-color)',
+                                  color: isActive ? '#ffffff' : 'var(--text-primary)'
+                                }}
+                                onClick={() => {
+                                  setTutorialSelectedRole(r.roleKey);
+                                  setTutorialSubTab('overview');
+                                }}
+                              >
+                                {renderRoleIconComponent(r.iconType, { style: { width: '15px', height: '15px', color: isActive ? '#ffffff' : r.color } })}
+                                <span>{r.roleKey === 'superadmin' ? 'Super Admin' : r.roleKey === 'seduc' ? 'Gestor/SEDUC' : r.roleKey === 'diretor' ? 'Diretor' : r.roleKey === 'pedagogo' ? 'Pedagogo' : 'Assistente'}</span>
+                              </button>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    )}
 
-                  {/* O que NÃO pode fazer */}
-                  <div>
-                    <h4 style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.65rem' }}>
-                      ⛔ O que este perfil NÃO tem acesso (Restrições):
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.permissions.restricted.map((rest, idx) => (
-                        <div key={idx} className="permission-pill-restricted">
-                          <span>✕</span>
-                          <span>{rest}</span>
+                    {/* Sub-tabs Internas: Visão Geral | Permissões | Passo a Passo | LGPD */}
+                    <div className="tutorial-subtab-nav">
+                      <button
+                        type="button"
+                        className={`tutorial-subtab-btn ${tutorialSubTab === 'overview' ? 'active' : ''}`}
+                        onClick={() => setTutorialSubTab('overview')}
+                      >
+                        <IconBookOpen style={{ width: '15px', height: '15px' }} />
+                        <span>Visão Geral</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`tutorial-subtab-btn ${tutorialSubTab === 'permissions' ? 'active' : ''}`}
+                        onClick={() => setTutorialSubTab('permissions')}
+                      >
+                        <IconShield style={{ width: '15px', height: '15px' }} />
+                        <span>Permissões & Restrições</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`tutorial-subtab-btn ${tutorialSubTab === 'steps' ? 'active' : ''}`}
+                        onClick={() => setTutorialSubTab('steps')}
+                      >
+                        <IconTarget style={{ width: '15px', height: '15px' }} />
+                        <span>Passo a Passo no Sistema</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`tutorial-subtab-btn ${tutorialSubTab === 'lgpd' ? 'active' : ''}`}
+                        onClick={() => setTutorialSubTab('lgpd')}
+                      >
+                        <IconLock style={{ width: '15px', height: '15px' }} />
+                        <span>Diretrizes LGPD & Ética</span>
+                      </button>
+                    </div>
+
+                    {/* CONTEÚDO DA SUB-ABA: VISÃO GERAL */}
+                    {tutorialSubTab === 'overview' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', lineHeight: '1.6' }}>
+                          <h4 style={{ color: rData.color, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', fontWeight: '700' }}>
+                            {renderRoleIconComponent(rData.iconType, { style: { width: '18px', height: '18px', color: rData.color } })}
+                            <span>Atribuição Institucional</span>
+                          </h4>
+                          <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', margin: 0 }}>
+                            {rData.overview}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* CONTEÚDO DA SUB-ABA: PASSO A PASSO PRÁTICO */}
-              {tutorialSubTab === 'steps' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.steps.map((st) => (
-                    <div key={st.step} className="tutorial-step-card">
-                      <div className="tutorial-step-number" style={{ backgroundColor: ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.color }}>
-                        {st.step}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                          <div style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                            <strong style={{ color: '#059669', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.25rem' }}>
+                              <IconCheckCircle style={{ width: '16px', height: '16px' }} /> Principais Atribuições
+                            </strong>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              {rData.permissions.allowed.length} permissões ativas configuradas no perfil.
+                            </span>
+                          </div>
+                          <div style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                            <strong style={{ color: '#dc2626', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.25rem' }}>
+                              <IconShield style={{ width: '16px', height: '16px' }} /> Restrições de Sigilo
+                            </strong>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              Proteção de privacidade, hierarquia institucional e conformidade LGPD.
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{st.title}</h4>
-                        <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>{st.desc}</p>
+                    )}
+
+                    {/* CONTEÚDO DA SUB-ABA: PERMISSÕES & RESTRIÇÕES */}
+                    {tutorialSubTab === 'permissions' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* O que pode fazer */}
+                        <div>
+                          <h4 style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem', fontSize: '0.92rem', fontWeight: '700' }}>
+                            <IconCheckCircle style={{ width: '18px', height: '18px', color: '#059669' }} />
+                            <span>O que este perfil PODE fazer:</span>
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {rData.permissions.allowed.map((perm, idx) => (
+                              <div key={idx} className="permission-pill-allowed">
+                                <span style={{ fontWeight: '800', color: '#059669', marginRight: '4px' }}>✓</span>
+                                <span>{perm}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* O que NÃO pode fazer */}
+                        <div>
+                          <h4 style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem', fontSize: '0.92rem', fontWeight: '700' }}>
+                            <IconShield style={{ width: '18px', height: '18px', color: '#dc2626' }} />
+                            <span>O que este perfil NÃO tem acesso (Restrições):</span>
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {rData.permissions.restricted.map((rest, idx) => (
+                              <div key={idx} className="permission-pill-restricted">
+                                <span style={{ fontWeight: '800', color: '#dc2626', marginRight: '4px' }}>✕</span>
+                                <span>{rest}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    )}
 
-              {/* CONTEÚDO DA SUB-ABA: LGPD */}
-              {tutorialSubTab === 'lgpd' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', borderLeft: '4px solid var(--accent-orange)' }}>
-                    <h4 style={{ color: 'var(--accent-orange)', marginBottom: '0.5rem' }}>
-                      ⚖️ Compromisso de Sigilo e Proteção de Dados (Lei 13.709/2018)
-                    </h4>
-                    <p style={{ fontSize: '0.875rem', lineHeight: '1.5', color: 'var(--text-primary)' }}>
-                      {ROLE_TUTORIALS_DATA[tutorialSelectedRole]?.lgpd}
-                    </p>
+                    {/* CONTEÚDO DA SUB-ABA: PASSO A PASSO PRÁTICO */}
+                    {tutorialSubTab === 'steps' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {rData.steps.map((st) => (
+                          <div key={st.step} className="tutorial-step-card">
+                            <div className="tutorial-step-number" style={{ backgroundColor: rData.color }}>
+                              {st.step}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '700' }}>{st.title}</h4>
+                              <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>{st.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* CONTEÚDO DA SUB-ABA: LGPD */}
+                    {tutorialSubTab === 'lgpd' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', borderLeft: '4px solid var(--accent-orange)' }}>
+                          <h4 style={{ color: 'var(--accent-orange)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem' }}>
+                            <IconScale style={{ width: '18px', height: '18px' }} />
+                            <span>Compromisso de Sigilo e Proteção de Dados (Lei 13.709/2018)</span>
+                          </h4>
+                          <p style={{ fontSize: '0.875rem', lineHeight: '1.55', color: 'var(--text-primary)', margin: 0 }}>
+                            {rData.lgpd}
+                          </p>
+                        </div>
+
+                        <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: '1.5', backgroundColor: 'var(--bg-card)', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>Boas Práticas Recomendadas:</strong>
+                          <ul style={{ paddingLeft: '1.25rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <li>Nunca compartilhe sua senha ou deixe o sistema aberto em computadores de uso coletivo.</li>
+                            <li>Utilize o botão de anonimização (LGPD) sempre que projetar dados em telões ou reuniões pedagógicas.</li>
+                            <li>Fichas de atendimento impressas devem ser guardadas em arquivo seguro da secretaria escolar.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
 
-                  <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                    <p><strong>Boas Práticas Recomendadas:</strong></p>
-                    <ul style={{ paddingLeft: '1.25rem', marginTop: '0.25rem' }}>
-                      <li>Nunca compartilhe sua senha ou deixe o sistema aberto em computadores de uso coletivo.</li>
-                      <li>Utilize o botão de anonimização (LGPD) sempre que projetar dados em telões ou reuniões.</li>
-                      <li>Fichas de atendimento impressas devem ser guardadas em arquivo seguro da secretaria escolar.</li>
-                    </ul>
+                  {/* Modal Footer */}
+                  <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', padding: '0.85rem 1.5rem', backgroundColor: 'var(--bg-card)' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-primary"
+                      onClick={() => setShowRoleTutorialModal(false)}
+                      style={{ fontSize: '0.85rem', padding: '0.5rem 1.5rem', fontWeight: '700' }}
+                    >
+                      Entendi, Fechar Tutorial
+                    </button>
                   </div>
-                </div>
-              )}
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', paddingRight: '1.25rem', paddingBottom: '1rem' }}>
-              <button 
-                type="button" 
-                className="btn btn-primary"
-                onClick={() => setShowRoleTutorialModal(false)}
-                style={{ fontSize: '0.85rem', padding: '0.4rem 1.25rem' }}
-              >
-                Entendi, Fechar Tutorial
-              </button>
-            </div>
+                </>
+              );
+            })()}
 
           </div>
         </div>

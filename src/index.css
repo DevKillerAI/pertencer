@@ -2387,3 +2387,127 @@ select:-webkit-autofill {
   background: #64748b;
 }
 
+/* ==========================================================================
+   ROLE TUTORIAL & PERMISSIONS MODAL
+   ========================================================================== */
+.role-tutorial-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.role-tutorial-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+  white-space: nowrap;
+}
+
+.role-tutorial-tab-btn:hover {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-color: #cbd5e1;
+}
+
+.role-tutorial-tab-btn.active {
+  color: #ffffff !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.tutorial-subtab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.tutorial-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.tutorial-subtab-btn:hover {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.tutorial-subtab-btn.active {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: #bae6fd;
+  font-weight: 700;
+}
+
+.permission-pill-allowed {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  background-color: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-left: 3px solid #10b981;
+  font-size: 0.84rem;
+  color: #065f46;
+  line-height: 1.45;
+}
+
+.permission-pill-restricted {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-left: 3px solid #ef4444;
+  font-size: 0.84rem;
+  color: #991b1b;
+  line-height: 1.45;
+}
+
+.tutorial-step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+}
+
+.tutorial-step-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
