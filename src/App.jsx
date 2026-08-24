@@ -1731,7 +1731,7 @@ function App() {
             <label className="form-label">CPF ou E-mail Institucional</label>
             <input
               type="text"
-              placeholder="vina@pome.com.br ou 000.000.000-00"
+              placeholder="seu.email@edu.contagem.mg.gov.br ou 000.000.000-00"
               className="form-control"
               value={loginData.cpf}
               onChange={(e) => {
@@ -1848,7 +1848,7 @@ function App() {
                     <input
                       type="email"
                       className="form-control"
-                      placeholder="Ex.: usuario@escola.edu.br"
+                      placeholder="seu.email@edu.contagem.mg.gov.br"
                       value={registerData.email}
                       onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                       required
