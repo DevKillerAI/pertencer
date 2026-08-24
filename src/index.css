@@ -680,7 +680,6 @@ select:-webkit-autofill {
   flex-shrink: 0;
 }
 
-/* Action Icon Buttons (Compact, Modern, Monochromatic) */
 .action-icon-btn {
   width: 28px;
   height: 28px;
@@ -694,6 +693,7 @@ select:-webkit-autofill {
   background-color: transparent;
   padding: 0;
   flex-shrink: 0;
+  position: relative;
 }
 
 .action-icon-btn:hover {
@@ -743,6 +743,114 @@ select:-webkit-autofill {
   background-color: #fee2e2;
   color: #b91c1c;
   border-color: #fca5a5;
+}
+
+.action-icon-restore {
+  background-color: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+.action-icon-restore:hover {
+  background-color: #ede9fe;
+  color: #6d28d9;
+  border-color: #c4b5fd;
+}
+
+/* =========================================================================
+   TOOLTIP SYSTEM COM DELAY REFINADO (0.3s) E EFEITO FLUTUANTE SUAVE
+   ========================================================================= */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 0.3rem 0.65rem;
+  background-color: rgba(15, 23, 42, 0.94);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  transition-delay: 0s;
+  z-index: 1050;
+  backdrop-filter: blur(4px);
+  letter-spacing: 0.01em;
+}
+
+[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border-width: 5px 5px 0 5px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.94) transparent transparent transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  transition-delay: 0s;
+  z-index: 1050;
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 0.28s; /* Pequeno delay refinado antes de exibir */
+}
+
+/* Tooltip direcionado para baixo (útil no cabeçalho ou topo) */
+[data-tooltip-pos="bottom"]::before {
+  bottom: auto;
+  top: calc(100% + 6px);
+  transform: translateX(-50%) translateY(-4px);
+}
+[data-tooltip-pos="bottom"]::after {
+  bottom: auto;
+  top: calc(100% + 1px);
+  border-width: 0 5px 5px 5px;
+  border-color: transparent transparent rgba(15, 23, 42, 0.94) transparent;
+  transform: translateX(-50%) translateY(-4px);
+}
+[data-tooltip-pos="bottom"]:hover::before,
+[data-tooltip-pos="bottom"]:hover::after {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip direcionado para esquerda (útil na última coluna da direita) */
+[data-tooltip-pos="left"]::before {
+  bottom: auto;
+  top: 50%;
+  right: calc(100% + 6px);
+  left: auto;
+  transform: translateY(-50%) translateX(4px);
+}
+[data-tooltip-pos="left"]::after {
+  bottom: auto;
+  top: 50%;
+  right: calc(100% + 1px);
+  left: auto;
+  border-width: 5px 0 5px 5px;
+  border-color: transparent transparent transparent rgba(15, 23, 42, 0.94);
+  transform: translateY(-50%) translateX(4px);
+}
+[data-tooltip-pos="left"]:hover::before,
+[data-tooltip-pos="left"]:hover::after {
+  transform: translateY(-50%) translateX(0);
 }
 
 .action-btn-compact {

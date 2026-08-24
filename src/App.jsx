@@ -2543,7 +2543,9 @@ function MainApp() {
           <button 
             className="theme-toggle" 
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            title="Alternar Tema"
+            data-tooltip={theme === 'light' ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro'}
+            data-tooltip-pos="bottom"
+            title={theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}
           >
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
@@ -2562,6 +2564,9 @@ function MainApp() {
               setProfileMessage(null);
               setShowProfileModal(true);
             }}
+            data-tooltip="Gerenciar seus dados cadastrais e senha"
+            data-tooltip-pos="bottom"
+            title="Meu Perfil de Acesso"
             style={{ padding: '0.5rem 0.85rem', marginRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
           >
             👤 Meu Perfil
@@ -2574,12 +2579,22 @@ function MainApp() {
               setTutorialSubTab('overview');
               setShowRoleTutorialModal(true);
             }}
+            data-tooltip="Guia institucional de uso e permissões"
+            data-tooltip-pos="bottom"
+            title="Tutorial do Sistema"
             style={{ padding: '0.5rem 0.85rem', marginRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
           >
             💡 Tutorial
           </button>
 
-          <button className="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.5rem 0.85rem', fontSize: '0.85rem' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleLogout} 
+            data-tooltip="Encerrar sessão de forma segura"
+            data-tooltip-pos="bottom"
+            title="Sair do POME"
+            style={{ padding: '0.5rem 0.85rem', fontSize: '0.85rem' }}
+          >
             Sair
           </button>
         </div>
@@ -2837,6 +2852,8 @@ function MainApp() {
                                 <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', justifyContent: 'flex-end' }}>
                                   <button 
                                     className="action-icon-btn action-icon-view" 
+                                    data-tooltip="Ver detalhes completos do atendimento"
+                                    data-tooltip-pos="left"
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
@@ -2848,6 +2865,8 @@ function MainApp() {
                                   </button>
                                   <button 
                                     className="action-icon-btn action-icon-print" 
+                                    data-tooltip="Imprimir Ficha Oficial A4"
+                                    data-tooltip-pos="left"
                                     onClick={() => handlePrint(o)}
                                     title="Imprimir Ficha Oficial A4"
                                   >
@@ -2856,6 +2875,8 @@ function MainApp() {
                                   {canEditOrDelete && (
                                     <button 
                                       className="action-icon-btn action-icon-edit" 
+                                      data-tooltip="Editar ocorrência"
+                                      data-tooltip-pos="left"
                                       onClick={() => handleEditOccurrence(o)}
                                       title="Editar ocorrência"
                                     >
@@ -2865,6 +2886,8 @@ function MainApp() {
                                   {canEditOrDelete && (
                                     <button 
                                       className="action-icon-btn action-icon-delete" 
+                                      data-tooltip="Excluir ocorrência"
+                                      data-tooltip-pos="left"
                                       onClick={() => handleDeleteOccurrence(o.id)}
                                       title="Excluir ocorrência"
                                     >
@@ -3026,6 +3049,8 @@ function MainApp() {
                                 <div style={{ display: 'inline-flex', gap: '4px', alignItems: 'center', justifyContent: 'flex-end' }}>
                                   <button 
                                     className="action-icon-btn action-icon-view" 
+                                    data-tooltip="Ver detalhes completos do atendimento"
+                                    data-tooltip-pos="left"
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
@@ -3037,6 +3062,8 @@ function MainApp() {
                                   </button>
                                   <button 
                                     className="action-icon-btn action-icon-print" 
+                                    data-tooltip="Imprimir Ficha Oficial A4"
+                                    data-tooltip-pos="left"
                                     onClick={() => handlePrint(o)}
                                     title="Imprimir Ficha Oficial A4"
                                   >
@@ -3045,6 +3072,8 @@ function MainApp() {
                                   {canEditOrDelete && (
                                     <button 
                                       className="action-icon-btn action-icon-edit" 
+                                      data-tooltip="Editar ocorrência"
+                                      data-tooltip-pos="left"
                                       onClick={() => handleEditOccurrence(o)}
                                       title="Editar ocorrência"
                                     >
@@ -3054,6 +3083,8 @@ function MainApp() {
                                   {canEditOrDelete && (
                                     <button 
                                       className="action-icon-btn action-icon-delete" 
+                                      data-tooltip="Excluir ocorrência"
+                                      data-tooltip-pos="left"
                                       onClick={() => handleDeleteOccurrence(o.id)}
                                       title="Excluir ocorrência"
                                     >
@@ -3535,6 +3566,8 @@ function MainApp() {
                                       <button
                                         type="button"
                                         className="glossary-circle-btn"
+                                        data-tooltip={`Ver definição jurídica de "${term}"`}
+                                        data-tooltip-pos="left"
                                         title={`Ver definição jurídica de "${term}"`}
                                         onClick={(e) => {
                                           e.preventDefault();
@@ -4057,21 +4090,25 @@ function MainApp() {
                           <tr key={s.id}>
                             <td style={{ color: 'var(--text-muted)' }}>{s.id}</td>
                             <td style={{ fontWeight: '600' }}>{s.name}</td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', gap: '5px', justifyContent: 'flex-end' }}>
                                 <button 
-                                  className="btn btn-secondary" 
-                                  style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
+                                  className="action-icon-btn action-icon-edit" 
+                                  data-tooltip="Editar nome da escola"
+                                  data-tooltip-pos="left"
+                                  title="Editar nome da escola"
                                   onClick={() => {
                                     setEditingSchool(s);
                                     setNewSchoolName(s.name);
                                   }}
                                 >
-                                  Editar
+                                  <IconEdit style={{ width: '14px', height: '14px' }} />
                                 </button>
                                 <button 
-                                  className="btn btn-danger" 
-                                  style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
+                                  className="action-icon-btn action-icon-delete" 
+                                  data-tooltip="Excluir unidade escolar"
+                                  data-tooltip-pos="left"
+                                  title="Excluir unidade escolar"
                                   onClick={async () => {
                                     if (!confirm('Deseja realmente excluir esta escola?')) return;
                                     try {
@@ -4083,7 +4120,7 @@ function MainApp() {
                                     }
                                   }}
                                 >
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}><IconTrash /> Excluir</span>
+                                  <IconTrash style={{ width: '14px', height: '14px' }} />
                                 </button>
                               </div>
                             </td>
@@ -4176,11 +4213,13 @@ function MainApp() {
                             <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#64748b' }}>
                               {u.classes && u.classes.length > 0 ? u.classes.join(', ') : '-'}
                             </td>
-                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap', padding: '0.85rem 1rem' }}>
-                              <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap', padding: '0.65rem 1rem' }}>
+                              <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
                                 <button 
-                                  className="btn btn-secondary" 
-                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}
+                                  className="action-icon-btn action-icon-edit" 
+                                  data-tooltip="Editar lotação e permissões do usuário"
+                                  data-tooltip-pos="left"
+                                  title="Editar lotação e permissões do usuário"
                                   onClick={() => {
                                     setEditingUser({
                                       id: u.id,
@@ -4194,12 +4233,14 @@ function MainApp() {
                                     });
                                   }}
                                 >
-                                  <IconEdit /> Editar
+                                  <IconEdit style={{ width: '14px', height: '14px' }} />
                                 </button>
                                 {u.id !== user.id && (
                                   <button 
-                                    className="btn btn-danger" 
-                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}
+                                    className="action-icon-btn action-icon-delete" 
+                                    data-tooltip="Excluir usuário do sistema"
+                                    data-tooltip-pos="left"
+                                    title="Excluir usuário do sistema"
                                     onClick={async () => {
                                       if (!confirm(`Deseja realmente excluir o usuário ${u.name}?`)) return;
                                       try {
@@ -4211,7 +4252,7 @@ function MainApp() {
                                       }
                                     }}
                                   >
-                                    <IconTrash /> Excluir
+                                    <IconTrash style={{ width: '14px', height: '14px' }} />
                                   </button>
                                 )}
                               </div>
@@ -5063,6 +5104,8 @@ function MainApp() {
                                 <div style={{ display: 'inline-flex', gap: '4px', justifyContent: 'flex-end' }}>
                                   <button
                                     className="action-icon-btn action-icon-view"
+                                    data-tooltip="Ver detalhes completos do atendimento"
+                                    data-tooltip-pos="left"
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
@@ -5074,6 +5117,8 @@ function MainApp() {
                                   </button>
                                   <button
                                     className="action-icon-btn action-icon-print"
+                                    data-tooltip="Imprimir Ficha Oficial A4"
+                                    data-tooltip-pos="left"
                                     onClick={() => handlePrint(o)}
                                     title="Imprimir Ficha Oficial A4"
                                   >
@@ -5259,17 +5304,19 @@ function MainApp() {
                               <td style={{ fontSize: '0.85rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {schoolName}
                               </td>
-                              <td style={{ textAlign: 'right' }}>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 {isSelf ? (
                                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Você está aqui</span>
                                 ) : (
                                   <button
                                     type="button"
-                                    className="btn btn-primary"
-                                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', backgroundColor: '#7c3aed', borderColor: '#7c3aed', color: 'white' }}
+                                    className="action-icon-btn action-icon-restore"
+                                    data-tooltip="Auditar e acessar sistema como este usuário"
+                                    data-tooltip-pos="left"
+                                    title="Entrar como este usuário"
                                     onClick={() => handleImpersonate(u)}
                                   >
-                                    👤 Entrar como este usuário
+                                    <IconUser style={{ width: '14px', height: '14px' }} />
                                   </button>
                                 )}
                               </td>
@@ -5336,23 +5383,28 @@ function MainApp() {
                                 </span>
                               ) : '-'}
                             </td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
                                 <a
                                   href={`/api/admin/backups/${b.filename}`}
                                   download={b.filename}
-                                  className="btn btn-secondary"
-                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', textDecoration: 'none' }}
+                                  className="action-icon-btn action-icon-view"
+                                  data-tooltip="Baixar arquivo JSON de backup"
+                                  data-tooltip-pos="left"
+                                  title="Baixar arquivo JSON de backup"
+                                  style={{ textDecoration: 'none' }}
                                 >
-                                  📥 Baixar JSON
+                                  <IconDownload style={{ width: '14px', height: '14px' }} />
                                 </a>
                                 <button
                                   type="button"
-                                  className="btn btn-warning"
-                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                  className="action-icon-btn action-icon-restore"
+                                  data-tooltip="Restaurar base de dados a partir deste snapshot"
+                                  data-tooltip-pos="left"
+                                  title="Restaurar base de dados a partir deste snapshot"
                                   onClick={() => handleRestoreBackup(b.filename)}
                                 >
-                                  🔄 Restaurar Base
+                                  <IconRefresh style={{ width: '14px', height: '14px' }} />
                                 </button>
                               </div>
                             </td>
@@ -5710,10 +5762,12 @@ function MainApp() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
+                  data-tooltip="Gerar e imprimir ficha de atendimento oficial (A4)"
+                  title="Imprimir Ficha A4"
+                  style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   onClick={() => handlePrint(selectedOccurrence)}
                 >
-                  🖨️ Imprimir (A4)
+                  <IconPrinter style={{ width: '15px', height: '15px' }} /> Imprimir Ficha A4
                 </button>
                 {(user.role === 'gestor' || 
                   user.role === 'seduc' || 
@@ -5724,7 +5778,9 @@ function MainApp() {
                     <button
                       type="button"
                       className="btn btn-warning"
-                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      data-tooltip="Editar informações e classificação deste atendimento"
+                      title="Editar Atendimento"
+                      style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       onClick={() => {
                         const occToEdit = { ...selectedOccurrence };
                         setShowDetailModal(false);
@@ -5732,15 +5788,17 @@ function MainApp() {
                         handleEditOccurrence(occToEdit);
                       }}
                     >
-                      ✏️ Alterar
+                      <IconEdit style={{ width: '15px', height: '15px' }} /> Alterar
                     </button>
                     <button
                       type="button"
                       className="btn btn-danger"
-                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                      data-tooltip="Excluir permanentemente esta ocorrência"
+                      title="Excluir Atendimento"
+                      style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', backgroundColor: 'var(--danger)', color: 'white', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       onClick={() => handleDeleteOccurrence(selectedOccurrence.id)}
                     >
-                      🗑️ Excluir
+                      <IconTrash style={{ width: '15px', height: '15px' }} /> Excluir
                     </button>
                   </>
                 )}
