@@ -184,6 +184,69 @@ const IconLightning = (props) => (
   </svg>
 );
 
+const IconScale = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18" />
+  </svg>
+);
+
+const IconTarget = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
+const IconBookOpen = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+);
+
+const IconCheckCircle = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+const IconUser = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const IconLock = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const IconPlus = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const IconEdit = (props) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const IconX = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 // Constants: Grade Cycles / Anos
 const GRADE_CYCLES = [
   '3 anos', '4 anos', '5 anos',
@@ -755,6 +818,7 @@ function MainApp() {
   const [newSchoolName, setNewSchoolName] = useState('');
   const [editingSchool, setEditingSchool] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileData, setProfileData] = useState({ name: '', email: '', phone: '', currentPassword: '', newPassword: '', confirmNewPassword: '' });
   const [profileMessage, setProfileMessage] = useState(null);
@@ -1752,6 +1816,44 @@ function MainApp() {
 
   const metrics = getMetrics();
   const reportMetrics = getMetrics(reportFilteredOccurrences);
+
+  // Status & Badge Helper
+  const getOccurrenceStatus = (occ) => {
+    if (!occ) return { label: 'Registrado', badgeClass: 'badge-primary', icon: '📋', style: {} };
+    if (occ.status === 'rascunho') {
+      return {
+        label: 'Rascunho',
+        badgeClass: 'badge-secondary',
+        icon: '📝',
+        style: { backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }
+      };
+    }
+    const hasDirectionRef = Array.isArray(occ.direction_referrals) && occ.direction_referrals.length > 0;
+    const hasVisto = Boolean(occ.directorNotes && occ.directorNotes.trim());
+
+    if (hasVisto) {
+      return {
+        label: 'Visto Confirmado',
+        badgeClass: 'badge-success',
+        icon: '✅',
+        style: { backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }
+      };
+    }
+    if (hasDirectionRef) {
+      return {
+        label: 'Visto Obrigatório',
+        badgeClass: 'badge-warning',
+        icon: '⚠️',
+        style: { backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d' }
+      };
+    }
+    return {
+      label: 'Registrado',
+      badgeClass: 'badge-primary',
+      icon: '📋',
+      style: { backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }
+    };
+  };
 
   // Relatórios Analíticos (Pedagogo, Diretor, Gestor e Super Admin)
   const getTurmasReport = (source = reportFilteredOccurrences) => {
@@ -3057,12 +3159,13 @@ function MainApp() {
                           <label className="form-label">Turma *</label>
                           <input
                             type="text"
-                            placeholder="Ex: 5º Ano A"
+                            placeholder="Ex: 5º ANO A"
                             className="form-control"
+                            style={{ textTransform: 'uppercase' }}
                             value={student.className}
                             onChange={(e) => {
                               const updated = [...formData.students];
-                              updated[sIdx].className = e.target.value;
+                              updated[sIdx].className = e.target.value.toUpperCase();
                               setFormData({ ...formData, students: updated });
                             }}
                             required
@@ -3883,266 +3986,127 @@ function MainApp() {
         {/* ----------------- TAB: GERENCIAR USUÁRIOS (GESTOR / SEDUC / SUPERADMIN) ----------------- */}
         {activeTab === 'users' && (user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
           <div className="fade-in">
-            <h2>Gerenciamento de Usuários</h2>
-            
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 2fr', gap: '1.5rem', alignItems: 'start' }}>
-              
-              <div className="card">
-                <div className="card-header">
-                  <h3>Cadastrar Novo Usuário</h3>
+            <div className="card" style={{ marginBottom: '2rem' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', padding: '1.25rem 1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', margin: 0, color: 'var(--primary)', fontWeight: '800' }}>
+                    👥 Usuários Cadastrados na Rede ({usersList.length})
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                    Gerenciamento institucional de perfis, lotações escolares e permissões de acesso ao POME.
+                  </p>
                 </div>
-                <form className="card-body" onSubmit={async (e) => {
-                  e.preventDefault();
-                  const classes = newUserData.classesInput
-                    ? newUserData.classesInput.split(',').map(c => c.trim())
-                    : [];
-                  const payload = {
-                    name: newUserData.name,
-                    email: newUserData.email,
-                    phone: newUserData.phone,
-                    cpf: newUserData.cpf.replace(/\D/g, ''),
-                    password: newUserData.password,
-                    role: newUserData.role,
-                    schoolId: (newUserData.role === 'gestor' || newUserData.role === 'seduc') ? null : newUserData.schoolId,
-                    classes: classes
-                  };
-
-                  try {
-                    const res = await fetch('/api/users', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(payload)
-                    });
-                    if (res.ok) {
-                      setNewUserData({ name: '', cpf: '', email: '', phone: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
-                      fetchUsers();
-                    } else {
-                      const err = await res.json();
-                      alert(err.error || 'Erro ao criar usuário.');
-                    }
-                  } catch (err) {
-                    console.error('Create user error:', err);
-                    alert('Erro de conexão ao criar usuário.');
-                  }
-                }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Nome Completo</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Ex: Ana Souza"
-                      value={newUserData.name}
-                      onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">E-mail Institucional</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      placeholder="Ex: ana@educacao.contagem.mg.gov.br"
-                      value={newUserData.email || ''}
-                      onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    <div className="form-group">
-                      <label className="form-label">CPF</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="000.000.000-00"
-                        value={newUserData.cpf}
-                        onChange={(e) => setNewUserData({ ...newUserData, cpf: formatCPF(e.target.value) })}
-                        maxLength={14}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Telefone</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="(31) 90000-0000"
-                        value={newUserData.phone || ''}
-                        onChange={(e) => setNewUserData({ ...newUserData, phone: formatPhone(e.target.value) })}
-                        maxLength={15}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Senha Provisória</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      placeholder="Senha provisória..."
-                      value={newUserData.password}
-                      onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Nível de Permissão</label>
-                    <select
-                      className="form-select"
-                      value={newUserData.role}
-                      onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
-                      required
-                    >
-                      <option value="pedagogo">Pedagogo(a)</option>
-                      <option value="diretor">Diretor(a)</option>
-                      <option value="assistente">Assistente Escolar</option>
-                      <option value="seduc">Seduc / Gestor Central</option>
-                      <option value="gestor">Gestor do Projeto</option>
-                    </select>
-                  </div>
-
-                  {newUserData.role !== 'gestor' && newUserData.role !== 'seduc' && (
-                    <div className="form-group">
-                      <label className="form-label">Escola Designada</label>
-                      <select
-                        className="form-select"
-                        value={newUserData.schoolId}
-                        onChange={(e) => setNewUserData({ ...newUserData, schoolId: e.target.value })}
-                        required
-                      >
-                        <option value="">Selecione uma escola...</option>
-                        {schools.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {newUserData.role === 'pedagogo' && (
-                    <div className="form-group">
-                      <label className="form-label">Turmas Vinculadas (Separadas por vírgula)</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ex: 5º Ano A, 5º Ano B, 4º Ano A"
-                        value={newUserData.classesInput}
-                        onChange={(e) => setNewUserData({ ...newUserData, classesInput: e.target.value })}
-                      />
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
-                    Cadastrar Usuário
-                  </button>
-                </form>
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setNewUserData({ name: '', cpf: '', email: '', phone: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
+                    setShowCreateUserModal(true);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.25rem', fontWeight: '700' }}
+                >
+                  <IconPlus /> Cadastrar Novo Usuário
+                </button>
               </div>
 
-              <div className="card">
-                <div className="card-header">
-                  <h3>Usuários Cadastrados ({usersList.length})</h3>
-                </div>
-                <div className="card-body" style={{ padding: 0 }}>
-                  <div className="table-responsive">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>Nome</th>
-                          <th>CPF</th>
-                          <th>Permissão</th>
-                          <th>Escola</th>
-                          <th>Turmas</th>
-                          <th style={{ textAlign: 'right' }}>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {usersList.map(u => {
-                          const schoolName = schools.find(s => s.id === u.schoolId)?.name || 'Rede Geral';
-                          return (
-                            <tr key={u.id}>
-                              <td style={{ fontWeight: '600' }}>{u.name}</td>
-                              <td>{u.cpf}</td>
-                              <td>
-                                <span className={`badge ${
-                                  u.role === 'superadmin' ? 'badge-primary' :
-                                  u.role === 'gestor' || u.role === 'seduc' ? 'badge-danger' : 
-                                  u.role === 'diretor' ? 'badge-primary' : 'badge-success'
-                                }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  {u.role}
-                                  <button
-                                    type="button"
-                                    className="help-role-badge"
-                                    style={{ width: '18px', height: '18px', fontSize: '0.65rem', marginLeft: '4px' }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setTutorialSelectedRole(u.role === 'seduc' ? 'seduc' : u.role);
-                                      setTutorialSubTab('overview');
-                                      setShowRoleTutorialModal(true);
-                                    }}
-                                  >
-                                    ❓
-                                    <span className="tooltip-role-text">
-                                      💡 Tutorial e Permissões ({ROLE_TUTORIALS_DATA[u.role]?.name || u.role})
-                                    </span>
-                                  </button>
-                                </span>
-                              </td>
-                              <td style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {schoolName}
-                              </td>
-                              <td>
-                                {u.classes && u.classes.length > 0 ? u.classes.join(', ') : '-'}
-                              </td>
-                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+              <div className="card-body" style={{ padding: 0 }}>
+                <div className="table-responsive">
+                  <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '0.85rem 1rem' }}>Nome Completo</th>
+                        <th style={{ padding: '0.85rem 1rem' }}>CPF</th>
+                        <th style={{ padding: '0.85rem 1rem' }}>E-mail Institucional</th>
+                        <th style={{ padding: '0.85rem 1rem' }}>Perfil / Permissão</th>
+                        <th style={{ padding: '0.85rem 1rem' }}>Escola Vinculada</th>
+                        <th style={{ padding: '0.85rem 1rem' }}>Turmas</th>
+                        <th style={{ textAlign: 'right', padding: '0.85rem 1rem' }}>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usersList.map(u => {
+                        const schoolName = schools.find(s => s.id === u.schoolId)?.name || 'Rede Geral';
+                        const roleColor = u.role === 'superadmin' ? '#7c3aed' : u.role === 'seduc' || u.role === 'gestor' ? '#1e40af' : u.role === 'diretor' ? '#0369a1' : '#059669';
+                        const roleBg = u.role === 'superadmin' ? '#f5f3ff' : u.role === 'seduc' || u.role === 'gestor' ? '#eff6ff' : u.role === 'diretor' ? '#f0f9ff' : '#ecfdf5';
+                        const roleBorder = u.role === 'superadmin' ? '#ddd6fe' : u.role === 'seduc' || u.role === 'gestor' ? '#bfdbfe' : u.role === 'diretor' ? '#bae6fd' : '#a7f3d0';
+
+                        return (
+                          <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ fontWeight: '700', color: 'var(--text-primary)', padding: '0.85rem 1rem' }}>{u.name}</td>
+                            <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontSize: '0.85rem', color: '#475569' }}>{u.cpf}</td>
+                            <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{u.email || '-'}</td>
+                            <td style={{ padding: '0.85rem 1rem' }}>
+                              <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: roleBg, color: roleColor, border: `1px solid ${roleBorder}`, padding: '3px 10px', fontSize: '0.76rem', fontWeight: '700', borderRadius: '50px', whiteSpace: 'nowrap' }}>
+                                <span>{u.role}</span>
+                                <button
+                                  type="button"
+                                  className="help-role-badge"
+                                  style={{ width: '18px', height: '18px', fontSize: '0.65rem', marginLeft: '2px', cursor: 'pointer', border: 'none', background: 'transparent', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setTutorialSelectedRole(u.role === 'seduc' ? 'seduc' : u.role);
+                                    setTutorialSubTab('overview');
+                                    setShowRoleTutorialModal(true);
+                                  }}
+                                  title={`Ver atribuições de ${u.role}`}
+                                >
+                                  ❓
+                                </button>
+                              </span>
+                            </td>
+                            <td style={{ padding: '0.85rem 1rem', fontWeight: '500', color: '#334155' }}>
+                              {schoolName}
+                            </td>
+                            <td style={{ padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#64748b' }}>
+                              {u.classes && u.classes.length > 0 ? u.classes.join(', ') : '-'}
+                            </td>
+                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap', padding: '0.85rem 1rem' }}>
+                              <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                                <button 
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}
+                                  onClick={() => {
+                                    setEditingUser({
+                                      id: u.id,
+                                      name: u.name,
+                                      cpf: u.cpf,
+                                      email: u.email || '',
+                                      phone: u.phone || '',
+                                      role: u.role,
+                                      schoolId: u.schoolId || '',
+                                      classesInput: Array.isArray(u.classes) ? u.classes.join(', ') : ''
+                                    });
+                                  }}
+                                >
+                                  <IconEdit /> Editar
+                                </button>
+                                {u.id !== user.id && (
                                   <button 
-                                    className="btn btn-secondary" 
-                                    style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                                    onClick={() => {
-                                      setEditingUser({
-                                        id: u.id,
-                                        name: u.name,
-                                        cpf: u.cpf,
-                                        email: u.email || '',
-                                        phone: u.phone || '',
-                                        role: u.role,
-                                        schoolId: u.schoolId || '',
-                                        classesInput: Array.isArray(u.classes) ? u.classes.join(', ') : ''
-                                      });
+                                    className="btn btn-danger" 
+                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: '600' }}
+                                    onClick={async () => {
+                                      if (!confirm(`Deseja realmente excluir o usuário ${u.name}?`)) return;
+                                      try {
+                                        const res = await fetch(`/api/users/${u.id}`, { method: 'DELETE' });
+                                        if (res.ok) fetchUsers();
+                                      } catch (err) {
+                                        console.error('Delete user error:', err);
+                                        alert('Erro ao excluir usuário.');
+                                      }
                                     }}
                                   >
-                                    ✏️ Editar
+                                    <IconTrash /> Excluir
                                   </button>
-                                  {u.id !== user.id && (
-                                    <button 
-                                      className="btn btn-danger" 
-                                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                                      onClick={async () => {
-                                        if (!confirm(`Deseja realmente excluir o usuário ${u.name}?`)) return;
-                                        try {
-                                          const res = await fetch(`/api/users/${u.id}`, { method: 'DELETE' });
-                                          if (res.ok) fetchUsers();
-                                        } catch (err) {
-                                          console.error('Delete user error:', err);
-                                          alert('Erro ao excluir usuário.');
-                                        }
-                                      }}
-                                    >
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconTrash /> Excluir</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-
             </div>
           </div>
         )}
@@ -5399,22 +5363,30 @@ function MainApp() {
               {/* Alerta Informativo de Visto Direção vs Atendimento Rotineiro */}
               {(() => {
                 const hasDirectionRef = Array.isArray(selectedOccurrence.direction_referrals) && selectedOccurrence.direction_referrals.length > 0;
-                if (hasDirectionRef && !selectedOccurrence.directorNotes) {
+                const hasVisto = Boolean(selectedOccurrence.directorNotes && selectedOccurrence.directorNotes.trim());
+
+                if (hasVisto) {
                   return (
-                    <div style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 'var(--radius-sm)', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#92400e' }}>
-                      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                    <div style={{ backgroundColor: '#dcfce7', border: '1px solid #22c55e', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#15803d' }}>
+                      <span style={{ fontSize: '1.25rem' }}>✅</span>
+                      <span><strong>Visto Confirmado pela Direção:</strong> Atendimento formalmente validado e acompanhado pela equipe gestora escolar.</span>
+                    </div>
+                  );
+                } else if (hasDirectionRef) {
+                  return (
+                    <div style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#92400e' }}>
+                      <span style={{ fontSize: '1.25rem' }}>⚠️</span>
                       <span><strong>Visto Obrigatório da Direção:</strong> Este atendimento possui encaminhamento para a Direção / Rede de Proteção e requer o visto formal da equipe gestora.</span>
                     </div>
                   );
-                } else if (!hasDirectionRef && !selectedOccurrence.directorNotes) {
+                } else {
                   return (
-                    <div style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.85rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
                       <span>ℹ️</span>
                       <span>Atendimento rotineiro registrado. Não requer visto obrigatório da direção escolar.</span>
                     </div>
                   );
                 }
-                return null;
               })()}
 
               {/* Toggle LGPD no Modal */}
@@ -6222,20 +6194,21 @@ function MainApp() {
       {/* MODAL: GLOSSÁRIO JURÍDICO & PEDAGÓGICO */}
       {selectedGlossaryTerm && (
         <div className="modal-overlay" onClick={() => setSelectedGlossaryTerm(null)}>
-          <div className="modal-content glossary-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+          <div className="modal-content glossary-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '660px', maxHeight: '88vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
               <div>
-                <span style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  📖 Glossário Jurídico & Pedagógico POME
-                </span>
-                <h3 style={{ fontSize: '1.25rem', margin: '0.25rem 0 0 0', color: 'var(--primary)', fontWeight: '800' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <IconBookOpen style={{ width: '15px', height: '15px' }} />
+                  <span>Glossário Jurídico & Pedagógico POME</span>
+                </div>
+                <h3 style={{ fontSize: '1.3rem', margin: '0.35rem 0 0 0', color: 'var(--primary)', fontWeight: '800', lineHeight: '1.2' }}>
                   {selectedGlossaryTerm.termo}
                 </h3>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                  <span className="badge" style={{ backgroundColor: '#f0f9ff', color: '#0369a1', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px' }}>
-                    🏷️ {selectedGlossaryTerm.dimensao}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
+                    {selectedGlossaryTerm.dimensao}
                   </span>
-                  <span className="badge" style={{ backgroundColor: '#f1f5f9', color: '#475569', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span className="badge" style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
                     {selectedGlossaryTerm.natureza}
                   </span>
                 </div>
@@ -6244,54 +6217,59 @@ function MainApp() {
                 type="button" 
                 className="btn btn-secondary" 
                 onClick={() => setSelectedGlossaryTerm(null)} 
-                style={{ padding: '0.25rem 0.65rem', borderRadius: '50%', fontSize: '1rem', border: 'none' }}
+                style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}
+                title="Fechar"
               >
-                ✕
+                <IconX />
               </button>
             </div>
 
-            <div className="card-body" style={{ padding: '1.25rem 0', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '68vh', overflowY: 'auto' }}>
-              <div className="glossary-section-card" style={{ padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
-                <h5 style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>⚖️</span> Significado Conforme a Legislação
+            <div className="card-body" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
+              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconScale style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                  <span>Significado Conforme a Legislação</span>
                 </h5>
-                <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', margin: 0 }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
                   {selectedGlossaryTerm.significado}
                 </p>
               </div>
 
               {selectedGlossaryTerm.termoAdequado && (
-                <div className="glossary-section-card" style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0284c7', padding: '0.75rem 1rem', borderRadius: '6px' }}>
-                  <h5 style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0369a1', margin: '0 0 0.25rem 0' }}>
-                    🎯 Termo Tecnicamente Adequado
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderLeft: '3px solid var(--primary)' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconTarget style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                    <span>Termo Tecnicamente Adequado</span>
                   </h5>
-                  <p style={{ fontSize: '0.82rem', color: '#475569', margin: 0, lineHeight: '1.45' }}>
-                    {selectedGlossaryTerm.termoAdequado}
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0, lineHeight: '1.45' }}>
+                    "{selectedGlossaryTerm.termoAdequado}"
                   </p>
                 </div>
               )}
 
-              <div className="glossary-section-card" style={{ padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
-                <h5 style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🏫</span> Situação em que se aplica na escola (Exemplo Prático)
+              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconSchool style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                  <span>Situação em que se aplica na escola (Exemplo Prático)</span>
                 </h5>
-                <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', margin: 0 }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
                   {selectedGlossaryTerm.situacaoEscola}
                 </p>
               </div>
 
-              <div className="glossary-section-card" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <h5 style={{ fontSize: '0.82rem', fontWeight: '800', color: '#166534', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>📜</span> Fonte Legal e Normativa
+              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconBookOpen style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                  <span>Fonte Legal e Normativa</span>
                 </h5>
-                <p style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, fontWeight: '600' }}>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '600' }}>
                   {selectedGlossaryTerm.fonteLegal}
                 </p>
               </div>
             </div>
 
-            <div className="card-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-primary" onClick={() => setSelectedGlossaryTerm(null)}>
+            <div className="card-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '0.85rem 1.5rem', display: 'flex', justifyContent: 'flex-end', backgroundColor: 'var(--bg-card)' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setSelectedGlossaryTerm(null)} style={{ padding: '0.5rem 1.5rem', fontWeight: '700' }}>
                 Entendido
               </button>
             </div>
@@ -6299,21 +6277,206 @@ function MainApp() {
         </div>
       )}
 
+      {/* MODAL: CADASTRAR NOVO USUÁRIO (GESTOR / SEDUC / SUPER ADMIN) */}
+      {showCreateUserModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateUserModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '620px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', padding: '1.25rem 1.5rem' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
+                  <IconPlus /> Cadastrar Novo Usuário
+                </h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Defina os dados de identificação, lotação e perfil de acesso do servidor.
+                </p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setShowCreateUserModal(false)} style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
+                <IconX />
+              </button>
+            </div>
+
+            <form className="card-body" onSubmit={async (e) => {
+              e.preventDefault();
+              const classes = newUserData.classesInput
+                ? newUserData.classesInput.split(',').map(c => c.trim().toUpperCase()).filter(Boolean)
+                : [];
+              const payload = {
+                name: newUserData.name.trim(),
+                email: newUserData.email.trim(),
+                phone: newUserData.phone.trim(),
+                cpf: newUserData.cpf.replace(/\D/g, ''),
+                password: newUserData.password,
+                role: newUserData.role,
+                schoolId: (newUserData.role === 'gestor' || newUserData.role === 'seduc' || newUserData.role === 'superadmin') ? null : newUserData.schoolId,
+                classes: classes
+              };
+
+              try {
+                const res = await fetch('/api/users', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                  setShowCreateUserModal(false);
+                  setNewUserData({ name: '', cpf: '', email: '', phone: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
+                  fetchUsers();
+                  setNotification({ type: 'success', message: 'Usuário cadastrado com sucesso!' });
+                } else {
+                  const err = await res.json();
+                  alert(err.error || 'Erro ao criar usuário.');
+                }
+              } catch (err) {
+                console.error('Create user error:', err);
+                alert('Erro de conexão ao criar usuário.');
+              }
+            }} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
+              <div className="form-group">
+                <label className="form-label">Nome Completo *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ex: Ana Souza"
+                  value={newUserData.name}
+                  onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">CPF *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="000.000.000-00"
+                    value={newUserData.cpf}
+                    onChange={(e) => setNewUserData({ ...newUserData, cpf: formatCPF(e.target.value) })}
+                    maxLength={14}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">E-mail Institucional *</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="nome@edu.contagem.mg.gov.br"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Telefone de Contato</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="(31) 90000-0000"
+                    value={newUserData.phone}
+                    onChange={(e) => setNewUserData({ ...newUserData, phone: formatPhone(e.target.value) })}
+                    maxLength={15}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Senha Inicial *</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    placeholder="Mínimo 4 caracteres"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Perfil de Acesso *</label>
+                <select
+                  className="form-select"
+                  value={newUserData.role}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                  required
+                >
+                  <option value="pedagogo">Pedagogo(a)</option>
+                  <option value="diretor">Diretor(a)</option>
+                  <option value="assistente">Assistente Escolar</option>
+                  <option value="seduc">Seduc / Gestor Central</option>
+                  <option value="gestor">Gestor do Projeto</option>
+                  {user.role === 'superadmin' && <option value="superadmin">Super Admin</option>}
+                </select>
+              </div>
+
+              {newUserData.role !== 'gestor' && newUserData.role !== 'seduc' && newUserData.role !== 'superadmin' && (
+                <div className="form-group">
+                  <label className="form-label">Escola Vinculada *</label>
+                  <select
+                    className="form-select"
+                    value={newUserData.schoolId}
+                    onChange={(e) => setNewUserData({ ...newUserData, schoolId: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione a escola...</option>
+                    {schools.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {newUserData.role === 'pedagogo' && (
+                <div className="form-group">
+                  <label className="form-label">Turmas Vinculadas (Separadas por vírgula)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: 5º ANO A, 5º ANO B, 4º ANO A"
+                    style={{ textTransform: 'uppercase' }}
+                    value={newUserData.classesInput}
+                    onChange={(e) => setNewUserData({ ...newUserData, classesInput: e.target.value.toUpperCase() })}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateUserModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
+                  Confirmar Cadastro
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: EDITAR USUÁRIO (GESTOR / SEDUC / SUPER ADMIN) */}
       {editingUser && (
         <div className="modal-overlay" onClick={() => setEditingUser(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>✏️ Editar Usuário: {editingUser.name}</h3>
-              <button className="btn btn-secondary" onClick={() => setEditingUser(null)} style={{ padding: '0.25rem 0.65rem', borderRadius: '50%' }}>
-                ✕
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '620px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', padding: '1.25rem 1.5rem' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
+                  <IconEdit /> Editar Usuário: {editingUser.name}
+                </h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Altere a lotação escolar, permissões e dados de contato do servidor.
+                </p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setEditingUser(null)} style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
+                <IconX />
               </button>
             </div>
 
             <form className="card-body" onSubmit={async (e) => {
               e.preventDefault();
               const classes = editingUser.classesInput
-                ? editingUser.classesInput.split(',').map(c => c.trim()).filter(Boolean)
+                ? editingUser.classesInput.split(',').map(c => c.trim().toUpperCase()).filter(Boolean)
                 : (Array.isArray(editingUser.classes) ? editingUser.classes : []);
               
               const payload = {
@@ -6344,7 +6507,7 @@ function MainApp() {
                 console.error('Update user error:', err);
                 alert('Erro de conexão ao atualizar usuário.');
               }
-            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem 0' }}>
+            }} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
               <div className="form-group">
                 <label className="form-label">Nome Completo</label>
                 <input
@@ -6430,18 +6593,19 @@ function MainApp() {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Ex: 3º Ano A, 4º Ano B"
+                    placeholder="Ex: 3º ANO A, 4º ANO B"
+                    style={{ textTransform: 'uppercase' }}
                     value={editingUser.classesInput}
-                    onChange={(e) => setEditingUser({ ...editingUser, classesInput: e.target.value })}
+                    onChange={(e) => setEditingUser({ ...editingUser, classesInput: e.target.value.toUpperCase() })}
                   />
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setEditingUser(null)}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
                   Salvar Alterações
                 </button>
               </div>
@@ -6453,11 +6617,18 @@ function MainApp() {
       {/* MODAL: MEU PERFIL (AUTONOMIA DO USUÁRIO LOGADO) */}
       {showProfileModal && (
         <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>👤 Meu Perfil de Acesso</h3>
-              <button className="btn btn-secondary" onClick={() => setShowProfileModal(false)} style={{ padding: '0.25rem 0.65rem', borderRadius: '50%' }}>
-                ✕
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-lg, 12px)', overflow: 'hidden' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', padding: '1.25rem 1.5rem', backgroundColor: 'var(--bg-card)' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>
+                  <IconUser /> Meu Perfil de Acesso
+                </h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Atualize suas informações cadastrais e credenciais de acesso.
+                </p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => setShowProfileModal(false)} style={{ padding: '0.35rem', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
+                <IconX />
               </button>
             </div>
 
@@ -6493,7 +6664,7 @@ function MainApp() {
                   setTimeout(() => {
                     setShowProfileModal(false);
                     setProfileMessage(null);
-                  }, 1500);
+                  }, 1400);
                 } else {
                   const err = await res.json();
                   setProfileMessage({ type: 'danger', text: err.error || 'Erro ao atualizar perfil.' });
@@ -6502,11 +6673,11 @@ function MainApp() {
                 console.error('Update profile error:', err);
                 setProfileMessage({ type: 'danger', text: 'Erro de conexão com o servidor.' });
               }
-            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem 0' }}>
+            }} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
               
               {profileMessage && (
                 <div style={{
-                  padding: '0.75rem',
+                  padding: '0.75rem 1rem',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: profileMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
                   color: profileMessage.type === 'success' ? '#15803d' : '#b91c1c',
@@ -6550,9 +6721,10 @@ function MainApp() {
                 />
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)' }}>
-                  🔒 Alterar Senha de Acesso (Opcional)
+              <div style={{ backgroundColor: 'var(--bg-app)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconLock style={{ width: '16px', height: '16px' }} />
+                  <span>Alterar Senha de Acesso (Opcional)</span>
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.8rem' }}>Senha Atual</label>
@@ -6564,7 +6736,7 @@ function MainApp() {
                     onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '0.8rem' }}>Nova Senha</label>
                     <input
@@ -6588,11 +6760,11 @@ function MainApp() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
                   Fechar
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
                   Atualizar Perfil
                 </button>
               </div>
