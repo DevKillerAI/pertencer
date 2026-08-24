@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 
-// ==========================================
-// ÍCONES VETORIAIS SVG EM ALTA RESOLUÇÃO
-// ==========================================
+// =========================================================================
+// ÍCONES VETORIAIS SVG EM ALTA RESOLUÇÃO (FIÉIS À IMAGEM DE REFERÊNCIA)
+// =========================================================================
 
 export const IconEscuta = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="white"/>
   </svg>
 );
 
 export const IconDados = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="3" y="12" width="4" height="9" rx="1" fill="white" />
     <rect x="10" y="7" width="4" height="14" rx="1" fill="white" />
     <rect x="17" y="3" width="4" height="18" rx="1" fill="white" />
@@ -19,26 +19,45 @@ export const IconDados = () => (
 );
 
 export const IconSeguranca = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="white"/>
   </svg>
 );
 
-export const IconEscolasPiloto = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#15803d"/>
+// Ícone 1: Escola Municipal (exato da imagem 2)
+export const IconEscolaVertical = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#0e6b34" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11 2v3h3l-1-1.5 1-1.5h-3z" fill="#0e6b34"/>
+    <path d="M11 2v4" stroke="#0e6b34" strokeWidth="1.5" strokeLinecap="round"/>
+    <polygon points="12,5 3,10 21,10" fill="#0e6b34"/>
+    <rect x="4" y="10" width="16" height="10" fill="#0e6b34" rx="1"/>
+    <rect x="6" y="12" width="2.5" height="3" fill="#e2f6eb" rx="0.5"/>
+    <rect x="10.5" y="12" width="3" height="3" fill="#e2f6eb" rx="0.5"/>
+    <rect x="15.5" y="12" width="2.5" height="3" fill="#e2f6eb" rx="0.5"/>
+    <rect x="10.5" y="16" width="3" height="4" fill="#e2f6eb" rx="1 1 0 0"/>
   </svg>
 );
 
-export const IconAlunosPiloto = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="#0284c7"/>
+// Ícone 2: Grupo de Alunos (exato da imagem 2)
+export const IconAlunosVertical = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#00647e" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="7" r="2.5" />
+    <path d="M12 10.5c-2.3 0-4.5 1.1-4.5 3.3V16h9v-2.2c0-2.2-2.2-3.3-4.5-3.3z" />
+    <circle cx="6" cy="9" r="2" />
+    <path d="M6 12c-1.8 0-3.5.9-3.5 2.5V16h3v-1.5c0-.8.3-1.6.8-2.2-.1-.2-.2-.3-.3-.3z" />
+    <circle cx="18" cy="9" r="2" />
+    <path d="M18 12c.1 0 .2.1.3.3.5.6.8 1.4.8 2.2V16h3v-1.5c0-1.6-1.7-2.5-3.5-2.5z" />
   </svg>
 );
 
-export const IconExpansaoPiloto = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" fill="#15803d"/>
+// Ícone 3: Expansão com Barras e Seta (exato da imagem 2)
+export const IconExpansaoVertical = () => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="15" width="3.5" height="6" rx="1" fill="#0e6b34" />
+    <rect x="10.25" y="11" width="3.5" height="10" rx="1" fill="#0e6b34" />
+    <rect x="16.5" y="7" width="3.5" height="14" rx="1" fill="#0e6b34" />
+    <path d="M4 11l5-5 4 4 6-6" stroke="#0e6b34" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 4h4v4" stroke="#0e6b34" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -73,131 +92,143 @@ export default function LandingLoginPage({
             ========================================================================= */}
         <div className="pome-landing-left">
           
-          {/* Header Institucional: Logo POME Ampliada + Card Parceria Prefeitura */}
-          <div className="landing-top-bar">
+          {/* Seção Superior Dividida: Conteúdo à Esquerda e Coluna de Parceiro/Métricas à Direita */}
+          <div className="landing-main-split-row">
             
-            {/* Logo Oficial POME com Slogan Integrado em Alta Resolução */}
-            <div className="landing-pome-logo-wrap">
-              <img 
-                src="/logo-vetor.svg" 
-                alt="POME - Plataforma de Observação e Melhoria do Clima Escolar" 
-                className="pome-main-logo"
-              />
-            </div>
-
-            {/* Caixa Parceria Oficial Prefeitura de Contagem */}
-            <div className="landing-partner-badge-card">
-              <span className="partner-label">Em parceria com</span>
-              <img 
-                src="/prefeitura-contagem.png" 
-                alt="Prefeitura de Contagem" 
-                className="prefeitura-logo-main"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-              <span className="pilot-pill-badge">PROJETO PILOTO</span>
-            </div>
-
-          </div>
-
-          {/* Headline de Impacto com Destaque nas Cores Oficiais */}
-          <div className="landing-hero-text">
-            <h1 className="hero-title">
-              Clima escolar melhor,<br />
-              com escuta, registro e <span className="highlight-green">acompanhamento.</span>
-            </h1>
-            <p className="hero-subtitle">
-              Uma plataforma para apoiar o registro de ocorrências, a escuta ativa e a análise do clima escolar.
-            </p>
-          </div>
-
-          {/* Grid de Benefícios e Métricas */}
-          <div className="landing-features-and-stats">
-            
-            {/* 3 Cards de Benefícios */}
-            <div className="benefit-cards-grid">
+            {/* Lado Esquerdo do Bloco Principal */}
+            <div className="landing-content-column">
               
-              {/* Card 1: Escuta e Comunicação */}
-              <div className="benefit-card benefit-green">
-                <div className="benefit-icon-badge" style={{ backgroundColor: '#15803d' }}>
-                  <IconEscuta />
-                </div>
-                <h3 className="benefit-title">Escuta e Comunicação</h3>
-                <p className="benefit-desc">
-                  Registra ocorrências, apoia a escuta ativa e orienta a comunicação não violenta.
+              {/* Logo Oficial POME com Slogan Integrado */}
+              <div className="landing-pome-logo-wrap">
+                <img 
+                  src="/logo-vetor.svg" 
+                  alt="POME - Plataforma de Observação e Melhoria do Clima Escolar" 
+                  className="pome-main-logo"
+                />
+              </div>
+
+              {/* Headline de Impacto com Destaque nas 3 Cores Exatas da Imagem 1 */}
+              <div className="landing-hero-text">
+                <h1 className="hero-title">
+                  <span className="hero-line-navy">Clima escolar melhor,</span><br />
+                  <span className="hero-line-teal">com escuta, registro e</span><br />
+                  <span className="hero-line-green">acompanhamento.</span>
+                </h1>
+                <p className="hero-subtitle">
+                  Uma plataforma para apoiar o registro de ocorrências, a mediação e a análise do clima escolar.
                 </p>
               </div>
 
-              {/* Card 2: Dados que orientam */}
-              <div className="benefit-card benefit-blue">
-                <div className="benefit-icon-badge" style={{ backgroundColor: '#0284c7' }}>
-                  <IconDados />
+              {/* 3 Cards de Benefícios Horizontais */}
+              <div className="benefit-cards-grid">
+                
+                {/* Card 1: Escuta e Comunicação */}
+                <div className="benefit-card benefit-green">
+                  <div className="benefit-icon-badge" style={{ backgroundColor: '#15803d' }}>
+                    <IconEscuta />
+                  </div>
+                  <h3 className="benefit-title">Escuta e Comunicação</h3>
+                  <p className="benefit-desc">
+                    Registra ocorrências, apoia a escuta ativa e orienta a comunicação não violenta.
+                  </p>
                 </div>
-                <h3 className="benefit-title">Dados que orientam</h3>
-                <p className="benefit-desc">
-                  Acompanha indicadores, organiza informações e orienta decisões mais assertivas.
-                </p>
-              </div>
 
-              {/* Card 3: Ambiente seguro */}
-              <div className="benefit-card benefit-orange">
-                <div className="benefit-icon-badge" style={{ backgroundColor: '#ea580c' }}>
-                  <IconSeguranca />
+                {/* Card 2: Dados que orientam */}
+                <div className="benefit-card benefit-blue">
+                  <div className="benefit-icon-badge" style={{ backgroundColor: '#0284c7' }}>
+                    <IconDados />
+                  </div>
+                  <h3 className="benefit-title">Dados que orientam</h3>
+                  <p className="benefit-desc">
+                    Acompanha indicadores, organiza informações e orienta decisões mais assertivas.
+                  </p>
                 </div>
-                <h3 className="benefit-title">Ambiente seguro</h3>
-                <p className="benefit-desc">
-                  Restringe acessos, protege dados e fortalece a privacidade.
-                </p>
+
+                {/* Card 3: Ambiente seguro */}
+                <div className="benefit-card benefit-orange">
+                  <div className="benefit-icon-badge" style={{ backgroundColor: '#ea580c' }}>
+                    <IconSeguranca />
+                  </div>
+                  <h3 className="benefit-title">Ambiente seguro</h3>
+                  <p className="benefit-desc">
+                    Restringe acessos, protege dados e fortalece a privacidade.
+                  </p>
+                </div>
+
               </div>
 
             </div>
 
-            {/* Coluna Lateral de Métricas do Projeto Piloto */}
-            <div className="pilot-metrics-list">
+            {/* Lado Direito do Bloco Principal: Coluna com Card da Prefeitura + 3 Métricas */}
+            <div className="landing-partner-and-metrics-column">
               
-              <div className="metric-item">
-                <div className="metric-icon-circle green">
-                  <IconEscolasPiloto />
-                </div>
-                <div className="metric-content">
-                  <strong className="metric-value green">10</strong>
-                  <span className="metric-label">escolas participantes</span>
-                </div>
+              {/* Card da Prefeitura de Contagem + PROJETO PILOTO */}
+              <div className="landing-partner-badge-card">
+                <span className="partner-label">Em parceria com</span>
+                <img 
+                  src="/prefeitura-contagem.png" 
+                  alt="Prefeitura de Contagem" 
+                  className="prefeitura-logo-main"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <span className="pilot-pill-badge">PROJETO PILOTO</span>
               </div>
 
-              <div className="metric-item">
-                <div className="metric-icon-circle blue">
-                  <IconAlunosPiloto />
+              {/* Lista Vertical de Métricas com Divisórias */}
+              <div className="pilot-metrics-vertical-list">
+                
+                {/* Métrica 1 */}
+                <div className="metric-item-row">
+                  <div className="metric-icon-circle green">
+                    <IconEscolaVertical />
+                  </div>
+                  <div className="metric-content-box">
+                    <strong className="metric-value green">10</strong>
+                    <span className="metric-label blue-link">escolas<br />participando</span>
+                  </div>
                 </div>
-                <div className="metric-content">
-                  <span className="metric-prefix">mais de</span>
-                  <strong className="metric-value blue">1.000</strong>
-                  <span className="metric-label">alunos atendidos</span>
-                </div>
-              </div>
 
-              <div className="metric-item">
-                <div className="metric-icon-circle light-green">
-                  <IconExpansaoPiloto />
+                <div className="metric-divider-line"></div>
+
+                {/* Métrica 2 */}
+                <div className="metric-item-row">
+                  <div className="metric-icon-circle blue">
+                    <IconAlunosVertical />
+                  </div>
+                  <div className="metric-content-box">
+                    <span className="metric-prefix blue-link">mais de</span>
+                    <strong className="metric-value blue">1.000</strong>
+                    <span className="metric-label blue-link">alunos<br />atendidos</span>
+                  </div>
                 </div>
-                <div className="metric-content">
-                  <strong className="metric-label-highlight">uso inicial<br />em expansão</strong>
+
+                <div className="metric-divider-line"></div>
+
+                {/* Métrica 3 */}
+                <div className="metric-item-row">
+                  <div className="metric-icon-circle cream">
+                    <IconExpansaoVertical />
+                  </div>
+                  <div className="metric-content-box">
+                    <strong className="metric-label-highlight">uso inicial<br />em expansão</strong>
+                  </div>
                 </div>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* Imagem Oficial do Caminho para a Escola (Arquivo criado pelo usuário) */}
+          {/* Imagem Panorâmica / Cinematográfica: Caminho para a Escola */}
           <div className="landing-illustration-wrap">
             <img 
               src="/caminho-para-a-escola.png" 
               alt="Estudantes a caminho da Escola Municipal" 
               className="caminho-escola-img"
               onError={(e) => {
-                // Fallback caso a imagem precise de recarregamento
                 e.target.src = '/caminho_para_a_escola_vector_300_sem_falhas_preview.png';
               }}
             />
