@@ -269,17 +269,18 @@ const initialData = {
       id: 'usr-1',
       name: 'Elisabette Leo (Super Admin)',
       cpf: '00000000000',
-      email: 'gestor@pome.com',
+      email: 'admin@edu.contagem.mg.gov.br',
       password: 'admin',
       role: 'superadmin',
       schoolId: null,
-      classes: []
+      classes: [],
+      lgpd_accepted: true
     },
     {
       id: 'usr-felipe',
       name: 'Felipe Marcelino (Super Admin)',
       cpf: '99999999999',
-      email: 'vina@pome.com.br',
+      email: 'felipe@edu.contagem.mg.gov.br',
       phone: '(31) 99999-9999',
       password: '2018@Senha',
       role: 'superadmin',
@@ -288,34 +289,59 @@ const initialData = {
       lgpd_accepted: true
     },
     {
-      id: 'usr-2',
-      name: 'Diretor Wancleber',
+      id: 'usr-seduc',
+      name: 'Gestão Central SEDUC',
       cpf: '11111111111',
-      email: 'diretor@pome.com',
+      email: 'gestor@edu.contagem.mg.gov.br',
+      password: 'seduc',
+      role: 'seduc',
+      schoolId: null,
+      classes: [],
+      lgpd_accepted: true
+    },
+    {
+      id: 'usr-2',
+      name: 'Diretor(a) Wancleber',
+      cpf: '22222222222',
+      email: 'diretor@edu.contagem.mg.gov.br',
       password: 'senha',
       role: 'diretor',
       schoolId: 'esc-1',
-      classes: []
+      classes: [],
+      lgpd_accepted: true
     },
     {
       id: 'usr-3',
       name: 'Pedagoga Maria Silva',
-      cpf: '22222222222',
-      email: 'pedagoga1@pome.com',
+      cpf: '33333333333',
+      email: 'pedagogo@edu.contagem.mg.gov.br',
       password: 'senha',
       role: 'pedagogo',
       schoolId: 'esc-1',
-      classes: ['5º Ano A', '5º Ano B', '4º Ano A']
+      classes: ['5º Ano A', '5º Ano B', '4º Ano A'],
+      lgpd_accepted: true
     },
     {
       id: 'usr-4',
       name: 'Pedagoga Ana Costa',
-      cpf: '33333333333',
-      email: 'pedagoga2@pome.com',
+      cpf: '33333333334',
+      email: 'pedagoga2@edu.contagem.mg.gov.br',
       password: 'senha',
       role: 'pedagogo',
       schoolId: 'esc-2',
-      classes: ['3º Ano A', '3º Ano B']
+      classes: ['3º Ano A', '3º Ano B'],
+      lgpd_accepted: true
+    },
+    {
+      id: 'usr-5',
+      name: 'Assistente de Mediação',
+      cpf: '44444444444',
+      email: 'assistente@edu.contagem.mg.gov.br',
+      password: 'senha',
+      role: 'assistente',
+      schoolId: 'esc-1',
+      classes: [],
+      lgpd_accepted: true
     }
   ],
   occurrences: [
@@ -383,6 +409,13 @@ function findClosingBracket(str, startIdx) {
   return -1;
 }
 
+const withTimeout = (promise, ms = 800) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
+  ]);
+};
+
 export const db = {
   getData: async () => {
     if (isSupabaseConfigured) {
@@ -398,10 +431,10 @@ export const db = {
   getSchools: async () => {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await withTimeout(supabase
           .from('schools')
           .select('*')
-          .order('name', { ascending: true });
+          .order('name', { ascending: true }));
         if (error) throw error;
         return data || [];
       } catch (err) {
@@ -464,10 +497,10 @@ export const db = {
   getUsers: async () => {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await withTimeout(supabase
           .from('users')
           .select('*')
-          .order('name', { ascending: true });
+          .order('name', { ascending: true }));
         if (error) throw error;
         const list = data || [];
         return list.map(u => {
@@ -559,10 +592,10 @@ export const db = {
   getOccurrences: async () => {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await withTimeout(supabase
           .from('occurrences')
           .select('*')
-          .order('date', { ascending: false });
+          .order('date', { ascending: false }));
         if (error) throw error;
         
         const list = data || [];

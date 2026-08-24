@@ -45,11 +45,14 @@ npm run build
 
 ---
 
-## 🏛️ Perfis de Acesso
+## 🏛️ Perfis de Acesso & Credenciais de Homologação
 
-* **Super Admin:** Gestão master, telemetria técnica, logs e auditoria.
-* **SEDUC / Gestor Central:** Visão panorâmica de toda a rede municipal e relatórios consolidados.
-* **Diretor(a):** Gestão e visto de 100% das ocorrências da unidade escolar.
-* **Pedagogo(a):** Abertura, mediação e registro dos atendimentos socioemocionais.
-* **Assistente Escolar / Mediador:** Apoio ao núcleo pedagógico e consultas.
+| Perfil / Cargo | Nome do Usuário | CPF de Acesso | E-mail Institucional | Senha Padrão | Escopo |
+|---|---|---|---|---|---|
+| 👑 **Super Admin** | Elisabette Leo | `000.000.000-00` | `admin@edu.contagem.mg.gov.br` | `admin123` *(ou `admin`)* | Toda a Rede |
+| 👑 **Super Admin** | Felipe Marcelino | `999.999.999-99` | `felipe@edu.contagem.mg.gov.br` | `2018@Senha` | Toda a Rede |
+| 🏛️ **Gestor SEDUC** | Gestão Central SEDUC | `111.111.111-11` | `gestor@edu.contagem.mg.gov.br` | `seduc123` *(ou `seduc` / `admin`)* | Rede Municipal |
+| 💼 **Diretor(a)** | Diretor(a) Wancleber | `222.222.222-22` | `diretor@edu.contagem.mg.gov.br` | `diretor123` *(ou `senha`)* | Escola Wancleber |
+| ✏️ **Pedagogo(a)** | Pedagoga Maria Silva | `333.333.333-33` | `pedagogo@edu.contagem.mg.gov.br` | `pedagogo123` *(ou `senha`)* | Escola Wancleber |
+| 🤝 **Assistente Escolar** | Assistente de Mediação | `444.444.444-44` | `assistente@edu.contagem.mg.gov.br` | `assistente123` *(ou `senha`)* | Escola Wancleber |
 

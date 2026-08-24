@@ -42,17 +42,18 @@
       "id": "usr-1",
       "name": "Elisabette Leo (Super Admin)",
       "cpf": "00000000000",
-      "email": "gestor@pome.com",
+      "email": "admin@edu.contagem.mg.gov.br",
       "password": "admin",
       "role": "superadmin",
       "schoolId": null,
-      "classes": []
+      "classes": [],
+      "lgpd_accepted": true
     },
     {
       "id": "usr-felipe",
       "name": "Felipe Marcelino (Super Admin)",
       "cpf": "99999999999",
-      "email": "vina@pome.com.br",
+      "email": "felipe@edu.contagem.mg.gov.br",
       "phone": "(31) 99999-9999",
       "password": "2018@Senha",
       "role": "superadmin",
@@ -61,20 +62,32 @@
       "lgpd_accepted": true
     },
     {
-      "id": "usr-2",
-      "name": "Diretor Wancleber",
+      "id": "usr-seduc",
+      "name": "Gestão Central SEDUC",
       "cpf": "11111111111",
-      "email": "diretor@pome.com",
+      "email": "gestor@edu.contagem.mg.gov.br",
+      "password": "seduc",
+      "role": "seduc",
+      "schoolId": null,
+      "classes": [],
+      "lgpd_accepted": true
+    },
+    {
+      "id": "usr-2",
+      "name": "Diretor(a) Wancleber",
+      "cpf": "22222222222",
+      "email": "diretor@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "diretor",
       "schoolId": "esc-1",
-      "classes": []
+      "classes": [],
+      "lgpd_accepted": true
     },
     {
       "id": "usr-3",
       "name": "Pedagoga Maria Silva",
-      "cpf": "22222222222",
-      "email": "pedagoga1@pome.com",
+      "cpf": "33333333333",
+      "email": "pedagogo@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "pedagogo",
       "schoolId": "esc-1",
@@ -82,46 +95,33 @@
         "5º Ano A",
         "5º Ano B",
         "4º Ano A"
-      ]
+      ],
+      "lgpd_accepted": true
     },
     {
       "id": "usr-4",
       "name": "Pedagoga Ana Costa",
-      "cpf": "33333333333",
-      "email": "pedagoga2@pome.com",
+      "cpf": "33333333334",
+      "email": "pedagoga2@edu.contagem.mg.gov.br",
       "password": "senha",
       "role": "pedagogo",
       "schoolId": "esc-2",
       "classes": [
         "3º Ano A",
         "3º Ano B"
-      ]
+      ],
+      "lgpd_accepted": true
     },
     {
-      "name": "Novo Assistente Aprovado",
-      "cpf": "88499412038",
-      "email": "assistente_1787499412038@educacao.contagem.mg.gov.br",
-      "phone": "",
-      "password": "senha123",
+      "id": "usr-5",
+      "name": "Assistente de Mediação",
+      "cpf": "44444444444",
+      "email": "assistente@edu.contagem.mg.gov.br",
+      "password": "senha",
       "role": "assistente",
       "schoolId": "esc-1",
       "classes": [],
-      "lgpd_accepted": true,
-      "createdAt": "2026-08-23T15:36:52.037Z",
-      "id": "usr-1787499412037"
-    },
-    {
-      "name": "Novo Assistente Aprovado",
-      "cpf": "88500585614",
-      "email": "assistente_1787500585614@educacao.contagem.mg.gov.br",
-      "phone": "",
-      "password": "senha123",
-      "role": "assistente",
-      "schoolId": "esc-1",
-      "classes": [],
-      "lgpd_accepted": true,
-      "createdAt": "2026-08-23T15:56:25.637Z",
-      "id": "usr-1787500585637"
+      "lgpd_accepted": true
     }
   ],
   "occurrences": [

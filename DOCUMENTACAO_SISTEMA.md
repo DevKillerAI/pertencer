@@ -48,10 +48,21 @@ O **POME** (Plataforma de Observação da Melhoria do Clima Escolar) é um siste
 
 ## 3. Autenticação e Autocadastro
 
-* **Entrada no Sistema:** Login unificado via CPF (com formatação automática `000.000.000-00`) ou E-mail institucional e senha, com botão para exibir/ocultar senha.
+* **Entrada no Sistema:** Login unificado via CPF (com formatação automática `000.000.000-00`) ou E-mail institucional (`@edu.contagem.mg.gov.br`) e senha, com botão para exibir/ocultar senha.
+* **Credenciais Padrão Pré-Configuradas para Testes e Homologação:**
+
+| Perfil / Cargo | Nome do Usuário | CPF de Acesso | E-mail Institucional | Senha Padrão | Escopo |
+|---|---|---|---|---|---|
+| 👑 **Super Admin** | Elisabette Leo | `000.000.000-00` | `admin@edu.contagem.mg.gov.br` | `admin123` *(ou `admin`)* | Toda a Rede |
+| 👑 **Super Admin** | Felipe Marcelino | `999.999.999-99` | `felipe@edu.contagem.mg.gov.br` | `2018@Senha` | Toda a Rede |
+| 🏛️ **Gestor SEDUC** | Gestão Central SEDUC | `111.111.111-11` | `gestor@edu.contagem.mg.gov.br` | `seduc123` *(ou `seduc` / `admin`)* | Rede Municipal |
+| 💼 **Diretor(a)** | Diretor(a) Wancleber | `222.222.222-22` | `diretor@edu.contagem.mg.gov.br` | `diretor123` *(ou `senha`)* | Escola Wancleber |
+| ✏️ **Pedagogo(a)** | Pedagoga Maria Silva | `333.333.333-33` | `pedagogo@edu.contagem.mg.gov.br` | `pedagogo123` *(ou `senha`)* | Escola Wancleber |
+| 🤝 **Assistente Escolar** | Assistente de Mediação | `444.444.444-44` | `assistente@edu.contagem.mg.gov.br` | `assistente123` *(ou `senha`)* | Escola Wancleber |
+
 * **Botão "📝 Cadastre-se":** Permite a novos servidores solicitarem acesso diretamente pela tela inicial.
 * **Formulário de Cadastro Completo:**
-  * CPF e E-mail Institucional.
+  * CPF e E-mail Institucional (`@edu.contagem.mg.gov.br`).
   * Nome Completo e Telefone.
   * Seleção de Perfil (Pedagogo, Diretor, Assistente, SEDUC).
   * Seleção da Unidade / Escola municipal.
