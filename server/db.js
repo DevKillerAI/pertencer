@@ -757,10 +757,10 @@ export const db = {
           payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
         }
 
-        const { error } = await supabase
+        const { error } = await withTimeout(supabase
           .from('occurrences')
           .upsert(payload)
-          .select();
+          .select());
         if (error) throw error;
         return occurrence;
       } catch (err) {
@@ -788,12 +788,12 @@ export const db = {
   deleteOccurrence: async (id) => {
     if (isSupabaseConfigured) {
       try {
-        const { error } = await supabase
+        const { error } = await withTimeout(supabase
           .from('occurrences')
           .delete()
-          .eq('id', id);
+          .eq('id', id));
         if (error) throw error;
-        return;
+        return true;
       } catch (err) {
         console.warn('Supabase deleteOccurrence failed, using local fallback:', err.message || err);
       }
@@ -803,5 +803,6 @@ export const db = {
     const data = readDb();
     data.occurrences = data.occurrences.filter(o => o.id !== id);
     writeDb(data);
+    return true;
   }
 };

@@ -1778,8 +1778,17 @@ function MainApp() {
   // Helper validation for Step 2
   const isStep2Valid = Boolean((formData?.subject || '').trim().length >= 10 && Array.isArray(formData?.classifications) && formData.classifications.length > 0);
 
+  // Helper validation for Step 3 (Sentimentos)
+  const isStep3Valid = !(formData?.feelings || []).includes('Outro') || Boolean((formData?.customFeeling || '').trim());
+
   // Helper validation for Step 4 (Encaminhamentos)
-  const isStep4Valid = Boolean((formData?.referrals || '').trim().length >= 5);
+  const isStep4Valid = Boolean(
+    (formData?.referrals || '').trim().length >= 5 && 
+    (!(formData?.direction_referrals || []).includes('Outro') || Boolean((formData?.customDirectionReferral || '').trim()))
+  );
+
+  // Helper validation for Step 5 (Revisão e Finalização)
+  const isStep5Valid = isStep1Valid && isStep2Valid && isStep3Valid && isStep4Valid;
 
   // Render Loading Splash Screen
   if (loading) {
