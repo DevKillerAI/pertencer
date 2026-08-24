@@ -247,6 +247,20 @@ const IconX = (props) => (
   </svg>
 );
 
+const IconEye = (props) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const IconTag = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <line x1="7" y1="7" x2="7.01" y2="7" />
+  </svg>
+);
+
 // Constants: Grade Cycles / Anos
 const GRADE_CYCLES = [
   '3 anos', '4 anos', '5 anos',
@@ -2696,14 +2710,14 @@ function MainApp() {
                     <table className="table">
                       <thead>
                         <tr>
-                          <th>Data</th>
-                          {(user.role === 'gestor' || user.role === 'seduc') && <th>Escola</th>}
-                          <th>Estudante(s)</th>
-                          <th>Turma</th>
-                          <th>Classificação</th>
-                          <th>Criado Por</th>
-                          <th>Status</th>
-                          <th style={{ textAlign: 'right' }}>Ações</th>
+                          <th style={{ width: '75px' }}>Data</th>
+                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '120px' }}>Escola</th>}
+                          <th style={{ minWidth: '120px' }}>Estudante(s)</th>
+                          <th style={{ width: '45px', textAlign: 'center' }}>Turma</th>
+                          <th style={{ minWidth: '120px' }}>Classificação</th>
+                          <th style={{ minWidth: '95px' }}>Criado Por</th>
+                          <th style={{ width: '100px' }}>Status</th>
+                          <th style={{ textAlign: 'right', width: '135px' }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2716,68 +2730,80 @@ function MainApp() {
 
                           const primaryType = Array.isArray(o.classifications) && o.classifications.length > 0
                             ? o.classifications[0]
-                            : o.type || 'Atendimento';
+                            : o.type || 'Atendimento Geral';
+
+                          const canEditOrDelete = (user.role === 'gestor' || 
+                            user.role === 'seduc' ||
+                            user.role === 'superadmin' ||
+                            user.role === 'diretor' || 
+                            ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes));
 
                           return (
                             <tr key={o.id}>
-                              <td>{formatDisplayDate(o.date)}</td>
-                              {(user.role === 'gestor' || user.role === 'seduc') && <td style={{ fontWeight: '500' }}>{schoolName}</td>}
-                              <td style={{ fontWeight: '600' }}>{displayedStudent}</td>
-                              <td>{o.className || studentsList[0]?.className || '-'}</td>
-                              <td>
-                                <span className="badge badge-primary">{primaryType}</span>
+                              <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{formatDisplayDate(o.date)}</td>
+                              {(user.role === 'gestor' || user.role === 'seduc') && (
+                                <td style={{ maxWidth: '120px', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
+                                  {schoolName}
+                                </td>
+                              )}
+                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.81rem' }}>
+                                {displayedStudent}
                               </td>
-                              <td style={{ color: 'var(--text-secondary)' }}>{anonymizeText(o.createdByName, anonymizeView)}</td>
+                              <td style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: '600' }}>
+                                {o.className || studentsList[0]?.className || '-'}
+                              </td>
+                              <td>
+                                <span className="table-classification-badge" title={primaryType}>
+                                  {primaryType}
+                                </span>
+                              </td>
+                              <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
+                                {anonymizeText(o.createdByName, anonymizeView)}
+                              </td>
                               <td>
                                 {(() => {
                                   const st = getOccurrenceStatus(o);
-                                  return <span className={`badge ${st.badgeClass}`} style={st.style}>{st.label}</span>;
+                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.71rem', padding: '0.2rem 0.5rem' }}>{st.label}</span>;
                                 })()}
                               </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
                                   <button 
-                                    className="btn btn-secondary" 
-                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    className="btn btn-secondary action-btn-compact" 
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
                                       setShowDetailModal(true);
                                     }}
+                                    title="Ver detalhes completos"
                                   >
-                                    Detalhes
+                                    <IconEye style={{ width: '12px', height: '12px' }} /> Ver
                                   </button>
                                   <button 
-                                    className="btn btn-primary" 
-                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    className="btn btn-primary action-btn-compact" 
                                     onClick={() => handlePrint(o)}
+                                    title="Imprimir Ficha Oficial A4"
                                   >
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> A4</span>
+                                    <IconPrinter style={{ width: '12px', height: '12px' }} /> A4
                                   </button>
-                                  {(user.role === 'gestor' || 
-                                    user.role === 'seduc' ||
-                                    user.role === 'superadmin' ||
-                                    user.role === 'diretor' || 
-                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
+                                  {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-warning" 
-                                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      className="btn btn-warning action-btn-compact" 
+                                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
                                       onClick={() => handleEditOccurrence(o)}
+                                      title="Editar Ocorrência"
                                     >
-                                      Alterar
+                                      <IconEdit style={{ width: '12px', height: '12px' }} />
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || 
-                                    user.role === 'seduc' || 
-                                    user.role === 'superadmin' ||
-                                    user.role === 'diretor' ||
-                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
+                                  {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-danger" 
-                                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                                      className="btn btn-danger action-btn-compact" 
+                                      style={{ backgroundColor: 'var(--danger)', color: 'white' }}
                                       onClick={() => handleDeleteOccurrence(o.id)}
+                                      title="Excluir Ocorrência"
                                     >
-                                      Excluir
+                                      <IconTrash style={{ width: '12px', height: '12px' }} />
                                     </button>
                                   )}
                                 </div>
@@ -2865,15 +2891,15 @@ function MainApp() {
                     <table className="table">
                       <thead>
                         <tr>
-                          <th>Data</th>
-                          {(user.role === 'gestor' || user.role === 'seduc') && <th>Escola</th>}
-                          <th>Estudante(s)</th>
-                          <th>Turma</th>
-                          <th>Responsável</th>
-                          <th>Classificação</th>
-                          <th>Criado Por</th>
-                          <th>Status</th>
-                          <th style={{ textAlign: 'right' }}>Ações</th>
+                          <th style={{ width: '75px' }}>Data</th>
+                          {(user.role === 'gestor' || user.role === 'seduc') && <th style={{ maxWidth: '120px' }}>Escola</th>}
+                          <th style={{ minWidth: '115px' }}>Estudante(s)</th>
+                          <th style={{ width: '45px', textAlign: 'center' }}>Turma</th>
+                          <th style={{ minWidth: '100px' }}>Responsável</th>
+                          <th style={{ minWidth: '115px' }}>Classificação</th>
+                          <th style={{ minWidth: '90px' }}>Criado Por</th>
+                          <th style={{ width: '100px' }}>Status</th>
+                          <th style={{ textAlign: 'right', width: '135px' }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2887,69 +2913,83 @@ function MainApp() {
                           const guardianName = o.guardianName || studentsList[0]?.guardian?.name || '-';
                           const primaryType = Array.isArray(o.classifications) && o.classifications.length > 0
                             ? o.classifications[0]
-                            : o.type || 'Atendimento';
+                            : o.type || 'Atendimento Geral';
+
+                          const canEditOrDelete = (user.role === 'gestor' || 
+                            user.role === 'seduc' || 
+                            user.role === 'superadmin' || 
+                            user.role === 'diretor' || 
+                            ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes));
 
                           return (
                             <tr key={o.id}>
-                              <td>{formatDisplayDate(o.date)}</td>
-                              {(user.role === 'gestor' || user.role === 'seduc') && <td style={{ fontWeight: '500' }}>{schoolName}</td>}
-                              <td style={{ fontWeight: '600' }}>{displayedStudent}</td>
-                              <td>{o.className || studentsList[0]?.className || '-'}</td>
-                              <td>{anonymizeText(guardianName, anonymizeView)}</td>
-                              <td>
-                                <span className="badge badge-primary">{primaryType}</span>
+                              <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{formatDisplayDate(o.date)}</td>
+                              {(user.role === 'gestor' || user.role === 'seduc') && (
+                                <td style={{ maxWidth: '120px', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }} title={schoolName}>
+                                  {schoolName}
+                                </td>
+                              )}
+                              <td style={{ fontWeight: '700', color: 'var(--text-primary)', wordBreak: 'break-word', fontSize: '0.81rem' }}>
+                                {displayedStudent}
                               </td>
-                              <td style={{ color: 'var(--text-secondary)' }}>{anonymizeText(o.createdByName, anonymizeView)}</td>
+                              <td style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: '600' }}>
+                                {o.className || studentsList[0]?.className || '-'}
+                              </td>
+                              <td style={{ fontSize: '0.78rem', wordBreak: 'break-word' }}>
+                                {anonymizeText(guardianName, anonymizeView)}
+                              </td>
+                              <td>
+                                <span className="table-classification-badge" title={primaryType}>
+                                  {primaryType}
+                                </span>
+                              </td>
+                              <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.25', wordBreak: 'break-word' }}>
+                                {anonymizeText(o.createdByName, anonymizeView)}
+                              </td>
                               <td>
                                 {(() => {
                                   const st = getOccurrenceStatus(o);
-                                  return <span className={`badge ${st.badgeClass}`} style={st.style}>{st.label}</span>;
+                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.71rem', padding: '0.2rem 0.5rem' }}>{st.label}</span>;
                                 })()}
                               </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', gap: '3px', alignItems: 'center' }}>
                                   <button 
-                                    className="btn btn-secondary" 
-                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    className="btn btn-secondary action-btn-compact" 
                                     onClick={() => {
                                       setSelectedOccurrence(o);
                                       setDirectorNotes(o.directorNotes || '');
                                       setShowDetailModal(true);
                                     }}
+                                    title="Ver detalhes completos"
                                   >
-                                    Detalhes
+                                    <IconEye style={{ width: '12px', height: '12px' }} /> Ver
                                   </button>
                                   <button 
-                                    className="btn btn-primary" 
-                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    className="btn btn-primary action-btn-compact" 
                                     onClick={() => handlePrint(o)}
+                                    title="Imprimir Ficha Oficial A4"
                                   >
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconPrinter /> A4</span>
+                                    <IconPrinter style={{ width: '12px', height: '12px' }} /> A4
                                   </button>
-                                  {(user.role === 'gestor' || 
-                                    user.role === 'seduc' ||
-                                    user.role === 'superadmin' ||
-                                    user.role === 'diretor' || 
-                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
+                                  {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-warning" 
-                                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                                      className="btn btn-warning action-btn-compact" 
+                                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
                                       onClick={() => handleEditOccurrence(o)}
+                                      title="Editar Ocorrência"
                                     >
-                                      Alterar
+                                      <IconEdit style={{ width: '12px', height: '12px' }} />
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || 
-                                    user.role === 'seduc' || 
-                                    user.role === 'superadmin' ||
-                                    user.role === 'diretor' ||
-                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
+                                  {canEditOrDelete && (
                                     <button 
-                                      className="btn btn-danger" 
-                                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                                      className="btn btn-danger action-btn-compact" 
+                                      style={{ backgroundColor: 'var(--danger)', color: 'white' }}
                                       onClick={() => handleDeleteOccurrence(o.id)}
+                                      title="Excluir Ocorrência"
                                     >
-                                      Excluir
+                                      <IconTrash style={{ width: '12px', height: '12px' }} />
                                     </button>
                                   )}
                                 </div>
@@ -3390,11 +3430,11 @@ function MainApp() {
                       Classificação da Ocorrência (Selecione uma ou mais)
                     </label>
 
-                    <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                    <div className="taxonomy-nature-container">
                       {Object.entries(TAXONOMY_TREE).map(([nature, dimensions]) => (
                         <div key={nature} className="taxonomy-nature-card">
                           <div className="taxonomy-nature-header">
-                            <span>🏷️</span>
+                            <IconTag style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
                             <span>{nature}</span>
                           </div>
                           
