@@ -775,6 +775,19 @@ function MainApp() {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  // Handler: Change Step with automatic smooth scroll to top of form
+  const goToStep = (stepNumber) => {
+    setFormStep(stepNumber);
+    setTimeout(() => {
+      const formCard = document.getElementById('pome-form-card');
+      if (formCard) {
+        formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 30);
+  };
+
   // Apply theme to HTML tag
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -2747,7 +2760,7 @@ function MainApp() {
 
         {/* ----------------- FORMULÁRIO PROGRESSIVO EM 5 ETAPAS (POME.PDF) ----------------- */}
         {showForm && (
-          <div className="card fade-in" style={{ maxWidth: '850px', margin: '0 auto' }}>
+          <div id="pome-form-card" className="card fade-in" style={{ maxWidth: '850px', margin: '0 auto' }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3>Registro de Atendimento</h3>
               <button className="btn btn-secondary" onClick={() => setShowForm(false)}>
@@ -2760,7 +2773,7 @@ function MainApp() {
               <div className="step-indicator">
                 <div 
                   className={`step-item ${formStep >= 1 ? 'active' : ''} ${formStep > 1 ? 'completed' : ''}`}
-                  onClick={() => setFormStep(1)}
+                  onClick={() => goToStep(1)}
                   style={{ cursor: 'pointer' }}
                   title="Passo 1: Identificação do Estudante"
                 >
@@ -2769,7 +2782,7 @@ function MainApp() {
                 </div>
                 <div 
                   className={`step-item ${formStep >= 2 ? 'active' : ''} ${formStep > 2 ? 'completed' : ''}`}
-                  onClick={() => setFormStep(2)}
+                  onClick={() => goToStep(2)}
                   style={{ cursor: 'pointer' }}
                   title="Passo 2: Relato e Classificação"
                 >
@@ -2778,7 +2791,7 @@ function MainApp() {
                 </div>
                 <div 
                   className={`step-item ${formStep >= 3 ? 'active' : ''} ${formStep > 3 ? 'completed' : ''}`}
-                  onClick={() => setFormStep(3)}
+                  onClick={() => goToStep(3)}
                   style={{ cursor: 'pointer' }}
                   title="Passo 3: Sentimentos (CNV)"
                 >
@@ -2787,7 +2800,7 @@ function MainApp() {
                 </div>
                 <div 
                   className={`step-item ${formStep >= 4 ? 'active' : ''} ${formStep > 4 ? 'completed' : ''}`}
-                  onClick={() => setFormStep(4)}
+                  onClick={() => goToStep(4)}
                   style={{ cursor: 'pointer' }}
                   title="Passo 4: Encaminhamentos"
                 >
@@ -2796,7 +2809,7 @@ function MainApp() {
                 </div>
                 <div 
                   className={`step-item ${formStep >= 5 ? 'active' : ''}`}
-                  onClick={() => setFormStep(5)}
+                  onClick={() => goToStep(5)}
                   style={{ cursor: 'pointer' }}
                   title="Passo 5: Revisão e Finalização"
                 >
@@ -3085,14 +3098,14 @@ function MainApp() {
                       <button 
                         type="button"
                         className="btn btn-secondary" 
-                        onClick={() => setFormStep(5)}
+                        onClick={() => goToStep(5)}
                       >
                         🔍 Ir para Revisão
                       </button>
                       <button 
                         type="button"
                         className="btn btn-primary" 
-                        onClick={() => setFormStep(2)}
+                        onClick={() => goToStep(2)}
                       >
                         Continuar para Passo 2 ➡️
                       </button>
@@ -3182,7 +3195,7 @@ function MainApp() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(1)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => goToStep(1)}>
                       ⬅️ Voltar ao Passo 1
                     </button>
                     <button 
@@ -3197,14 +3210,14 @@ function MainApp() {
                       <button 
                         type="button"
                         className="btn btn-secondary" 
-                        onClick={() => setFormStep(5)}
+                        onClick={() => goToStep(5)}
                       >
                         🔍 Ir para Revisão
                       </button>
                       <button 
                         type="button"
                         className="btn btn-primary" 
-                        onClick={() => setFormStep(3)}
+                        onClick={() => goToStep(3)}
                       >
                         Continuar para Passo 3 ➡️
                       </button>
@@ -3301,7 +3314,7 @@ function MainApp() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(2)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => goToStep(2)}>
                       ⬅️ Voltar ao Passo 2
                     </button>
                     <button 
@@ -3316,14 +3329,14 @@ function MainApp() {
                       <button 
                         type="button"
                         className="btn btn-secondary" 
-                        onClick={() => setFormStep(5)}
+                        onClick={() => goToStep(5)}
                       >
                         🔍 Ir para Revisão
                       </button>
                       <button 
                         type="button"
                         className="btn btn-primary" 
-                        onClick={() => setFormStep(4)}
+                        onClick={() => goToStep(4)}
                       >
                         Continuar para Passo 4 ➡️
                       </button>
@@ -3425,7 +3438,7 @@ function MainApp() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => setFormStep(3)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => goToStep(3)}>
                       ⬅️ Voltar ao Passo 3
                     </button>
                     <button 
@@ -3439,7 +3452,7 @@ function MainApp() {
                     <button 
                       type="button"
                       className="btn btn-primary" 
-                      onClick={() => setFormStep(5)}
+                      onClick={() => goToStep(5)}
                     >
                       Revisar Registro (Passo 5) ➡️
                     </button>
@@ -3546,7 +3559,7 @@ function MainApp() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <button className="btn btn-secondary" onClick={() => setFormStep(4)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => goToStep(4)}>
                       ⬅️ Editar Dados
                     </button>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
