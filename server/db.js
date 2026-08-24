@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 const DB_FILE = path.join(__dirname, 'db.json');
 
 // Supabase Configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://mowvehesrsawbxqhtytk.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY || 'sb_publishable_9DG9WVh7oVbM9r2hXQMvkA_ERImrg3S';
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
 export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
@@ -409,7 +409,7 @@ function findClosingBracket(str, startIdx) {
   return -1;
 }
 
-const withTimeout = (promise, ms = 800) => {
+const withTimeout = (promise, ms = 8000) => {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))

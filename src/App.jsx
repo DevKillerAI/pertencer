@@ -816,12 +816,34 @@ function MainApp() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setOccurrences(data);
-        return data;
+        if (Array.isArray(data)) {
+          let localStore = [];
+          try {
+            localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
+          } catch (_) {}
+          
+          const merged = [...data];
+          localStore.forEach(loc => {
+            if (!merged.some(m => m.id === loc.id)) {
+              merged.unshift(loc);
+            }
+          });
+          setOccurrences(merged);
+          return merged;
+        }
       }
     } catch (err) {
       console.error('Error fetching occurrences:', err);
     }
+    
+    try {
+      const localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
+      if (localStore.length > 0) {
+        setOccurrences(localStore);
+        return localStore;
+      }
+    } catch (_) {}
+    
     return null;
   };
 
