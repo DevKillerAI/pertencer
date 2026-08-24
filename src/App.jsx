@@ -174,9 +174,113 @@ const GRADE_CYCLES = [
   'EJA 1º segmento', 'EJA 2º segmento'
 ];
 
-// Constants: New 3-Level Scientific Taxonomy (Natureza -> Dimensões -> Termos)
+// Constants: Turnos (Item 2)
+const TURN_OPTIONS = [
+  'Manhã',
+  'Tarde',
+  'Noite',
+  'Integral'
+];
+
+// Constants: Componentes Curriculares / Matérias (Item 2)
+const SUBJECT_OPTIONS = [
+  'Língua Portuguesa',
+  'Matemática',
+  'Ciências',
+  'História',
+  'Geografia',
+  'Artes',
+  'Educação Física',
+  'Língua Inglesa',
+  'Ensino Religioso',
+  'Filosofia',
+  'Sociologia',
+  'Geral / Polivalente',
+  'Outro'
+];
+
+// Helper: Formatar data local atual no formato YYYY-MM-DD sem distorção UTC (Item 1)
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper: Exibir data formatada em pt-BR sem risco de retroceder um dia por fuso UTC (Item 1)
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return '-';
+  if (typeof dateStr === 'string' && dateStr.includes('-')) {
+    const clean = dateStr.split('T')[0];
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    }
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  return d.toLocaleDateString('pt-BR');
+};
+
+// Helper: Format DateTime for Audit Trail
+export const formatDisplayDateTime = (isoStr) => {
+  if (!isoStr) return '-';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return String(isoStr);
+  return d.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Helper: Determine Occurrence Status (Visto Obrigatório apenas se houver encaminhamento para a Direção/Rede)
+export const getOccurrenceStatus = (o) => {
+  if (!o) return { key: 'none', label: '-', badgeClass: 'badge-secondary', style: {} };
+  
+  if (o.status === 'rascunho') {
+    return {
+      key: 'rascunho',
+      label: '📝 Rascunho',
+      badgeClass: 'badge-secondary',
+      style: { backgroundColor: 'var(--text-secondary)', color: 'white' }
+    };
+  }
+  if (o.directorNotes && o.directorNotes.trim()) {
+    return {
+      key: 'visto',
+      label: '✅ Visto Diretoria',
+      badgeClass: 'badge-success',
+      style: {}
+    };
+  }
+  
+  // Apenas exige visto se houver opções ticadas no campo de encaminhamento da direção / rede de proteção
+  const hasDirectionRef = Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0;
+  if (hasDirectionRef) {
+    return {
+      key: 'visto_obrigatorio',
+      label: '⚠️ Visto Obrigatório',
+      badgeClass: 'badge-warning',
+      style: { backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b', fontWeight: '700' }
+    };
+  }
+  
+  // Caso contrário, trata-se de um atendimento rotineiro registrado normalmente
+  return {
+    key: 'registrado',
+    label: '📄 Registrado',
+    badgeClass: 'badge-secondary',
+    style: { backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }
+  };
+};
+
+// Constants: New 3-Level Scientific Taxonomy (Nomenclatura ajustada - Item 5)
 const TAXONOMY_TREE = {
-  'Natureza: Perturbadora': {
+  'Perturbadoras': {
     'Descumprimento de normas escolares': [
       'Indisciplina recorrente',
       'Saída injustificada da sala',
@@ -188,7 +292,7 @@ const TAXONOMY_TREE = {
       'Intimidação (ato isolado, não sistemático)'
     ]
   },
-  'Natureza: Agressiva e/ou Violenta': {
+  'Agressivas e/ou Violentas': {
     'Violências interpessoais': [
       'Agressão física',
       'Agressão verbal',
@@ -238,7 +342,7 @@ const TAXONOMY_TREE = {
       'Incêndio ou tentativa de incêndio'
     ]
   },
-  'Natureza: Situações de risco': {
+  'Situações de Risco': {
     'Situações de risco': [
       'Automutilação / autolesão',
       'Ideação ou tentativa de suicídio',
@@ -512,9 +616,11 @@ function App() {
   const [loginData, setLoginData] = useState({ cpf: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
-  // Self-Registration Modal State (Apontamento 1: Cadastro com LGPD)
+  // Self-Registration Modal State (Cadastro com LGPD - Itens 8, 9, 10, 11, 12)
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showFullLgpdTerms, setShowFullLgpdTerms] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [registerData, setRegisterData] = useState({
@@ -525,6 +631,7 @@ function App() {
     role: 'pedagogo',
     schoolId: '',
     password: '',
+    confirmPassword: '',
     lgpd_accepted: false
   });
   
@@ -579,7 +686,7 @@ function App() {
     id: '',
     schoolId: '',
     students: [createDefaultStudent()],
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateString(),
     
     // Passo 2: Assunto e Classificações
     subject: '',
@@ -599,7 +706,14 @@ function App() {
     
     // Passo 5 / Controle
     directorNotes: '',
-    status: 'rascunho'
+    status: 'rascunho',
+    createdAt: '',
+    createdById: '',
+    createdByName: '',
+    updatedAt: '',
+    updatedById: '',
+    updatedByName: '',
+    editHistory: []
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -718,11 +832,21 @@ function App() {
     }
   };
 
-  // Handler: Self-Registration (Apontamento 1)
+  // Handler: Self-Registration (Itens 8, 9, 10, 11, 12)
   const handleRegister = async (e) => {
     e.preventDefault();
     setRegisterError('');
     setRegisterSuccess('');
+
+    if (!registerData.password || registerData.password.length < 4) {
+      setRegisterError('A senha é obrigatória e deve conter pelo menos 4 caracteres.');
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      setRegisterError('A confirmação de senha não coincide com a senha digitada.');
+      return;
+    }
 
     if (!registerData.lgpd_accepted) {
       setRegisterError('Você deve concordar com os termos da LGPD e sigilo.');
@@ -736,14 +860,16 @@ function App() {
         body: JSON.stringify(registerData)
       });
       if (res.ok) {
-        setRegisterSuccess('Cadastro realizado com sucesso! Você já pode realizar o login imediatamente com seu CPF/E-mail e senha.');
+        setRegisterSuccess('Cadastro realizado com sucesso! Você já pode entrar imediatamente no sistema.');
+        const registeredIdentifier = registerData.cpf || registerData.email;
+        setLoginData(prev => ({ ...prev, cpf: registeredIdentifier, password: registerData.password }));
         setRegisterData({
-          name: '', cpf: '', email: '', phone: '', role: 'pedagogo', schoolId: '', password: '', lgpd_accepted: false
+          name: '', cpf: '', email: '', phone: '', role: 'pedagogo', schoolId: '', password: '', confirmPassword: '', lgpd_accepted: false
         });
         setTimeout(() => {
           setShowRegisterModal(false);
           setRegisterSuccess('');
-        }, 2500);
+        }, 1800);
       } else {
         const data = await res.json();
         setRegisterError(data.error || 'Erro ao realizar cadastro.');
@@ -861,33 +987,27 @@ function App() {
     }
   };
 
-  // Handler: Logout
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    setImpersonatedOriginalUser(null);
-    localStorage.removeItem('impersonatedOriginalUser');
-    setActiveTab('dashboard');
-    setShowForm(false);
-    setFormStep(1);
-    setSearchQuery('');
-    setFilterNature('');
-    setFilterSchool('');
-    setFilterClass('');
-    setSelectedOccurrence(null);
-    setShowDetailModal(false);
-    setLoginData({ cpf: '', password: '' });
-    setLoginError('');
-    window.location.href = '/';
-  };
-
-  // Handler: Save Occurrence (5 Steps)
+  // Handler: Save Occurrence (5 Steps com Rastreabilidade e Auditoria)
   const handleSaveOccurrence = async (status = 'finalizado') => {
     const primaryType = formData.classifications && formData.classifications.length > 0
       ? formData.classifications[0]
       : 'Atendimento Geral';
 
     const firstStudent = formData.students[0] || createDefaultStudent();
+    const isNew = !formData.id;
+    const nowIso = new Date().toISOString();
+    const actionLabel = isNew
+      ? (status === 'rascunho' ? 'Criação de rascunho' : 'Criação do atendimento')
+      : 'Edição do atendimento';
+
+    const history = Array.isArray(formData.editHistory) ? [...formData.editHistory] : [];
+    history.push({
+      timestamp: nowIso,
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      action: actionLabel
+    });
 
     const payload = {
       ...formData,
@@ -901,11 +1021,13 @@ function App() {
       guardianName: firstStudent.guardian?.name || '',
       contacts: firstStudent.guardian?.contact || '',
       schoolId: user.schoolId || formData.schoolId || schools[0]?.id,
+      createdAt: formData.createdAt || (formData.date ? `${formData.date}T12:00:00.000Z` : nowIso),
       createdById: formData.createdById || user.id,
       createdByName: formData.createdByName || user.name,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
       updatedById: user.id,
-      updatedByName: user.name
+      updatedByName: user.name,
+      editHistory: history
     };
 
     try {
@@ -966,39 +1088,38 @@ function App() {
       customDirectionReferral: '',
       directorNotes: occ.directorNotes || '',
       status: occ.status || 'finalizado',
+      createdAt: occ.createdAt || (occ.date ? `${occ.date}T12:00:00.000Z` : new Date().toISOString()),
       createdById: occ.createdById,
-      createdByName: occ.createdByName
+      createdByName: occ.createdByName,
+      updatedAt: occ.updatedAt || '',
+      updatedById: occ.updatedById || '',
+      updatedByName: occ.updatedByName || '',
+      editHistory: Array.isArray(occ.editHistory) ? occ.editHistory : []
     });
     setShowForm(true);
     setFormStep(1);
   };
 
-  // Handler: Delete Occurrence
-  const handleDeleteOccurrence = async (occId) => {
-    if (!confirm('Deseja realmente excluir esta ocorrência permanentemente?')) return;
-    try {
-      const res = await fetch(`/api/occurrences/${occId}?role=${user.role}&userId=${user.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchOccurrences();
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Erro ao excluir ocorrência.');
-      }
-    } catch (err) {
-      console.error('Delete occurrence error:', err);
-      alert('Erro de conexão ao excluir ocorrência.');
-    }
-  };
-
-  // Handler: Save Director Notes
+  // Handler: Save Director Notes (com Registro de Auditoria)
   const handleSaveDirectorNotes = async () => {
     if (!selectedOccurrence) return;
+    const nowIso = new Date().toISOString();
+    const history = Array.isArray(selectedOccurrence.editHistory) ? [...selectedOccurrence.editHistory] : [];
+    history.push({
+      timestamp: nowIso,
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      action: 'Visto e parecer da diretoria'
+    });
+
     const updated = {
       ...selectedOccurrence,
       directorNotes: directorNotes,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
       updatedById: user.id,
-      updatedByName: user.name
+      updatedByName: user.name,
+      editHistory: history
     };
     try {
       const res = await fetch('/api/occurrences', {
@@ -1313,9 +1434,11 @@ function App() {
     const agressivas = source.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
     const riscos = source.filter(o => occurrenceHasNature(o, 'Risco')).length;
     const comVisto = source.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length;
+    const vistoObrigatorio = source.filter(o => !o.directorNotes && o.status !== 'rascunho' && Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0).length;
+    const registrados = source.filter(o => o.status !== 'rascunho' && (!Array.isArray(o.direction_referrals) || o.direction_referrals.length === 0) && !o.directorNotes).length;
     const rascunhos = source.filter(o => o.status === 'rascunho').length;
 
-    return { total, perturbadoras, agressivas, riscos, comVisto, rascunhos };
+    return { total, perturbadoras, agressivas, riscos, comVisto, vistoObrigatorio, registrados, rascunhos };
   };
 
   const metrics = getMetrics();
@@ -1334,6 +1457,7 @@ function App() {
           count: 0,
           studentsCount: 0,
           comVisto: 0,
+          vistoObrigatorio: 0,
           semVisto: 0,
           perturbadoras: 0,
           agressivas: 0,
@@ -1344,8 +1468,14 @@ function App() {
       map[classKey].count += 1;
       if (user && o.createdById === user.id) map[classKey].myCount += 1;
       map[classKey].studentsCount += (studentsList.length || 1);
-      if (o.directorNotes && o.directorNotes.trim()) map[classKey].comVisto += 1;
-      else map[classKey].semVisto += 1;
+      if (o.directorNotes && o.directorNotes.trim()) {
+        map[classKey].comVisto += 1;
+      } else {
+        map[classKey].semVisto += 1;
+        if (Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0) {
+          map[classKey].vistoObrigatorio += 1;
+        }
+      }
       if (occurrenceHasNature(o, 'Perturbadora')) map[classKey].perturbadoras += 1;
       if (occurrenceHasNature(o, 'Agressiva')) map[classKey].agressivas += 1;
       if (occurrenceHasNature(o, 'Risco')) map[classKey].risco += 1;
@@ -1364,7 +1494,7 @@ function App() {
       }
     });
     return Object.entries(map)
-      .map(([feeling, count]) => ({ feeling, count }))
+      .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
   };
 
@@ -1406,6 +1536,7 @@ function App() {
         name: s.name,
         total: occs.length,
         comVisto: occs.filter(o => o.directorNotes && o.directorNotes.trim()).length,
+        vistoObrigatorio: occs.filter(o => !o.directorNotes && o.status !== 'rascunho' && Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0).length,
         semVisto: occs.filter(o => !o.directorNotes && o.status !== 'rascunho').length,
         rascunhos: occs.filter(o => o.status === 'rascunho').length,
         riscos: occs.filter(o => occurrenceHasNature(o, 'Risco') || occurrenceHasNature(o, 'Agressiva')).length
@@ -1497,9 +1628,6 @@ function App() {
   // Helper validation for Step 2
   const isStep2Valid = formData.subject.trim().length >= 10 && formData.classifications.length > 0;
 
-  // Helper validation for Step 3 (Sentimentos)
-  const isStep3Valid = formData.feelings.length > 0;
-
   // Helper validation for Step 4 (Encaminhamentos)
   const isStep4Valid = formData.referrals.trim().length >= 5;
 
@@ -1522,178 +1650,7 @@ function App() {
     return (
       <div className="login-wrapper" style={{ flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
         
-        {/* Tutorial Bar */}
-        <div className="tutorial-container">
-          <div className="tutorial-header" onClick={() => setShowTutorial(!showTutorial)}>
-            <div className="tutorial-title">
-              <span>💡</span>
-              <span>Tutorial de Navegação e Contas de Teste</span>
-            </div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              {showTutorial ? '▲ Recolher' : '▼ Expandir'}
-            </span>
-          </div>
-
-          {showTutorial && (
-            <div className="tutorial-content">
-              <div className="tutorial-tabs">
-                <button 
-                  type="button"
-                  className={`tutorial-tab-btn ${tutorialTab === 'welcome' ? 'active' : ''}`}
-                  onClick={() => setTutorialTab('welcome')}
-                >
-                  Boas-vindas
-                </button>
-                <button 
-                  type="button"
-                  className={`tutorial-tab-btn ${tutorialTab === 'roles' ? 'active' : ''}`}
-                  onClick={() => setTutorialTab('roles')}
-                >
-                  Contas de Acesso
-                </button>
-                <button 
-                  type="button"
-                  className={`tutorial-tab-btn ${tutorialTab === 'features' ? 'active' : ''}`}
-                  onClick={() => setTutorialTab('features')}
-                >
-                  Fluxo em 5 Passos
-                </button>
-              </div>
-
-              <div className="tutorial-tab-content">
-                {tutorialTab === 'welcome' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <p>
-                      A plataforma <strong>POME</strong> (Plataforma de Observação da Melhoria do Clima Escolar) apoia o registro sistemático, mediação de conflitos e análise estatística na rede de ensino.
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        onClick={() => setShowRegisterModal(true)}
-                      >
-                        📝 Solicitar Cadastro de Acesso
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {tutorialTab === 'roles' && (
-                  <div>
-                    <p style={{ marginBottom: '0.5rem' }}>Clique em um perfil para preencher os dados de login automaticamente:</p>
-                    <div className="quick-login-grid">
-                      <div 
-                        className="quick-login-card" 
-                        onClick={() => setLoginData({ cpf: 'vina@pome.com.br', password: '2018@Senha' })}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <span className="quick-login-role">👑 Felipe Marcelino (Super Admin)</span>
-                          <button
-                            type="button"
-                            className="help-role-badge"
-                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTutorialSelectedRole('superadmin');
-                              setTutorialSubTab('overview');
-                              setShowRoleTutorialModal(true);
-                            }}
-                          >
-                            ❓
-                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Super Admin</span>
-                          </button>
-                        </div>
-                        <span className="quick-login-creds">vina@pome.com.br | 2018@Senha</span>
-                      </div>
-                      <div 
-                        className="quick-login-card" 
-                        onClick={() => setLoginData({ cpf: '000.000.000-00', password: 'admin' })}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <span className="quick-login-role">⚡ Elisabette (Super Admin)</span>
-                          <button
-                            type="button"
-                            className="help-role-badge"
-                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTutorialSelectedRole('superadmin');
-                              setTutorialSubTab('overview');
-                              setShowRoleTutorialModal(true);
-                            }}
-                          >
-                            ❓
-                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Super Admin</span>
-                          </button>
-                        </div>
-                        <span className="quick-login-creds">CPF: 000.000.000-00 | Senha: admin</span>
-                      </div>
-                      <div 
-                        className="quick-login-card" 
-                        onClick={() => setLoginData({ cpf: '111.111.111-11', password: 'senha' })}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <span className="quick-login-role">💼 Diretor(a)</span>
-                          <button
-                            type="button"
-                            className="help-role-badge"
-                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTutorialSelectedRole('diretor');
-                              setTutorialSubTab('overview');
-                              setShowRoleTutorialModal(true);
-                            }}
-                          >
-                            ❓
-                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Diretor</span>
-                          </button>
-                        </div>
-                        <span className="quick-login-creds">CPF: 111.111.111-11 | Senha: senha</span>
-                      </div>
-                      <div 
-                        className="quick-login-card" 
-                        onClick={() => setLoginData({ cpf: '222.222.222-22', password: 'senha' })}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                          <span className="quick-login-role">✏️ Pedagogo(a)</span>
-                          <button
-                            type="button"
-                            className="help-role-badge"
-                            style={{ width: '18px', height: '18px', fontSize: '0.65rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTutorialSelectedRole('pedagogo');
-                              setTutorialSubTab('overview');
-                              setShowRoleTutorialModal(true);
-                            }}
-                          >
-                            ❓
-                            <span className="tooltip-role-text">💡 Tutorial e Permissões do Pedagogo</span>
-                          </button>
-                        </div>
-                        <span className="quick-login-creds">CPF: 222.222.222-22 | Senha: senha</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {tutorialTab === 'features' && (
-                  <ul style={{ paddingLeft: '1.2rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.825rem' }}>
-                    <li><strong>Passo 1 (Identificação):</strong> Múltiplos estudantes, turno, sexo, ciclo/EJA e dados do responsável.</li>
-                    <li><strong>Passo 2 (Ocorrência):</strong> Relato do ocorrido primeiro e classificação na nova taxonomia em 3 níveis.</li>
-                    <li><strong>Passo 3 (Sentimentos):</strong> Escuta ativa CNV identificando emoções sem julgamento.</li>
-                    <li><strong>Passo 4 (Encaminhamentos):</strong> Ações escolares e acionamento da rede de proteção (Conselho Tutelar, CAPS, etc.).</li>
-                    <li><strong>Passo 5 (Revisão):</strong> Confirmação, rascunho e emissão de folhas de atendimento A4 com anonimização LGPD.</li>
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Login Card */}
+        {/* Login Card (Itens 3, 7, 8, 12) */}
         <form className="login-card" onSubmit={handleLogin}>
           <div className="login-header">
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', width: '100%' }}>
@@ -1712,7 +1669,7 @@ function App() {
             <label className="form-label">CPF ou E-mail Institucional</label>
             <input
               type="text"
-              placeholder="000.000.000-00 ou seu e-mail..."
+              placeholder="vina@pome.com.br ou 000.000.000-00"
               className="form-control"
               value={loginData.cpf}
               onChange={(e) => {
@@ -1761,7 +1718,7 @@ function App() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.25rem' }}>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.25rem', fontWeight: '700' }}>
             Entrar no Sistema
           </button>
 
@@ -1769,83 +1726,48 @@ function App() {
             <button 
               type="button" 
               className="btn btn-secondary" 
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%', fontSize: '0.9rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               onClick={() => setShowRegisterModal(true)}
             >
-              📝 Solicitar Acesso ao POME
+              📝 Cadastre-se
             </button>
           </div>
         </form>
 
-        {/* Modal: Cadastro de Usuário (Apontamento 1 - POME.pdf Pág. 1) */}
+        {/* Modal: Cadastro de Usuário (Itens 9, 10, 11, 12 - Imagem POME) */}
         {showRegisterModal && (
           <div className="modal-overlay" onClick={() => setShowRegisterModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '1.15rem' }}>Cadastro de Usuário</h3>
-                <button className="btn btn-secondary" onClick={() => setShowRegisterModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '620px' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+                <h3 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)' }}>Cadastro de Usuário</h3>
+                <button className="btn btn-secondary" onClick={() => setShowRegisterModal(false)} style={{ padding: '0.35rem 0.75rem', borderRadius: '50%' }}>
                   ✕
                 </button>
               </div>
-              <form className="card-body" onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  Preencha os dados abaixo para solicitar acesso ao POME.
+              
+              <form className="card-body" onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem' }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  Preencha os dados abaixo para criar sua conta de acesso ao POME.
                 </p>
 
-                {/* LGPD Info Notice */}
-                <div className="lgpd-box" style={{ borderLeft: '4px solid var(--primary)' }}>
-                  ℹ️ Este cadastro segue a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>. Seus dados são usados apenas para controle de acesso e responsabilidade pelos registros no sistema.
+                {/* LGPD Info Box */}
+                <div className="lgpd-box" style={{ borderLeft: '4px solid var(--primary)', backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                  ℹ️ Este cadastro segue a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>. Seus dados são utilizados exclusivamente para autenticação e registro funcional no sistema.
                 </div>
 
                 {registerSuccess && (
-                  <div style={{ color: 'var(--success)', backgroundColor: 'var(--success-light)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--success)', fontSize: '0.875rem' }}>
+                  <div style={{ color: 'var(--success)', backgroundColor: 'var(--success-light)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--success)', fontSize: '0.875rem', fontWeight: '500' }}>
                     {registerSuccess}
                   </div>
                 )}
 
                 {registerError && (
-                  <div style={{ color: 'var(--danger)', backgroundColor: 'var(--danger-light)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger)', fontSize: '0.875rem' }}>
+                  <div style={{ color: 'var(--danger)', backgroundColor: 'var(--danger-light)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger)', fontSize: '0.875rem', fontWeight: '500' }}>
                     {registerError}
                   </div>
                 )}
 
-                {/* Perfil de Acesso */}
-                <div className="form-group">
-                  <label className="form-label" style={{ fontWeight: '600' }}>Perfil de Acesso</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    {[
-                      { id: 'seduc', label: 'Seduc' },
-                      { id: 'diretor', label: 'Diretor(a)' },
-                      { id: 'pedagogo', label: 'Pedagogo(a)' },
-                      { id: 'assistente', label: 'Assistente escolar' }
-                    ].map(p => (
-                      <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.85rem' }}>
-                        <input
-                          type="radio"
-                          name="profile_role"
-                          checked={registerData.role === p.id}
-                          onChange={() => setRegisterData({ ...registerData, role: p.id })}
-                        />
-                        <span>{p.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Nome Completo */}
-                <div className="form-group">
-                  <label className="form-label">Nome Completo</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Nome completo, como consta no documento"
-                    value={registerData.name}
-                    onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                {/* CPF & E-mail */}
+                {/* CPF e E-mail Institucional */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
                     <label className="form-label">CPF</label>
@@ -1864,7 +1786,7 @@ function App() {
                     <input
                       type="email"
                       className="form-control"
-                      placeholder="nome@educacao.contagem.mg.gov.br"
+                      placeholder="Ex.: usuario@escola.edu.br"
                       value={registerData.email}
                       onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                       required
@@ -1872,10 +1794,21 @@ function App() {
                   </div>
                 </div>
 
-                {/* Telefone & Unidade Escolar */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                {/* Nome Completo e Telefone */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Telefone</label>
+                    <label className="form-label">Nome Completo</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex.: Nome do Usuário"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Telefone (Opcional)</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1885,8 +1818,26 @@ function App() {
                       maxLength={15}
                     />
                   </div>
+                </div>
+
+                {/* Perfil e Unidade / Escola (Dropdowns) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Unidade Escolar</label>
+                    <label className="form-label">Perfil</label>
+                    <select
+                      className="form-select"
+                      value={registerData.role}
+                      onChange={(e) => setRegisterData({ ...registerData, role: e.target.value })}
+                      required
+                    >
+                      <option value="pedagogo">Pedagogo(a)</option>
+                      <option value="diretor">Diretor(a)</option>
+                      <option value="assistente">Assistente Escolar / Mediador(a)</option>
+                      <option value="seduc">Gestor(a) SEDUC</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Unidade / Escola</label>
                     <select
                       className="form-select"
                       value={registerData.schoolId}
@@ -1894,7 +1845,7 @@ function App() {
                       disabled={registerData.role === 'seduc'}
                       required={registerData.role !== 'seduc'}
                     >
-                      <option value="">Selecione a escola vinculada...</option>
+                      <option value="">Selecione...</option>
                       {schools.map(s => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
@@ -1902,13 +1853,86 @@ function App() {
                   </div>
                 </div>
 
+                {/* Senha e Repetir Senha (Itens 10 e 11) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Senha</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showRegisterPassword ? "text" : "password"}
+                        className="form-control"
+                        placeholder="Digite sua senha"
+                        style={{ paddingRight: '2.5rem' }}
+                        value={registerData.password}
+                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                        required
+                        minLength={4}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                      >
+                        {showRegisterPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Repetir senha</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showRegisterConfirmPassword ? "text" : "password"}
+                        className="form-control"
+                        placeholder="Digite novamente sua senha"
+                        style={{ paddingRight: '2.5rem' }}
+                        value={registerData.confirmPassword}
+                        onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                        required
+                        minLength={4}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                      >
+                        {showRegisterConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Termo de Consentimento LGPD */}
-                <div className="lgpd-box" style={{ marginTop: '0.5rem' }}>
-                  <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: 'var(--primary)' }}>
+                <div className="lgpd-box" style={{ marginTop: '0.25rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: 'var(--primary)', fontSize: '0.85rem' }}>
                     Termo de consentimento (LGPD)
                   </div>
-                  <p style={{ fontSize: '0.78rem' }}>
-                    O presente termo formaliza o consentimento para tratamento de dados pessoais e dados pessoais sensíveis no âmbito do POME, comprometendo-se o usuário ao sigilo e ao zelo no registro e na divulgação.
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    O presente cadastro formaliza o acesso institucional ao POME, comprometendo-se o usuário à confidencialidade e ao sigilo no manuseio de dados pedagógicos.
                   </p>
                   
                   <button 
@@ -1920,8 +1944,8 @@ function App() {
                   </button>
 
                   {showFullLgpdTerms && (
-                    <div className="lgpd-full-text">
-                      Em cumprimento à Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais - LGPD), o usuário declara estar ciente de que todos os dados coletados na plataforma destinam-se exclusivamente ao monitoramento educacional, mediação e clima escolar, sendo expressamente vedado o uso para fins não autorizados ou o compartilhamento de informações identificáveis de estudantes e famílias sem a devida anonimização e salvaguarda legal.
+                    <div className="lgpd-full-text" style={{ fontSize: '0.75rem', marginTop: '0.35rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                      Em cumprimento à Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais - LGPD), o usuário declara estar ciente de que todos os dados coletados na plataforma destinam-se exclusivamente ao monitoramento educacional, mediação e clima escolar, sendo expressamente vedado o compartilhamento indevido ou o uso para fins não autorizados.
                     </div>
                   )}
 
@@ -1932,17 +1956,17 @@ function App() {
                       onChange={(e) => setRegisterData({ ...registerData, lgpd_accepted: e.target.checked })}
                       required
                     />
-                    <span>Li e concordo com o termo de consentimento para tratamento de dados pessoais e compromisso de sigilo, conforme a LGPD.</span>
+                    <span>Li e concordo com o termo de consentimento para tratamento de dados e compromisso de sigilo (LGPD).</span>
                   </label>
                 </div>
 
-                {/* Actions */}
+                {/* Actions (Botão Cadastrar) */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                   <button type="button" className="btn btn-secondary" onClick={() => setShowRegisterModal(false)}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={!registerData.lgpd_accepted}>
-                    Concluir cadastro
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.625rem 1.75rem', fontWeight: '700' }} disabled={!registerData.lgpd_accepted}>
+                    Cadastrar
                   </button>
                 </div>
               </form>
@@ -2175,6 +2199,13 @@ function App() {
                   <div className="metric-value">{metrics.riscos}</div>
                 </div>
               </div>
+              <div className="metric-card" style={{ borderColor: metrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: metrics.vistoObrigatorio > 0 ? '#fffbeb' : 'inherit' }}>
+                <div className="metric-icon" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}><IconWarning /></div>
+                <div className="metric-details">
+                  <h4 style={{ color: metrics.vistoObrigatorio > 0 ? '#92400e' : 'inherit', fontWeight: '700' }}>Visto Obrigatório</h4>
+                  <div className="metric-value" style={{ color: metrics.vistoObrigatorio > 0 ? '#b45309' : 'inherit' }}>{metrics.vistoObrigatorio}</div>
+                </div>
+              </div>
               <div className="metric-card">
                 <div className="metric-icon" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}><IconSchool /></div>
                 <div className="metric-details">
@@ -2234,22 +2265,19 @@ function App() {
 
                           return (
                             <tr key={o.id}>
-                              <td>{new Date(o.date).toLocaleDateString('pt-BR')}</td>
+                              <td>{formatDisplayDate(o.date)}</td>
                               {(user.role === 'gestor' || user.role === 'seduc') && <td style={{ fontWeight: '500' }}>{schoolName}</td>}
                               <td style={{ fontWeight: '600' }}>{displayedStudent}</td>
                               <td>{o.className || studentsList[0]?.className || '-'}</td>
                               <td>
                                 <span className="badge badge-primary">{primaryType}</span>
                               </td>
-                              <td style={{ color: 'var(--text-secondary)' }}>{o.createdByName}</td>
+                              <td style={{ color: 'var(--text-secondary)' }}>{anonymizeText(o.createdByName, anonymizeView)}</td>
                               <td>
-                                {o.status === 'rascunho' ? (
-                                  <span className="badge badge-secondary" style={{ backgroundColor: 'var(--text-secondary)', color: 'white' }}>Rascunho</span>
-                                ) : o.directorNotes ? (
-                                  <span className="badge badge-success">Visto Diretoria</span>
-                                ) : (
-                                  <span className="badge badge-warning">Pendente</span>
-                                )}
+                                {(() => {
+                                  const st = getOccurrenceStatus(o);
+                                  return <span className={`badge ${st.badgeClass}`} style={st.style}>{st.label}</span>;
+                                })()}
                               </td>
                               <td style={{ textAlign: 'right' }}>
                                 <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
@@ -2403,7 +2431,7 @@ function App() {
 
                           return (
                             <tr key={o.id}>
-                              <td>{new Date(o.date).toLocaleDateString('pt-BR')}</td>
+                              <td>{formatDisplayDate(o.date)}</td>
                               {(user.role === 'gestor' || user.role === 'seduc') && <td style={{ fontWeight: '500' }}>{schoolName}</td>}
                               <td style={{ fontWeight: '600' }}>{displayedStudent}</td>
                               <td>{o.className || studentsList[0]?.className || '-'}</td>
@@ -2411,15 +2439,12 @@ function App() {
                               <td>
                                 <span className="badge badge-primary">{primaryType}</span>
                               </td>
-                              <td style={{ color: 'var(--text-secondary)' }}>{o.createdByName}</td>
+                              <td style={{ color: 'var(--text-secondary)' }}>{anonymizeText(o.createdByName, anonymizeView)}</td>
                               <td>
-                                {o.status === 'rascunho' ? (
-                                  <span className="badge badge-secondary" style={{ backgroundColor: 'var(--text-secondary)', color: 'white' }}>Rascunho</span>
-                                ) : o.directorNotes ? (
-                                  <span className="badge badge-success">Visto Diretoria</span>
-                                ) : (
-                                  <span className="badge badge-warning">Pendente</span>
-                                )}
+                                {(() => {
+                                  const st = getOccurrenceStatus(o);
+                                  return <span className={`badge ${st.badgeClass}`} style={st.style}>{st.label}</span>;
+                                })()}
                               </td>
                               <td style={{ textAlign: 'right' }}>
                                 <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
@@ -2600,10 +2625,8 @@ function App() {
 
                         <div className="form-group">
                           <label className="form-label">Turno</label>
-                          <input
-                            type="text"
-                            placeholder="Ex: Manhã, Tarde, Noite..."
-                            className="form-control"
+                          <select
+                            className="form-select"
                             value={student.turn}
                             onChange={(e) => {
                               const updated = [...formData.students];
@@ -2611,7 +2634,12 @@ function App() {
                               setFormData({ ...formData, students: updated });
                             }}
                             required
-                          />
+                          >
+                            <option value="">Selecione o turno...</option>
+                            {TURN_OPTIONS.map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
                         </div>
 
                         {/* Ano/Ciclo & Turma */}
@@ -2668,11 +2696,9 @@ function App() {
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Componente Curricular</label>
-                          <input
-                            type="text"
-                            placeholder="Ex: Língua Portuguesa, Matemática..."
-                            className="form-control"
+                          <label className="form-label">Componente Curricular / Matéria</label>
+                          <select
+                            className="form-select"
                             value={student.subject_matter}
                             onChange={(e) => {
                               const updated = [...formData.students];
@@ -2680,7 +2706,12 @@ function App() {
                               setFormData({ ...formData, students: updated });
                             }}
                             required
-                          />
+                          >
+                            <option value="">Selecione a matéria...</option>
+                            {SUBJECT_OPTIONS.map(subj => (
+                              <option key={subj} value={subj}>{subj}</option>
+                            ))}
+                          </select>
                         </div>
 
                         {/* Bloco Responsável (Abaixo dos dados do estudante) */}
@@ -2793,7 +2824,7 @@ function App() {
                     Passo 2: Assunto e Classificação do Atendimento
                   </h4>
                   
-                  {/* 1. Assunto/Descrição do Ocorrido VEM PRIMEIRO (Apontamento 4a) */}
+                  {/* 1. Assunto/Descrição do Ocorrido VEM PRIMEIRO (Apontamento 4a / Item 6) */}
                   <div className="form-group full-width" style={{ marginBottom: '1.5rem' }}>
                     <label className="form-label" style={{ fontWeight: '700', fontSize: '0.95rem' }}>
                       Assunto / Descrição do Ocorrido
@@ -2806,6 +2837,9 @@ function App() {
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                       required
                     />
+                    <span style={{ color: '#dc2626', fontSize: '0.8rem', fontWeight: '500', display: 'block', marginTop: '0.25rem' }}>
+                      (Não citar nomes de pais/responsáveis, professores e alunos neste campo.)
+                    </span>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                       <span>Mínimo 10 caracteres.</span>
                       <span>Atual: {formData.subject.trim().length}</span>
@@ -2954,6 +2988,9 @@ function App() {
                       value={formData.feelings_observations || ''}
                       onChange={(e) => setFormData({ ...formData, feelings_observations: e.target.value })}
                     />
+                    <span style={{ color: '#dc2626', fontSize: '0.8rem', fontWeight: '500', display: 'block', marginTop: '0.25rem' }}>
+                      (Não citar nomes de pais/responsáveis, professores e alunos neste campo.)
+                    </span>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                       <span>Essas informações ajudam a compreender a situação e orientar intervenções restaurativas.</span>
                       <span>{(formData.feelings_observations || '').length} / 500</span>
@@ -2998,6 +3035,9 @@ function App() {
                         onChange={(e) => setFormData({ ...formData, referrals: e.target.value })}
                         required
                       />
+                      <span style={{ color: '#dc2626', fontSize: '0.8rem', fontWeight: '500', display: 'block', marginTop: '0.25rem' }}>
+                        (Não citar nomes de pais/responsáveis, professores e alunos neste campo.)
+                      </span>
                     </div>
 
                     {/* Observações Adicionais */}
@@ -3012,6 +3052,9 @@ function App() {
                         value={formData.observations}
                         onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
                       />
+                      <span style={{ color: '#dc2626', fontSize: '0.8rem', fontWeight: '500', display: 'block', marginTop: '0.25rem' }}>
+                        (Não citar nomes de pais/responsáveis, professores e alunos neste campo.)
+                      </span>
                     </div>
 
                     {/* Encaminhamento Direção / Rede de Proteção (Apontamento 7) */}
@@ -3106,7 +3149,7 @@ function App() {
                     </div>
 
                     <p style={{ marginBottom: '0.5rem' }}>
-                      <strong>Data do Atendimento:</strong> {new Date(formData.date).toLocaleDateString('pt-BR')}
+                      <strong>Data do Atendimento:</strong> {formatDisplayDate(formData.date)}
                     </p>
 
                     {/* Classificações */}
@@ -4376,7 +4419,9 @@ function App() {
                       ) : (
                         reportFilteredOccurrences.map(o => {
                           const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
-                          const studentNames = studentsList.map(s => s.studentName).join(', ') || o.studentName || 'Não informado';
+                          const studentNames = (studentsList.length > 0 
+                            ? studentsList.map(s => anonymizeText(s.studentName, anonymizeView)).join(', ') 
+                            : anonymizeText(o.studentName, anonymizeView)) || 'Não informado';
                           const className = (studentsList.length > 0 ? `${studentsList[0].gradeCycle || ''} ${studentsList[0].className || ''}` : `${o.gradeCycle || ''} ${o.className || ''}`).trim();
                           const schoolName = schools.find(s => s.id === o.schoolId)?.name || 'Rede Geral';
                           const classifications = Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || 'Geral'];
@@ -4384,7 +4429,7 @@ function App() {
 
                           return (
                             <tr key={o.id}>
-                              <td style={{ fontSize: '0.825rem', whiteSpace: 'nowrap' }}>{new Date(o.date).toLocaleDateString('pt-BR')}</td>
+                              <td style={{ fontSize: '0.825rem', whiteSpace: 'nowrap' }}>{formatDisplayDate(o.date)}</td>
                               <td style={{ fontWeight: '600' }}>{studentNames}</td>
                               <td style={{ fontSize: '0.825rem' }}>
                                 <div>{schoolName}</div>
@@ -4409,13 +4454,10 @@ function App() {
                                 )}
                               </td>
                               <td>
-                                {hasNotes ? (
-                                  <span className="badge badge-success" style={{ fontSize: '0.725rem' }}>✅ Homologado</span>
-                                ) : o.status === 'rascunho' ? (
-                                  <span className="badge badge-secondary" style={{ fontSize: '0.725rem' }}>📝 Rascunho</span>
-                                ) : (
-                                  <span className="badge badge-warning" style={{ fontSize: '0.725rem' }}>⏳ Pendente</span>
-                                )}
+                                {(() => {
+                                  const st = getOccurrenceStatus(o);
+                                  return <span className={`badge ${st.badgeClass}`} style={{ ...st.style, fontSize: '0.725rem' }}>{st.label}</span>;
+                                })()}
                               </td>
                               <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <div style={{ display: 'inline-flex', gap: '4px' }}>
@@ -4827,13 +4869,40 @@ function App() {
         <div className="modal-overlay" onClick={() => { setShowDetailModal(false); setSelectedOccurrence(null); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Detalhes do Atendimento</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0 }}>Detalhes do Atendimento</h3>
+                {(() => {
+                  const st = getOccurrenceStatus(selectedOccurrence);
+                  return <span className={`badge ${st.badgeClass}`} style={st.style}>{st.label}</span>;
+                })()}
+              </div>
               <button className="btn btn-secondary" onClick={() => { setShowDetailModal(false); setSelectedOccurrence(null); }}>
                 ✕
               </button>
             </div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', maxHeight: '80vh' }}>
               
+              {/* Alerta Informativo de Visto Direção vs Atendimento Rotineiro */}
+              {(() => {
+                const hasDirectionRef = Array.isArray(selectedOccurrence.direction_referrals) && selectedOccurrence.direction_referrals.length > 0;
+                if (hasDirectionRef && !selectedOccurrence.directorNotes) {
+                  return (
+                    <div style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 'var(--radius-sm)', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#92400e' }}>
+                      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                      <span><strong>Visto Obrigatório da Direção:</strong> Este atendimento possui encaminhamento para a Direção / Rede de Proteção e requer o visto formal da equipe gestora.</span>
+                    </div>
+                  );
+                } else if (!hasDirectionRef && !selectedOccurrence.directorNotes) {
+                  return (
+                    <div style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                      <span>ℹ️</span>
+                      <span>Atendimento rotineiro registrado. Não requer visto obrigatório da direção escolar.</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Toggle LGPD no Modal */}
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <label 
@@ -4867,7 +4936,7 @@ function App() {
                   <div key={i} style={{ backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', marginTop: '0.35rem' }}>
                     <p><strong>{anonymizeText(st.studentName, anonymizeView)}</strong> ({st.sex || 'Não informado'} | Turno: {st.turn || 'Não informado'})</p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
-                      {st.gradeCycle} - {st.className} | Prof: {st.teacherName} ({st.subject_matter})
+                      {st.gradeCycle} - {st.className} | Prof: {anonymizeText(st.teacherName, anonymizeView)} ({st.subject_matter})
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
                       Responsável: {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond || 'Responsável'}) - Contato: {anonymizeView ? '(XX) XXXXX-XXXX' : (st.guardian?.contact || 'Não informado')}
@@ -4876,7 +4945,7 @@ function App() {
                 ))}
               </div>
 
-              <p><strong>Data da Ocorrência:</strong> {new Date(selectedOccurrence.date).toLocaleDateString('pt-BR')}</p>
+              <p><strong>Data da Ocorrência:</strong> {formatDisplayDate(selectedOccurrence.date)}</p>
               
               {/* Classificações */}
               <div>
@@ -4962,6 +5031,47 @@ function App() {
                   </p>
                 )}
               </div>
+
+              {/* RASTREABILIDADE & AUDITORIA */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🛡️</span>
+                  <span>Rastreabilidade & Auditoria</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)' }}>Criado por: </span>
+                    <strong>{anonymizeText(selectedOccurrence.createdByName || 'Usuário do Sistema', anonymizeView)}</strong>
+                    <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {formatDisplayDateTime(selectedOccurrence.createdAt || selectedOccurrence.date)}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-secondary)' }}>Última alteração: </span>
+                    <strong>{selectedOccurrence.updatedByName ? anonymizeText(selectedOccurrence.updatedByName, anonymizeView) : 'Sem edições'}</strong>
+                    <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {selectedOccurrence.updatedAt ? formatDisplayDateTime(selectedOccurrence.updatedAt) : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {Array.isArray(selectedOccurrence.editHistory) && selectedOccurrence.editHistory.length > 0 && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <details>
+                      <summary style={{ cursor: 'pointer', fontWeight: '600', color: 'var(--primary)' }}>
+                        📜 Ver histórico completo de ações ({selectedOccurrence.editHistory.length})
+                      </summary>
+                      <div style={{ marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '0.5rem', borderLeft: '2px solid var(--border-color)' }}>
+                        {selectedOccurrence.editHistory.map((h, hIdx) => (
+                          <div key={hIdx}>
+                            • <strong>{formatDisplayDateTime(h.timestamp)}</strong>: {h.action} por {anonymizeText(h.userName, anonymizeView)}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -5031,7 +5141,7 @@ function App() {
             </div>
 
             <div className="print-field col-6">
-              <span className="print-field-label">Data da Ocorrência:</span> {new Date(selectedOccurrence.date).toLocaleDateString('pt-BR')}
+              <span className="print-field-label">Data da Ocorrência:</span> {formatDisplayDate(selectedOccurrence.date)}
             </div>
             <div className="print-field col-6">
               <span className="print-field-label">Classificação(ões):</span> {(Array.isArray(selectedOccurrence.classifications) ? selectedOccurrence.classifications : [selectedOccurrence.type]).filter(Boolean).join(', ')}

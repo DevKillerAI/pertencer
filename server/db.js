@@ -72,6 +72,12 @@ async function detectSchema() {
     const { error: errUpdatedByName } = await supabase.from('occurrences').select('updatedByName').limit(1);
     schemaCache.occurrences.hasUpdatedByName = !errUpdatedByName;
 
+    const { error: errCreatedAt } = await supabase.from('occurrences').select('createdAt').limit(1);
+    schemaCache.occurrences.hasCreatedAt = !errCreatedAt;
+
+    const { error: errEditHistory } = await supabase.from('occurrences').select('editHistory').limit(1);
+    schemaCache.occurrences.hasEditHistory = !errEditHistory;
+
     const { error: errEmail } = await supabase.from('users').select('email').limit(1);
     schemaCache.users.hasEmail = !errEmail;
 
@@ -584,6 +590,8 @@ export const db = {
                   if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
                   if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
                   if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
+                  if (!schemaCache.occurrences.hasCreatedAt && meta.createdAt !== undefined) decoded.createdAt = meta.createdAt;
+                  if (!schemaCache.occurrences.hasEditHistory && meta.editHistory !== undefined) decoded.editHistory = meta.editHistory;
                 } catch (e) {
                   console.error("Failed to parse serialized occurrence metadata:", e);
                 }
@@ -620,9 +628,11 @@ export const db = {
           if (!decoded.direction_referrals) decoded.direction_referrals = [];
           if (!decoded.status) decoded.status = 'finalizado';
           if (!decoded.subject_matter) decoded.subject_matter = '';
+          if (!decoded.createdAt) decoded.createdAt = decoded.date ? `${decoded.date}T12:00:00.000Z` : new Date().toISOString();
           if (!decoded.updatedAt) decoded.updatedAt = '';
           if (!decoded.updatedById) decoded.updatedById = '';
           if (!decoded.updatedByName) decoded.updatedByName = '';
+          if (!decoded.editHistory) decoded.editHistory = [];
           
           return decoded;
         });
@@ -687,9 +697,11 @@ export const db = {
             feelings_observations: occurrence.feelings_observations || '',
             direction_referrals: occurrence.direction_referrals || [],
             status: occurrence.status || 'finalizado',
+            createdAt: occurrence.createdAt || (occurrence.date ? `${occurrence.date}T12:00:00.000Z` : new Date().toISOString()),
             updatedAt: occurrence.updatedAt || '',
             updatedById: occurrence.updatedById || '',
-            updatedByName: occurrence.updatedByName || ''
+            updatedByName: occurrence.updatedByName || '',
+            editHistory: occurrence.editHistory || []
           };
           
           // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
@@ -701,9 +713,11 @@ export const db = {
           if (!schemaCache.occurrences.hasFeelingsObservations) delete payload.feelings_observations;
           if (!schemaCache.occurrences.hasDirectionReferrals) delete payload.direction_referrals;
           if (!schemaCache.occurrences.hasStatus) delete payload.status;
+          if (!schemaCache.occurrences.hasCreatedAt) delete payload.createdAt;
           if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
           if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
           if (!schemaCache.occurrences.hasUpdatedByName) delete payload.updatedByName;
+          if (!schemaCache.occurrences.hasEditHistory) delete payload.editHistory;
           
           // Append metadata to observations
           const metaTag = `[POME_META:${JSON.stringify(meta)}]`;

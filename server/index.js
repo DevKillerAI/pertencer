@@ -161,11 +161,19 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'E-mail já cadastrado no sistema.' });
     }
 
-    const userPassword = req.body.password || 'senha123';
+    const userPassword = (req.body.password || '').trim();
+    if (!userPassword || userPassword.length < 4) {
+      return res.status(400).json({ error: 'A senha é obrigatória e deve ter pelo menos 4 caracteres.' });
+    }
+
+    if (req.body.confirmPassword && req.body.confirmPassword !== userPassword) {
+      return res.status(400).json({ error: 'As senhas digitadas não coincidem.' });
+    }
+
     const newUser = {
-      name,
+      name: name.trim(),
       cpf: cleanCpf,
-      email,
+      email: email.trim().toLowerCase(),
       phone: phone || '',
       password: userPassword,
       role: role.toLowerCase(), // superadmin, seduc, pedagogo, diretor, assistente

@@ -421,10 +421,43 @@ h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   background-color: var(--bg-input);
-  color: var(--text-primary);
+  color: #111827 !important; /* Pure black / dark text (Item 3) */
   font-size: 0.875rem;
+  font-weight: 500;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control::placeholder, .form-textarea::placeholder {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Override browser autofill text and background color to remain black */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  font-weight: 500 !important;
+}
+
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .form-select,
+[data-theme='dark'] .form-textarea {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] input:-webkit-autofill,
+[data-theme='dark'] input:-webkit-autofill:hover, 
+[data-theme='dark'] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc !important;
+  -webkit-box-shadow: 0 0 0px 1000px #1e293b inset !important;
+  box-shadow: 0 0 0px 1000px #1e293b inset !important;
 }
 
 .form-control:focus, .form-select:focus, .form-textarea:focus {
