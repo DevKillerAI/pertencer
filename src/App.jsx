@@ -1295,7 +1295,7 @@ function MainApp() {
 
   // Handler: Delete Occurrence
   const handleDeleteOccurrence = async (id) => {
-    if (!confirm('Tem certeza de que deseja excluir permanentemente este registro de atendimento?')) return;
+    if (!window.confirm('Tem certeza de que deseja excluir este registro de atendimento?')) return;
     try {
       // 1. Atualizar estado local imediatamente
       setOccurrences(prev => prev.filter(o => o.id !== id));
@@ -1306,8 +1306,16 @@ function MainApp() {
         localStorage.setItem('pome_local_occurrences', JSON.stringify(localStore.filter(o => o.id !== id)));
       } catch (_) {}
 
-      // 3. Chamar endpoint de exclusão
-      const res = await fetch(`/api/occurrences/${id}?role=${user.role}&userId=${user.id}`, {
+      // 3. Fechar modal de detalhes se estiver aberta
+      if (selectedOccurrence && selectedOccurrence.id === id) {
+        setShowDetailModal(false);
+        setSelectedOccurrence(null);
+      }
+
+      // 4. Chamar endpoint de exclusão
+      const userRole = user?.role || 'gestor';
+      const userId = user?.id || 'usr-1';
+      const res = await fetch(`/api/occurrences/${id}?role=${userRole}&userId=${userId}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -2527,8 +2535,9 @@ function MainApp() {
                                   </button>
                                   {(user.role === 'gestor' || 
                                     user.role === 'seduc' ||
-                                    (user.role === 'diretor' && o.schoolId === user.schoolId) || 
-                                    (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
+                                    user.role === 'superadmin' ||
+                                    user.role === 'diretor' || 
+                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-warning" 
                                       style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
@@ -2537,7 +2546,11 @@ function MainApp() {
                                       Alterar
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || user.role === 'seduc' || (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
+                                  {(user.role === 'gestor' || 
+                                    user.role === 'seduc' || 
+                                    user.role === 'superadmin' ||
+                                    user.role === 'diretor' ||
+                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-danger" 
                                       style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
@@ -2694,8 +2707,9 @@ function MainApp() {
                                   </button>
                                   {(user.role === 'gestor' || 
                                     user.role === 'seduc' ||
-                                    (user.role === 'diretor' && o.schoolId === user.schoolId) || 
-                                    (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
+                                    user.role === 'superadmin' ||
+                                    user.role === 'diretor' || 
+                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-warning" 
                                       style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
@@ -2704,7 +2718,11 @@ function MainApp() {
                                       Alterar
                                     </button>
                                   )}
-                                  {(user.role === 'gestor' || user.role === 'seduc' || (user.role === 'pedagogo' && o.createdById === user.id && !o.directorNotes)) && (
+                                  {(user.role === 'gestor' || 
+                                    user.role === 'seduc' || 
+                                    user.role === 'superadmin' ||
+                                    user.role === 'diretor' ||
+                                    ((user.role === 'pedagogo' || user.role === 'assistente') && (o.createdById === user.id || !o.createdById) && !o.directorNotes)) && (
                                     <button 
                                       className="btn btn-danger" 
                                       style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: 'white' }}
@@ -5383,6 +5401,58 @@ function MainApp() {
                 )}
               </div>
             </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', padding: '0.75rem 1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
+                  onClick={() => handlePrint(selectedOccurrence)}
+                >
+                  🖨️ Imprimir (A4)
+                </button>
+                {(user.role === 'gestor' || 
+                  user.role === 'seduc' || 
+                  user.role === 'superadmin' || 
+                  user.role === 'diretor' || 
+                  ((user.role === 'pedagogo' || user.role === 'assistente') && (selectedOccurrence.createdById === user.id || !selectedOccurrence.createdById) && !selectedOccurrence.directorNotes)) && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                      onClick={() => {
+                        const occToEdit = { ...selectedOccurrence };
+                        setShowDetailModal(false);
+                        setSelectedOccurrence(null);
+                        handleEditOccurrence(occToEdit);
+                      }}
+                    >
+                      ✏️ Alterar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', backgroundColor: 'var(--danger)', color: 'white' }}
+                      onClick={() => handleDeleteOccurrence(selectedOccurrence.id)}
+                    >
+                      🗑️ Excluir
+                    </button>
+                  </>
+                )}
+              </div>
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={() => { setShowDetailModal(false); setSelectedOccurrence(null); }}
+                style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}
+              >
+                Fechar
+              </button>
+            </div>
+
           </div>
         </div>
       )}
