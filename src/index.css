@@ -1676,5 +1676,522 @@ select:-webkit-autofill {
   border-radius: 3px;
 }
 
+/* =========================================================================
+   POME LANDING & LOGIN PAGE - ESTILOS VISUAIS E RESPONSIVIDADE
+   ========================================================================= */
 
+.pome-landing-page {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 50%, #f8fafc 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
 
+.pome-landing-container {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 1.5rem 2rem;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.pome-landing-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.landing-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.landing-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.landing-tagline {
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.3;
+}
+
+.landing-tagline strong {
+  color: #15803d;
+}
+
+.landing-partner-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #ffffff;
+  padding: 0.45rem 0.85rem;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.partner-label {
+  font-size: 0.725rem;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.prefeitura-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.pilot-pill {
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.landing-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.hero-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hero-subtitle {
+  font-size: 1.05rem;
+  color: #0284c7;
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.landing-features-and-stats {
+  display: grid;
+  grid-template-columns: 2.3fr 1fr;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.benefit-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.benefit-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1rem 0.85rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.benefit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.benefit-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.benefit-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.35rem 0;
+}
+
+.benefit-desc {
+  font-size: 0.725rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.pilot-metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metric-icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon-circle.green {
+  background: #dcfce7;
+}
+
+.metric-icon-circle.blue {
+  background: #e0f2fe;
+}
+
+.metric-icon-circle.light-green {
+  background: #ecfdf5;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.metric-prefix {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.metric-value.green {
+  color: #15803d;
+}
+
+.metric-value.blue {
+  color: #0284c7;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.metric-label-highlight {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.landing-illustration-wrap {
+  margin-top: 0.5rem;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Coluna Direita - Card de Login */
+.pome-landing-right {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.login-card-elevated {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 2.25rem 2rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.login-card-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.35rem 0;
+}
+
+.login-card-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.4;
+}
+
+.login-error-alert {
+  background: #fee2e2;
+  border: 1px solid #f87171;
+  color: #991b1b;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.login-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.login-field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.login-input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-leading-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  display: flex;
+  pointer-events: none;
+}
+
+.login-input-field {
+  width: 100%;
+  padding: 0.75rem 2.4rem 0.75rem 2.4rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.925rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #ffffff;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+.login-input-field:focus {
+  border-color: #15803d;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}
+
+.input-trailing-action {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-trailing-action:hover {
+  color: #334155;
+}
+
+.login-options-row {
+  display: flex;
+  align-items: center;
+  font-size: 0.825rem;
+  color: #475569;
+}
+
+.remember-me-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-checkbox {
+  accent-color: #15803d;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.btn-login-submit {
+  background: #15803d;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.btn-login-submit:hover:not(:disabled) {
+  background: #166534;
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);
+}
+
+.btn-login-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.35rem 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.login-divider span {
+  padding: 0 10px;
+}
+
+.btn-register-outline {
+  background: transparent;
+  color: #15803d;
+  border: 1.5px solid #15803d;
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s, color 0.2s;
+  width: 100%;
+}
+
+.btn-register-outline:hover {
+  background: #f0fdf4;
+}
+
+.pilot-disclaimer-box {
+  margin-top: 1.25rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.disclaimer-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.disclaimer-text {
+  font-size: 0.75rem;
+  color: #0369a1;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.pome-landing-footer {
+  width: 100%;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
+  background: transparent;
+}
+
+/* Responsividade Mobile & Tablet */
+@media (max-width: 960px) {
+  .pome-landing-container {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .landing-features-and-stats {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .pilot-metrics-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+
+  .hero-title {
+    font-size: 1.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .benefit-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .login-card-elevated {
+    padding: 1.75rem 1.25rem;
+  }
+}

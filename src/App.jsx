@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import logoVetor from './logo-vetor.svg';
+import LandingLoginPage from './components/LandingLoginPage';
 
 // SVG Logo Component (Circle of kids around a house with a heart)
 const Logo = ({ iconOnly = false, ...props }) => {
@@ -1961,91 +1962,20 @@ function MainApp() {
   // Render Login page if not authenticated
   if (!user) {
     return (
-      <div className="login-wrapper" style={{ flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
-        
-        {/* Login Card (Itens 3, 7, 8, 12) */}
-        <form className="login-card" onSubmit={handleLogin}>
-          <div className="login-header">
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', width: '100%' }}>
-              <Logo style={{ width: '220px', height: 'auto' }} />
-            </div>
-            <p className="login-subtitle">Sistema de Registro e Monitoramento de Clima Escolar</p>
-          </div>
-          
-          {loginError && (
-            <div style={{ color: 'var(--danger)', fontSize: '0.875rem', backgroundColor: 'var(--danger-light)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger)' }}>
-              {loginError}
-            </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label">CPF ou E-mail Institucional</label>
-            <input
-              type="text"
-              placeholder="seu.email@edu.contagem.mg.gov.br ou 000.000.000-00"
-              className="form-control"
-              value={loginData.cpf}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^[\d.-]*$/.test(val) && !val.includes('@')) {
-                  setLoginData({ ...loginData, cpf: formatCPF(val) });
-                } else {
-                  setLoginData({ ...loginData, cpf: val });
-                }
-              }}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Senha</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Digite sua senha"
-                className="form-control"
-                style={{ paddingRight: '2.5rem' }}
-                value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '0.75rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: 0
-                }}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.25rem', fontWeight: '700' }}>
-            Entrar no Sistema
-          </button>
-
-          <div style={{ textAlign: 'center', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              style={{ width: '100%', fontSize: '0.9rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              onClick={() => setShowRegisterModal(true)}
-            >
-              📝 Cadastre-se
-            </button>
-          </div>
-        </form>
+      <>
+        <LandingLoginPage
+          credentials={{ username: loginData.cpf, password: loginData.password }}
+          setCredentials={(creds) => {
+            const val = creds.username;
+            const formatted = (/^[\d.-]*$/.test(val) && !val.includes('@')) ? formatCPF(val) : val;
+            setLoginData({ cpf: formatted, password: creds.password });
+          }}
+          onLogin={handleLogin}
+          loading={false}
+          error={loginError}
+          onOpenRegister={() => setShowRegisterModal(true)}
+          LogoComponent={Logo}
+        />
 
         {/* Modal: Cadastro de Usuário (Itens 9, 10, 11, 12 - Imagem POME) */}
         {showRegisterModal && (
@@ -2287,7 +2217,7 @@ function MainApp() {
           </div>
         )}
 
-      </div>
+      </>
     );
   }
 
