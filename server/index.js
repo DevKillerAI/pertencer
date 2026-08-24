@@ -399,7 +399,9 @@ app.post('/api/users', async (req, res) => {
     const saved = await db.saveUser(user);
 
     // Trigger Supabase Auth Email
-    await triggerSupabaseAuthEmail(user.email, user.password, user);
+    if (user.password) {
+      await triggerSupabaseAuthEmail(user.email, user.password, user);
+    }
 
     logEngine.log('AUDIT', `Usuário criado/atualizado pela gestão: ${user.name} (${user.role})`);
 
@@ -409,6 +411,69 @@ app.post('/api/users', async (req, res) => {
     logEngine.log('ERROR', `Erro ao salvar usuário: ${error.message}`, { error: String(error) });
     console.error('Error saving user:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// PUT User (Update by ID - Gestor / Super Admin)
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    const users = await db.getUsers();
+    const existing = users.find(u => u.id === id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    const merged = {
+      ...existing,
+      ...updateData,
+      id,
+      cpf: updateData.cpf ? updateData.cpf.replace(/\D/g, '') : existing.cpf
+    };
+
+    const saved = await db.saveUser(merged);
+    logEngine.log('AUDIT', `Usuário atualizado: ${merged.name} (${merged.role})`);
+    const { password: _pwd, ...savedWithoutPassword } = saved;
+    res.json(savedWithoutPassword);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar usuário.' });
+  }
+});
+
+// PUT Profile (Update own personal profile)
+app.put('/api/profile', async (req, res) => {
+  try {
+    const { userId, name, email, phone, currentPassword, newPassword } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'Identificação de usuário necessária.' });
+    }
+    const users = await db.getUsers();
+    const existing = users.find(u => u.id === userId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // If changing password, verify current password
+    if (newPassword) {
+      if (!currentPassword || existing.password !== currentPassword) {
+        return res.status(400).json({ error: 'Senha atual incorreta.' });
+      }
+      existing.password = newPassword.trim();
+    }
+
+    if (name) existing.name = name.trim();
+    if (email) existing.email = email.trim().toLowerCase();
+    if (phone !== undefined) existing.phone = phone.trim();
+
+    const saved = await db.saveUser(existing);
+    logEngine.log('AUDIT', `Perfil atualizado pelo próprio usuário: ${existing.name}`);
+    const { password: _pwd, ...savedWithoutPassword } = saved;
+    res.json(savedWithoutPassword);
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar perfil.' });
   }
 });
 

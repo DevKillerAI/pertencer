@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import logoVetor from './logo-vetor.svg';
 import LandingLoginPage from './components/LandingLoginPage';
+import { LEGAL_GLOSSARY } from './constants/legalGlossary';
+import { LGPD_DOCUMENT } from './constants/lgpdTerms';
+
+// Constants: 10 Unidades Escolares Oficiais do Piloto POME
+export const OFFICIAL_SCHOOLS = [
+  { id: 'esc-1', name: 'CEMEI Sagrado Coração' },
+  { id: 'esc-2', name: 'EM Dona Gabriela Leite Araújo' },
+  { id: 'esc-3', name: 'EM Professora Maria Olintha' },
+  { id: 'esc-4', name: 'EM Maria Silva Lucas – CAIC' },
+  { id: 'esc-5', name: 'EM Professor Wancleber Pacheco' },
+  { id: 'esc-6', name: 'EM Glória Marques Diniz' },
+  { id: 'esc-7', name: 'EM Isabel Nascimento de Mattos' },
+  { id: 'esc-8', name: 'EM Francisco Sales da Silva Diniz' },
+  { id: 'esc-9', name: 'EM Professora Julia Kubitschek de Oliveira' },
+  { id: 'esc-10', name: 'EM Dona Cordelina Silveira Mattos' }
+];
 
 // SVG Logo Component (Circle of kids around a house with a heart)
 const Logo = ({ iconOnly = false, ...props }) => {
@@ -170,6 +186,7 @@ const IconLightning = (props) => (
 
 // Constants: Grade Cycles / Anos
 const GRADE_CYCLES = [
+  '3 anos', '4 anos', '5 anos',
   '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
   '6º Ano', '7º Ano', '8º Ano', '9º Ano',
   'EJA 1º segmento', 'EJA 2º segmento'
@@ -737,6 +754,11 @@ function MainApp() {
   // School/User Creation States (Gestor)
   const [newSchoolName, setNewSchoolName] = useState('');
   const [editingSchool, setEditingSchool] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState({ name: '', email: '', phone: '', currentPassword: '', newPassword: '', confirmNewPassword: '' });
+  const [profileMessage, setProfileMessage] = useState(null);
+  const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
   const [newUserData, setNewUserData] = useState({ 
     name: '', cpf: '', email: '', phone: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' 
   });
@@ -803,13 +825,16 @@ function MainApp() {
       const res = await fetch('/api/schools');
       if (res.ok) {
         const data = await res.json();
-        setSchools(data);
-        return data;
+        if (Array.isArray(data) && data.length > 0) {
+          setSchools(data);
+          return data;
+        }
       }
     } catch (err) {
       console.error('Error fetching schools:', err);
     }
-    return null;
+    setSchools(OFFICIAL_SCHOOLS);
+    return OFFICIAL_SCHOOLS;
   };
 
   const fetchOccurrences = async () => {
@@ -1888,6 +1913,23 @@ function MainApp() {
     }));
   };
 
+  const getTurnoReport = (source = reportFilteredOccurrences) => getTurnsDistributionReport(source);
+
+  const getClassificationReport = (source = reportFilteredOccurrences) => {
+    const map = {};
+    const total = source.length || 1;
+    source.forEach(o => {
+      const cls = Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : (o.type ? [o.type] : []);
+      cls.forEach(c => {
+        if (!c) return;
+        map[c] = (map[c] || 0) + 1;
+      });
+    });
+    return Object.entries(map)
+      .map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+  };
+
   // Print Occurrence Ficha A4 function
   const handlePrintOccurrence = (occ) => {
     const targetOcc = occ || selectedOccurrence;
@@ -2169,37 +2211,49 @@ function MainApp() {
                   </div>
                 </div>
 
-                {/* Termo de Consentimento LGPD */}
-                <div className="lgpd-box" style={{ marginTop: '0.25rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: 'var(--primary)', fontSize: '0.85rem' }}>
-                    Termo de consentimento (LGPD)
+                {/* Termo de Consentimento LGPD Completo */}
+                <div className="lgpd-box" style={{ marginTop: '0.25rem', backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <div style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.88rem' }}>
+                      📜 {LGPD_DOCUMENT.title}
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowFullLgpdTerms(!showFullLgpdTerms)}
+                      style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                    >
+                      {showFullLgpdTerms ? '▲ Recolher termo' : '▼ Expandir e ler termo completo'}
+                    </button>
                   </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-                    O presente cadastro formaliza o acesso institucional ao POME, comprometendo-se o usuário à confidencialidade e ao sigilo no manuseio de dados pedagógicos.
-                  </p>
                   
-                  <button 
-                    type="button" 
-                    onClick={() => setShowFullLgpdTerms(!showFullLgpdTerms)}
-                    style={{ background: 'none', border: 'none', color: 'var(--accent-orange)', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', padding: '0.25rem 0', textDecoration: 'underline' }}
-                  >
-                    {showFullLgpdTerms ? '▲ Ocultar termo completo' : '▼ Ler termo completo'}
-                  </button>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', lineHeight: '1.4' }}>
+                    {LGPD_DOCUMENT.subtitle}. Este termo formaliza o consentimento nos termos dos Arts. 7º e 11 da Lei nº 13.709/2018.
+                  </p>
 
                   {showFullLgpdTerms && (
-                    <div className="lgpd-full-text" style={{ fontSize: '0.75rem', marginTop: '0.35rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                      Em cumprimento à Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais - LGPD), o usuário declara estar ciente de que todos os dados coletados na plataforma destinam-se exclusivamente ao monitoramento educacional, mediação e clima escolar, sendo expressamente vedado o compartilhamento indevido ou o uso para fins não autorizados.
+                    <div className="lgpd-full-text-scroll" style={{ fontSize: '0.76rem', color: '#334155', lineHeight: '1.45', maxHeight: '240px', overflowY: 'auto', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.85rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      {LGPD_DOCUMENT.sections.map((sec) => (
+                        <div key={sec.number} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.45rem' }}>
+                          <strong style={{ color: '#0f172a', display: 'block', marginBottom: '0.2rem' }}>
+                            {sec.number}. {sec.title}
+                          </strong>
+                          {sec.content.map((p, idx) => (
+                            <p key={idx} style={{ margin: '0.2rem 0' }}>{p}</p>
+                          ))}
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', color: '#0f172a' }}>
                     <input
                       type="checkbox"
                       checked={registerData.lgpd_accepted}
                       onChange={(e) => setRegisterData({ ...registerData, lgpd_accepted: e.target.checked })}
                       required
+                      style={{ marginTop: '2px' }}
                     />
-                    <span>Li e concordo com o termo de consentimento para tratamento de dados e compromisso de sigilo (LGPD).</span>
+                    <span>{LGPD_DOCUMENT.checkboxLabel}</span>
                   </label>
                 </div>
 
@@ -2306,6 +2360,25 @@ function MainApp() {
             title="Alternar Tema"
           >
             {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => {
+              setProfileData({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: ''
+              });
+              setProfileMessage(null);
+              setShowProfileModal(true);
+            }}
+            style={{ padding: '0.5rem 0.85rem', marginRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}
+          >
+            👤 Meu Perfil
           </button>
 
           <button 
@@ -3223,22 +3296,44 @@ function MainApp() {
                                 {terms.map(term => {
                                   const isChecked = (formData.classifications || []).includes(term);
                                   return (
-                                    <label key={term} className="taxonomy-item-label">
-                                      <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={(e) => {
-                                          let updatedList = [...(formData.classifications || [])];
-                                          if (e.target.checked) {
-                                            updatedList.push(term);
-                                          } else {
-                                            updatedList = updatedList.filter(item => item !== term);
-                                          }
-                                          setFormData({ ...formData, classifications: updatedList });
+                                    <div key={term} className="taxonomy-item-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', background: isChecked ? '#f0fdf4' : 'transparent', borderRadius: '6px', padding: '2px 6px' }}>
+                                      <label className="taxonomy-item-label" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                            let updatedList = [...(formData.classifications || [])];
+                                            if (e.target.checked) {
+                                              updatedList.push(term);
+                                            } else {
+                                              updatedList = updatedList.filter(item => item !== term);
+                                            }
+                                            setFormData({ ...formData, classifications: updatedList });
+                                          }}
+                                        />
+                                        <span style={{ fontSize: '0.84rem' }}>{term}</span>
+                                      </label>
+                                      <button
+                                        type="button"
+                                        className="glossary-circle-btn"
+                                        title={`Ver definição jurídica de "${term}"`}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setSelectedGlossaryTerm(LEGAL_GLOSSARY[term] || {
+                                            termo: term,
+                                            natureza: nature,
+                                            dimensao: dimension,
+                                            significado: 'Classificação pedagógica para fins de monitoramento e mediação no POME.',
+                                            termoAdequado: term,
+                                            situacaoEscola: 'Ocorrência registrada no ambiente escolar conforme os protocolos da rede.',
+                                            fonteLegal: 'Regimento Escolar e Legislação Vigente.'
+                                          });
                                         }}
-                                      />
-                                      <span>{term}</span>
-                                    </label>
+                                      >
+                                        ?
+                                      </button>
+                                    </div>
                                   );
                                 })}
                               </div>
@@ -3999,25 +4094,45 @@ function MainApp() {
                               <td>
                                 {u.classes && u.classes.length > 0 ? u.classes.join(', ') : '-'}
                               </td>
-                              <td style={{ textAlign: 'right' }}>
-                                {u.id !== user.id && (
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
                                   <button 
-                                    className="btn btn-danger" 
-                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                                    onClick={async () => {
-                                      if (!confirm('Deseja realmente excluir este usuário?')) return;
-                                      try {
-                                        const res = await fetch(`/api/users/${u.id}`, { method: 'DELETE' });
-                                        if (res.ok) fetchUsers();
-                                      } catch (err) {
-                                        console.error('Delete user error:', err);
-                                        alert('Erro ao excluir usuário.');
-                                      }
+                                    className="btn btn-secondary" 
+                                    style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+                                    onClick={() => {
+                                      setEditingUser({
+                                        id: u.id,
+                                        name: u.name,
+                                        cpf: u.cpf,
+                                        email: u.email || '',
+                                        phone: u.phone || '',
+                                        role: u.role,
+                                        schoolId: u.schoolId || '',
+                                        classesInput: Array.isArray(u.classes) ? u.classes.join(', ') : ''
+                                      });
                                     }}
                                   >
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconTrash /> Excluir</span>
+                                    ✏️ Editar
                                   </button>
-                                )}
+                                  {u.id !== user.id && (
+                                    <button 
+                                      className="btn btn-danger" 
+                                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                      onClick={async () => {
+                                        if (!confirm(`Deseja realmente excluir o usuário ${u.name}?`)) return;
+                                        try {
+                                          const res = await fetch(`/api/users/${u.id}`, { method: 'DELETE' });
+                                          if (res.ok) fetchUsers();
+                                        } catch (err) {
+                                          console.error('Delete user error:', err);
+                                          alert('Erro ao excluir usuário.');
+                                        }
+                                      }}
+                                    >
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconTrash /> Excluir</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -5562,6 +5677,7 @@ function MainApp() {
                       <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Estudante</th>
                       <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Sexo / Turno</th>
                       <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Ano / Turma</th>
+                      <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Professora / Disciplina</th>
                       <th style={{ textAlign: 'left', fontSize: '8.5pt', padding: '2px' }}>Responsável / Contato</th>
                     </tr>
                   </thead>
@@ -5573,6 +5689,8 @@ function MainApp() {
                         turn: occ.turn || 'Não inf.',
                         gradeCycle: occ.gradeCycle,
                         className: occ.className,
+                        teacherName: occ.teacherName,
+                        subject_matter: occ.subject_matter,
                         guardian: {
                           name: occ.guardianName || 'Não informado',
                           bond: 'Responsável',
@@ -5585,7 +5703,13 @@ function MainApp() {
                         <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.sex} / {st.turn}</td>
                         <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>{st.gradeCycle} - {st.className}</td>
                         <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>
-                          {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond}) - {anonymizeView ? '(XX) XXXXX-XXXX' : st.guardian?.contact}
+                          <strong>{anonymizeText(st.teacherName || occ.teacherName || 'Não informada', anonymizeView)}</strong>
+                          <span style={{ display: 'block', fontSize: '7.5pt', color: '#333' }}>
+                            ({st.subject_matter === 'Outro' ? (st.customSubject || 'Outro') : (st.subject_matter || occ.subject_matter || 'Não informada')})
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '8.5pt', padding: '3px 2px' }}>
+                          {anonymizeText(st.guardian?.name, anonymizeView)} ({st.guardian?.bond || 'Resp.'}) - {anonymizeView ? '(XX) XXXXX-XXXX' : st.guardian?.contact}
                         </td>
                       </tr>
                     ))}
@@ -5689,10 +5813,10 @@ function MainApp() {
           <div style={{ backgroundColor: '#f8f9fa', padding: '5px 8px', borderRadius: '4px', marginBottom: '12px', fontSize: '8pt', border: '1px solid #ddd' }}>
             <strong>Filtros Ativos: </strong>
             <span>Escola: {reportFilterSchool ? (schools.find(s => s.id === reportFilterSchool)?.name || reportFilterSchool) : 'Todas'} | </span>
-            <span>Período: {reportFilterStartDate || reportFilterEndDate ? `${formatDisplayDate(reportFilterStartDate)} a ${formatDisplayDate(reportFilterEndDate)}` : 'Todo o período'} | </span>
+            <span>Período: {reportFilterDateStart || reportFilterDateEnd ? `${formatDisplayDate(reportFilterDateStart)} a ${formatDisplayDate(reportFilterDateEnd)}` : 'Todo o período'} | </span>
             <span>Turno: {reportFilterTurn || 'Todos'} | </span>
             <span>Ciclo: {reportFilterGrade || 'Todos'} | </span>
-            <span>Classificação: {reportFilterClass || 'Todas'} | </span>
+            <span>Classificação: {reportFilterClassification || reportFilterClass || 'Todas'} | </span>
             <span>Sentimento: {reportFilterFeeling || 'Todos'} | </span>
             <span>Status: {reportFilterStatus || 'Todos'}</span>
           </div>
@@ -6091,6 +6215,388 @@ function MainApp() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: GLOSSÁRIO JURÍDICO & PEDAGÓGICO */}
+      {selectedGlossaryTerm && (
+        <div className="modal-overlay" onClick={() => setSelectedGlossaryTerm(null)}>
+          <div className="modal-content glossary-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  📖 Glossário Jurídico & Pedagógico POME
+                </span>
+                <h3 style={{ fontSize: '1.25rem', margin: '0.25rem 0 0 0', color: 'var(--primary)', fontWeight: '800' }}>
+                  {selectedGlossaryTerm.termo}
+                </h3>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                  <span className="badge" style={{ backgroundColor: '#f0f9ff', color: '#0369a1', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px' }}>
+                    🏷️ {selectedGlossaryTerm.dimensao}
+                  </span>
+                  <span className="badge" style={{ backgroundColor: '#f1f5f9', color: '#475569', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px' }}>
+                    {selectedGlossaryTerm.natureza}
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => setSelectedGlossaryTerm(null)} 
+                style={{ padding: '0.25rem 0.65rem', borderRadius: '50%', fontSize: '1rem', border: 'none' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="card-body" style={{ padding: '1.25rem 0', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '68vh', overflowY: 'auto' }}>
+              <div className="glossary-section-card" style={{ padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                <h5 style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>⚖️</span> Significado Conforme a Legislação
+                </h5>
+                <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', margin: 0 }}>
+                  {selectedGlossaryTerm.significado}
+                </p>
+              </div>
+
+              {selectedGlossaryTerm.termoAdequado && (
+                <div className="glossary-section-card" style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0284c7', padding: '0.75rem 1rem', borderRadius: '6px' }}>
+                  <h5 style={{ fontSize: '0.82rem', fontWeight: '700', color: '#0369a1', margin: '0 0 0.25rem 0' }}>
+                    🎯 Termo Tecnicamente Adequado
+                  </h5>
+                  <p style={{ fontSize: '0.82rem', color: '#475569', margin: 0, lineHeight: '1.45' }}>
+                    {selectedGlossaryTerm.termoAdequado}
+                  </p>
+                </div>
+              )}
+
+              <div className="glossary-section-card" style={{ padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                <h5 style={{ fontSize: '0.88rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🏫</span> Situação em que se aplica na escola (Exemplo Prático)
+                </h5>
+                <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', margin: 0 }}>
+                  {selectedGlossaryTerm.situacaoEscola}
+                </p>
+              </div>
+
+              <div className="glossary-section-card" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <h5 style={{ fontSize: '0.82rem', fontWeight: '800', color: '#166534', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📜</span> Fonte Legal e Normativa
+                </h5>
+                <p style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, fontWeight: '600' }}>
+                  {selectedGlossaryTerm.fonteLegal}
+                </p>
+              </div>
+            </div>
+
+            <div className="card-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setSelectedGlossaryTerm(null)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR USUÁRIO (GESTOR / SEDUC / SUPER ADMIN) */}
+      {editingUser && (
+        <div className="modal-overlay" onClick={() => setEditingUser(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--primary)' }}>✏️ Editar Usuário: {editingUser.name}</h3>
+              <button className="btn btn-secondary" onClick={() => setEditingUser(null)} style={{ padding: '0.25rem 0.65rem', borderRadius: '50%' }}>
+                ✕
+              </button>
+            </div>
+
+            <form className="card-body" onSubmit={async (e) => {
+              e.preventDefault();
+              const classes = editingUser.classesInput
+                ? editingUser.classesInput.split(',').map(c => c.trim()).filter(Boolean)
+                : (Array.isArray(editingUser.classes) ? editingUser.classes : []);
+              
+              const payload = {
+                name: editingUser.name,
+                email: editingUser.email,
+                phone: editingUser.phone,
+                cpf: editingUser.cpf.replace(/\D/g, ''),
+                role: editingUser.role,
+                schoolId: (editingUser.role === 'gestor' || editingUser.role === 'seduc' || editingUser.role === 'superadmin') ? null : editingUser.schoolId,
+                classes: classes
+              };
+
+              try {
+                const res = await fetch(`/api/users/${editingUser.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                  setEditingUser(null);
+                  fetchUsers();
+                  setNotification({ type: 'success', message: 'Usuário atualizado com sucesso!' });
+                } else {
+                  const err = await res.json();
+                  alert(err.error || 'Erro ao atualizar usuário.');
+                }
+              } catch (err) {
+                console.error('Update user error:', err);
+                alert('Erro de conexão ao atualizar usuário.');
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem 0' }}>
+              <div className="form-group">
+                <label className="form-label">Nome Completo</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingUser.name}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">CPF</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editingUser.cpf}
+                    onChange={(e) => setEditingUser({ ...editingUser, cpf: formatCPF(e.target.value) })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">E-mail Institucional</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={editingUser.email}
+                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Telefone</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editingUser.phone}
+                    onChange={(e) => setEditingUser({ ...editingUser, phone: formatPhone(e.target.value) })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Perfil de Acesso</label>
+                  <select
+                    className="form-select"
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                    required
+                  >
+                    <option value="pedagogo">Pedagogo(a)</option>
+                    <option value="diretor">Diretor(a)</option>
+                    <option value="assistente">Assistente Escolar</option>
+                    <option value="seduc">Seduc / Gestor Central</option>
+                    <option value="gestor">Gestor do Projeto</option>
+                    {user.role === 'superadmin' && <option value="superadmin">Super Admin</option>}
+                  </select>
+                </div>
+              </div>
+
+              {editingUser.role !== 'gestor' && editingUser.role !== 'seduc' && editingUser.role !== 'superadmin' && (
+                <div className="form-group">
+                  <label className="form-label">Escola Vinculada</label>
+                  <select
+                    className="form-select"
+                    value={editingUser.schoolId || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, schoolId: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione a escola...</option>
+                    {schools.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {editingUser.role === 'pedagogo' && (
+                <div className="form-group">
+                  <label className="form-label">Turmas Vinculadas (Separadas por vírgula)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: 3º Ano A, 4º Ano B"
+                    value={editingUser.classesInput}
+                    onChange={(e) => setEditingUser({ ...editingUser, classesInput: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditingUser(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: MEU PERFIL (AUTONOMIA DO USUÁRIO LOGADO) */}
+      {showProfileModal && (
+        <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.85rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--primary)' }}>👤 Meu Perfil de Acesso</h3>
+              <button className="btn btn-secondary" onClick={() => setShowProfileModal(false)} style={{ padding: '0.25rem 0.65rem', borderRadius: '50%' }}>
+                ✕
+              </button>
+            </div>
+
+            <form className="card-body" onSubmit={async (e) => {
+              e.preventDefault();
+              setProfileMessage(null);
+
+              if (profileData.newPassword && profileData.newPassword !== profileData.confirmNewPassword) {
+                setProfileMessage({ type: 'danger', text: 'A confirmação de nova senha não confere.' });
+                return;
+              }
+
+              try {
+                const res = await fetch('/api/profile', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    name: profileData.name,
+                    email: profileData.email,
+                    phone: profileData.phone,
+                    currentPassword: profileData.currentPassword,
+                    newPassword: profileData.newPassword
+                  })
+                });
+
+                if (res.ok) {
+                  const updated = await res.json();
+                  const mergedUser = { ...user, ...updated };
+                  setUser(mergedUser);
+                  localStorage.setItem('user', JSON.stringify(mergedUser));
+                  setProfileMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
+                  setTimeout(() => {
+                    setShowProfileModal(false);
+                    setProfileMessage(null);
+                  }, 1500);
+                } else {
+                  const err = await res.json();
+                  setProfileMessage({ type: 'danger', text: err.error || 'Erro ao atualizar perfil.' });
+                }
+              } catch (err) {
+                console.error('Update profile error:', err);
+                setProfileMessage({ type: 'danger', text: 'Erro de conexão com o servidor.' });
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem 0' }}>
+              
+              {profileMessage && (
+                <div style={{
+                  padding: '0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: profileMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
+                  color: profileMessage.type === 'success' ? '#15803d' : '#b91c1c',
+                  border: `1px solid ${profileMessage.type === 'success' ? '#86efac' : '#fca5a5'}`,
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}>
+                  {profileMessage.text}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">Nome Completo</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">E-mail Institucional</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Telefone de Contato</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: formatPhone(e.target.value) })}
+                />
+              </div>
+
+              <div style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)' }}>
+                  🔒 Alterar Senha de Acesso (Opcional)
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Senha Atual</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    placeholder="Digite sua senha atual"
+                    value={profileData.currentPassword}
+                    onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Nova Senha</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Mínimo 4 dígitos"
+                      value={profileData.newPassword}
+                      onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Confirmar Nova Senha</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Repita a nova senha"
+                      value={profileData.confirmNewPassword}
+                      onChange={(e) => setProfileData({ ...profileData, confirmNewPassword: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
+                  Fechar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Atualizar Perfil
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

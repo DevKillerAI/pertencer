@@ -1,40 +1,44 @@
 {
   "schools": [
     {
+      "id": "esc-1",
+      "name": "CEMEI Sagrado Coração"
+    },
+    {
       "id": "esc-2",
-      "name": "Escola Municipal Anita Garibaldi"
+      "name": "EM Dona Gabriela Leite Araújo"
     },
     {
       "id": "esc-3",
-      "name": "Escola Municipal Castro Alves"
-    },
-    {
-      "id": "esc-5",
-      "name": "Escola Municipal Cecília Meireles"
-    },
-    {
-      "id": "esc-6",
-      "name": "Escola Municipal Duque de Caxias"
-    },
-    {
-      "id": "esc-8",
-      "name": "Escola Municipal Getúlio Vargas"
-    },
-    {
-      "id": "esc-9",
-      "name": "Escola Municipal Machado de Assis"
+      "name": "EM Professora Maria Olintha"
     },
     {
       "id": "esc-4",
-      "name": "Escola Municipal Monteiro Lobato"
+      "name": "EM Maria Silva Lucas – CAIC"
     },
     {
-      "id": "esc-1",
-      "name": "Escola Municipal Professor Wancleber Pacheco"
+      "id": "esc-5",
+      "name": "EM Professor Wancleber Pacheco"
+    },
+    {
+      "id": "esc-6",
+      "name": "EM Glória Marques Diniz"
     },
     {
       "id": "esc-7",
-      "name": "Escola Municipal Ruy Barbosa"
+      "name": "EM Isabel Nascimento de Mattos"
+    },
+    {
+      "id": "esc-8",
+      "name": "EM Francisco Sales da Silva Diniz"
+    },
+    {
+      "id": "esc-9",
+      "name": "EM Professora Julia Kubitschek de Oliveira"
+    },
+    {
+      "id": "esc-10",
+      "name": "EM Dona Cordelina Silveira Mattos"
     }
   ],
   "users": [
