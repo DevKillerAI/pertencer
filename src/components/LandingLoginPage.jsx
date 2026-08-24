@@ -404,6 +404,11 @@ export default function LandingLoginPage({
         </div>
 
       </div>
+
+      {/* Rodapé Institucional DevKiller */}
+      <footer className="pome-landing-footer">
+        <span>© 2026 DevKiller. Todos os direitos reservados.</span>
+      </footer>
     </div>
   );
 }

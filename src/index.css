@@ -2264,6 +2264,16 @@ select:-webkit-autofill {
   margin: 0;
 }
 
+.pome-landing-footer {
+  width: 100%;
+  text-align: center;
+  padding: 1.25rem 1rem 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #0284c7;
+  font-weight: 500;
+  background: transparent;
+}
+
 /* Responsividade Mobile & Tablet */
 @media (max-width: 960px) {
   .pome-landing-container {
