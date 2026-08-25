@@ -852,6 +852,7 @@ function MainApp() {
   const [reportFilterDateEnd, setReportFilterDateEnd] = useState('');
   const [reportSearchQuery, setReportSearchQuery] = useState('');
   const [reportActiveChartTab, setReportActiveChartTab] = useState('nature'); // 'nature' | 'feelings' | 'sex' | 'turns' | 'classes' | 'schools'
+  const [dimChartMode, setDimChartMode] = useState('horizontal'); // 'horizontal' | 'vertical'
   
   // Modals & Forms
   const [showForm, setShowForm] = useState(false);
@@ -2148,10 +2149,12 @@ function MainApp() {
       const count = source.filter(o => occurrenceHasDimension(o, dimName)).length;
       return {
         dimName,
+        nome: info.nome || dimName,
         shortName: `${info.numero || (idx + 1)}. ${info.nome || dimName}`,
         numero: info.numero || (idx + 1),
         icone: info.icone || '📌',
         color: info.cor || '#0ea5e9',
+        descricao: info.descricao || '',
         count,
         pct: Math.round((count / total) * 100)
       };
@@ -2161,10 +2164,12 @@ function MainApp() {
     if (countOutra > 0) {
       items.push({
         dimName: 'Outra',
+        nome: 'Outra ocorrência / Não contemplada',
         shortName: '9. Outra / Não contemplada',
         numero: 9,
         icone: '➕',
         color: '#64748b',
+        descricao: 'Situações e ocorrências atípicas não previstas nas 8 dimensões oficiais.',
         count: countOutra,
         pct: Math.round((countOutra / total) * 100)
       });
@@ -4826,74 +4831,208 @@ function MainApp() {
                 </div>
               </div>
 
-              {/* GRÁFICO 1: DISTRIBUIÇÃO PELAS 8 DIMENSÕES OFICIAIS */}
+              {/* GRÁFICO 1: DISTRIBUIÇÃO PELAS 8 DIMENSÕES OFICIAIS (GRÁFICO DE BARRAS & COLUNAS) */}
               {(reportActiveChartTab === 'nature' || reportActiveChartTab === 'dimensions') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {(() => {
                     const dims = getDimensionsDistributionReport(reportFilteredOccurrences);
-                    const totalOccs = reportFilteredOccurrences.length || 1;
-                    
-                    // Build gradient string for donut
-                    let accumPct = 0;
-                    const segments = dims.map(d => {
-                      const start = accumPct;
-                      const end = accumPct + d.pct;
-                      accumPct = end;
-                      return `${d.color} ${start}% ${end}%`;
-                    });
-                    const donutGradient = segments.length > 0 && dims.some(d => d.count > 0)
-                      ? `conic-gradient(${segments.join(', ')})`
-                      : 'conic-gradient(#e2e8f0 0% 100%)';
+                    const totalOccs = reportFilteredOccurrences.length || 0;
+                    const maxCount = Math.max(...dims.map(d => d.count), 1);
+                    const topDimension = [...dims].sort((a, b) => b.count - a.count)[0];
+                    const riscoCount = dims.find(d => d.numero === 7)?.count || 0;
+
+                    if (totalOccs === 0) {
+                      return (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '2rem' }}>
+                          Nenhuma ocorrência encontrada para os filtros selecionados.
+                        </p>
+                      );
+                    }
 
                     return (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {dims.map(d => (
-                            <div key={d.dimName} className="chart-bar-row">
-                              <div className="chart-bar-info" style={{ marginBottom: '2px' }}>
-                                <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span>{d.icone}</span>
-                                  <span>{d.shortName}</span>
-                                </span>
-                                <strong style={{ fontSize: '0.84rem', color: d.color }}>{d.count} ({d.pct}%)</strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* Barra Superior de Métricas e Alternância de Visualização */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                              Total Classificado: <strong style={{ color: 'var(--text-primary)' }}>{totalOccs}</strong> ocorrências
+                            </div>
+                            {topDimension && topDimension.count > 0 && (
+                              <div style={{ fontSize: '0.82rem', backgroundColor: `${topDimension.color}15`, color: topDimension.color, border: `1px solid ${topDimension.color}40`, padding: '2px 8px', borderRadius: '6px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>{topDimension.icone}</span>
+                                <span>Maior Incidência: {topDimension.nome} ({topDimension.count} casos - {topDimension.pct}%)</span>
                               </div>
-                              <div className="chart-bar-track" style={{ height: '8px' }}>
+                            )}
+                            {riscoCount > 0 && (
+                              <div style={{ fontSize: '0.82rem', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                                🛡️ Dimensão 7 (Risco/Saúde): {riscoCount} casos
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Alternador de Modo: Barras Horizontais vs Colunas Verticais */}
+                          <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.65rem',
+                                backgroundColor: dimChartMode === 'horizontal' ? 'var(--primary)' : 'transparent',
+                                color: dimChartMode === 'horizontal' ? '#ffffff' : 'var(--text-secondary)',
+                                border: 'none',
+                                fontWeight: dimChartMode === 'horizontal' ? '700' : '500',
+                                borderRadius: '4px'
+                              }}
+                              onClick={() => setDimChartMode('horizontal')}
+                            >
+                              📊 Barras Horizontais
+                            </button>
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.65rem',
+                                backgroundColor: dimChartMode === 'vertical' ? 'var(--primary)' : 'transparent',
+                                color: dimChartMode === 'vertical' ? '#ffffff' : 'var(--text-secondary)',
+                                border: 'none',
+                                fontWeight: dimChartMode === 'vertical' ? '700' : '500',
+                                borderRadius: '4px'
+                              }}
+                              onClick={() => setDimChartMode('vertical')}
+                            >
+                              📈 Colunas Verticais
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* MODO 1: GRÁFICO DE BARRAS HORIZONTAIS ANALÍTICAS */}
+                        {dimChartMode === 'horizontal' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            {dims.map(d => {
+                              const isTop = topDimension && topDimension.dimName === d.dimName && d.count > 0;
+                              return (
                                 <div 
-                                  className="chart-bar-fill" 
-                                  style={{ 
-                                    width: `${d.pct}%`, 
-                                    backgroundColor: d.color,
-                                    borderRadius: '4px'
+                                  key={d.dimName} 
+                                  className="dim-bar-item-card"
+                                  style={{
+                                    borderLeft: `4px solid ${d.color}`,
+                                    backgroundColor: isTop ? `${d.color}08` : 'var(--bg-app)'
                                   }}
-                                ></div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                                >
+                                  <div className="dim-bar-header">
+                                    <div className="dim-bar-title-block">
+                                      <div 
+                                        className="dim-bar-icon-badge" 
+                                        style={{ 
+                                          backgroundColor: `${d.color}18`, 
+                                          color: d.color,
+                                          border: `1px solid ${d.color}35`
+                                        }}
+                                      >
+                                        {d.icone}
+                                      </div>
+                                      <div>
+                                        <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <span>{d.shortName}</span>
+                                          {isTop && (
+                                            <span style={{ fontSize: '0.68rem', backgroundColor: d.color, color: '#fff', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>
+                                              TOP
+                                            </span>
+                                          )}
+                                        </div>
+                                        {d.descricao && (
+                                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.25', marginTop: '2px' }}>
+                                            {d.descricao}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="dim-bar-metrics-block">
+                                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                        {d.count} {d.count === 1 ? 'ocorrência' : 'ocorrências'}
+                                      </span>
+                                      <span 
+                                        style={{ 
+                                          fontSize: '0.82rem', 
+                                          fontWeight: '800', 
+                                          color: d.color,
+                                          backgroundColor: `${d.color}15`,
+                                          padding: '3px 8px',
+                                          borderRadius: '6px',
+                                          minWidth: '46px',
+                                          textAlign: 'center'
+                                        }}
+                                      >
+                                        {d.pct}%
+                                      </span>
+                                    </div>
+                                  </div>
 
-                        {/* Donut Indicador e Legenda Consolidada */}
-                        <div className="chart-donut-container" style={{ backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                          <div 
-                            className="chart-donut-circle" 
-                            style={{ background: donutGradient }}
-                          >
-                            <div className="chart-donut-inner">
-                              <span>{reportFilteredOccurrences.length}</span>
-                              <span style={{ fontSize: '0.65rem', fontWeight: '600', color: 'var(--text-secondary)' }}>TOTAL</span>
-                            </div>
+                                  <div className="dim-bar-track-large" style={{ marginTop: '0.35rem' }}>
+                                    <div 
+                                      className="dim-bar-fill-large" 
+                                      style={{ 
+                                        width: `${d.pct}%`, 
+                                        backgroundColor: d.color,
+                                        backgroundImage: `linear-gradient(90deg, ${d.color}, ${d.color}dd)`
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
+                        )}
 
-                          <div className="chart-legend" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem 0.75rem', marginTop: '1rem' }}>
-                            {dims.map(d => (
-                              <div key={d.dimName} className="chart-legend-item" style={{ fontSize: '0.74rem' }}>
-                                <div className="chart-legend-color" style={{ backgroundColor: d.color, width: '10px', height: '10px', borderRadius: '2px' }}></div>
-                                <span title={d.dimName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {d.numero}. {d.shortName.split('.')[1] || d.shortName}: <strong>{d.count}</strong>
+                        {/* MODO 2: GRÁFICO DE COLUNAS VERTICAIS */}
+                        {dimChartMode === 'vertical' && (
+                          <div className="dim-column-chart-wrapper">
+                            <div className="dim-column-grid">
+                              {dims.map(d => {
+                                const heightPct = maxCount > 0 ? Math.round((d.count / maxCount) * 100) : 0;
+                                const barHeightPx = Math.max(Math.round((heightPct / 100) * 150), d.count > 0 ? 12 : 4);
+                                return (
+                                  <div key={d.dimName} className="dim-col-item">
+                                    <div className="dim-col-bar-container">
+                                      {d.count > 0 && (
+                                        <span 
+                                          className="dim-col-value-badge" 
+                                          style={{ color: d.color }}
+                                        >
+                                          {d.count} ({d.pct}%)
+                                        </span>
+                                      )}
+                                      <div 
+                                        className="dim-col-bar-fill"
+                                        style={{ 
+                                          height: `${barHeightPx}px`, 
+                                          backgroundColor: d.count > 0 ? d.color : 'rgba(148, 163, 184, 0.3)',
+                                          backgroundImage: d.count > 0 ? `linear-gradient(180deg, ${d.color}, ${d.color}aa)` : 'none'
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="dim-col-footer" title={d.nome}>
+                                      <div style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{d.icone}</div>
+                                      <div style={{ fontWeight: '700', color: d.color }}>D{d.numero}</div>
+                                      <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {d.nome.length > 14 ? `${d.nome.substring(0, 13)}...` : d.nome}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', marginTop: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              {dims.map(d => (
+                                <span key={d.dimName} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <strong style={{ color: d.color }}>D{d.numero}:</strong> {d.nome} (<strong>{d.count}</strong>)
                                 </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })()}
