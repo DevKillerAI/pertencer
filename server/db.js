@@ -7,105 +7,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE = path.join(__dirname, 'db.json');
 
-// Supabase Configuration
+// Supabase Configuration (Single Source of Truth)
 const supabaseUrl = process.env.SUPABASE_URL || 'https://mowvehesrsawbxqhtytk.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY || 'sb_publishable_9DG9WVh7oVbM9r2hXQMvkA_ERImrg3S';
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
-export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey) : null;
-
-// Dynamic schema detection for Supabase mode fallback
-export const schemaCache = {
-  occurrences: {
-    hasSubjectMatter: false,
-    hasAttendedPeople: false,
-    hasStudents: false,
-    hasClassifications: false,
-    hasFeelings: false,
-    hasFeelingsObservations: false,
-    hasDirectionReferrals: false,
-    hasStatus: false,
-    hasUpdatedAt: false,
-    hasUpdatedById: false,
-    hasUpdatedByName: false,
-    hasDirectorNotes: false
-  },
-  users: {
-    hasEmail: false,
-    hasPhone: false,
-    hasLgpdAccepted: false,
-    hasCreatedAt: false
-  }
-};
-
-async function detectSchema() {
-  if (!isSupabaseConfigured) return;
-  try {
-    const { error: errSubjectMatter } = await supabase.from('occurrences').select('subject_matter').limit(1);
-    schemaCache.occurrences.hasSubjectMatter = !errSubjectMatter;
-
-    const { error: errAttendedPeople } = await supabase.from('occurrences').select('attended_people').limit(1);
-    schemaCache.occurrences.hasAttendedPeople = !errAttendedPeople;
-
-    const { error: errStudents } = await supabase.from('occurrences').select('students').limit(1);
-    schemaCache.occurrences.hasStudents = !errStudents;
-
-    const { error: errClassifications } = await supabase.from('occurrences').select('classifications').limit(1);
-    schemaCache.occurrences.hasClassifications = !errClassifications;
-
-    const { error: errFeelings } = await supabase.from('occurrences').select('feelings').limit(1);
-    schemaCache.occurrences.hasFeelings = !errFeelings;
-
-    const { error: errFeelingsObservations } = await supabase.from('occurrences').select('feelings_observations').limit(1);
-    schemaCache.occurrences.hasFeelingsObservations = !errFeelingsObservations;
-
-    const { error: errDirectionReferrals } = await supabase.from('occurrences').select('direction_referrals').limit(1);
-    schemaCache.occurrences.hasDirectionReferrals = !errDirectionReferrals;
-
-    const { error: errStatus } = await supabase.from('occurrences').select('status').limit(1);
-    schemaCache.occurrences.hasStatus = !errStatus;
-
-    const { error: errUpdatedAt } = await supabase.from('occurrences').select('updatedAt').limit(1);
-    schemaCache.occurrences.hasUpdatedAt = !errUpdatedAt;
-
-    const { error: errUpdatedById } = await supabase.from('occurrences').select('updatedById').limit(1);
-    schemaCache.occurrences.hasUpdatedById = !errUpdatedById;
-
-    const { error: errUpdatedByName } = await supabase.from('occurrences').select('updatedByName').limit(1);
-    schemaCache.occurrences.hasUpdatedByName = !errUpdatedByName;
-
-    const { error: errCreatedAt } = await supabase.from('occurrences').select('createdAt').limit(1);
-    schemaCache.occurrences.hasCreatedAt = !errCreatedAt;
-
-    const { error: errEditHistory } = await supabase.from('occurrences').select('editHistory').limit(1);
-    schemaCache.occurrences.hasEditHistory = !errEditHistory;
-
-    const { error: errDirectorNotes } = await supabase.from('occurrences').select('directorNotes').limit(1);
-    schemaCache.occurrences.hasDirectorNotes = !errDirectorNotes;
-
-    const { error: errEmail } = await supabase.from('users').select('email').limit(1);
-    schemaCache.users.hasEmail = !errEmail;
-
-    const { error: errPhone } = await supabase.from('users').select('phone').limit(1);
-    schemaCache.users.hasPhone = !errPhone;
-
-    const { error: errLgpd } = await supabase.from('users').select('lgpd_accepted').limit(1);
-    schemaCache.users.hasLgpdAccepted = !errLgpd;
-
-    const { error: errUserCreatedAt } = await supabase.from('users').select('createdAt').limit(1);
-    schemaCache.users.hasCreatedAt = !errUserCreatedAt;
-
-    console.log('Database: Schema detection completed:', JSON.stringify(schemaCache));
-  } catch (error) {
-    console.error('Database: Schema detection failed, using fallbacks:', error);
-  }
-}
+export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false }
+}) : null;
 
 if (isSupabaseConfigured) {
-  console.log('Database: Connected using Supabase.');
-  detectSchema();
+  console.log('Database: Supabase configurado e ativo como FONTE ÚNICA DA VERDADE.');
 } else {
-  console.log('Database: Supabase keys not set. Falling back to local db.json file.');
+  console.error('FATAL: Supabase não configurado. Verifique as credenciais no .env.');
 }
 
 // Paths for logging and automatic backups
@@ -154,7 +68,363 @@ export const logEngine = {
   }
 };
 
-// Automatic Backup Engine
+// =========================================================================
+// ENCODING & DECODING HELPERS (METADATA PROTECTION & RESILIENCE)
+// =========================================================================
+
+export function decodeUser(u) {
+  if (!u) return null;
+  let decoded = { ...u };
+  let cleanClasses = Array.isArray(decoded.classes) ? [...decoded.classes] : [];
+
+  const emailItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__email:'));
+  if (emailItem) {
+    decoded.email = emailItem.slice(8);
+    cleanClasses = cleanClasses.filter(c => c !== emailItem);
+  } else if (!decoded.email) {
+    decoded.email = '';
+  }
+
+  const phoneItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__phone:'));
+  if (phoneItem) {
+    decoded.phone = phoneItem.slice(8);
+    cleanClasses = cleanClasses.filter(c => c !== phoneItem);
+  } else if (!decoded.phone) {
+    decoded.phone = '';
+  }
+
+  const lgpdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__lgpd:'));
+  if (lgpdItem) {
+    decoded.lgpd_accepted = true;
+    cleanClasses = cleanClasses.filter(c => c !== lgpdItem);
+  }
+
+  const createdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__created:'));
+  if (createdItem) {
+    decoded.createdAt = createdItem.slice(10);
+    cleanClasses = cleanClasses.filter(c => c !== createdItem);
+  }
+
+  decoded.classes = cleanClasses;
+  return decoded;
+}
+
+export function encodeUser(user) {
+  const userClasses = Array.isArray(user.classes)
+    ? user.classes.filter(c => typeof c === 'string' && !c.startsWith('__'))
+    : [];
+
+  const classesPayload = [...userClasses];
+  if (user.email) classesPayload.push(`__email:${user.email.trim()}`);
+  if (user.phone) classesPayload.push(`__phone:${user.phone.trim()}`);
+  if (user.lgpd_accepted) classesPayload.push('__lgpd:true');
+  if (user.createdAt) classesPayload.push(`__created:${user.createdAt}`);
+
+  return {
+    id: user.id || ('usr-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+    name: (user.name || '').trim(),
+    cpf: (user.cpf || '').replace(/\D/g, ''),
+    password: user.password || 'senha',
+    role: (user.role || 'pedagogo').toLowerCase(),
+    schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId || null),
+    classes: classesPayload
+  };
+}
+
+export function decodeOccurrence(raw) {
+  if (!raw) return null;
+  const decoded = { ...raw };
+  let obs = decoded.observations || '';
+  let meta = null;
+
+  // Format 1: <!--POME_META_START-->...<!--POME_META_END-->
+  const startTag = '<!--POME_META_START-->';
+  const endTag = '<!--POME_META_END-->';
+  const startIdx = obs.indexOf(startTag);
+  const endIdx = obs.indexOf(endTag);
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    const jsonStr = obs.slice(startIdx + startTag.length, endIdx).trim();
+    try {
+      meta = JSON.parse(jsonStr);
+      obs = (obs.slice(0, startIdx) + obs.slice(endIdx + endTag.length)).trim();
+    } catch (e) {
+      console.error('Error parsing POME_META tag:', e);
+    }
+  }
+
+  // Format 2: Fallback for legacy [POME_META:...]
+  if (!meta && obs.includes('[POME_META:')) {
+    const pStart = obs.indexOf('[POME_META:');
+    const pEnd = obs.lastIndexOf(']');
+    if (pStart !== -1 && pEnd > pStart) {
+      const jsonStr = obs.slice(pStart + 11, pEnd).trim();
+      try {
+        meta = JSON.parse(jsonStr);
+        obs = (obs.slice(0, pStart) + obs.slice(pEnd + 1)).trim();
+      } catch (_) {}
+    }
+  }
+
+  if (meta) {
+    if (meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
+    if (meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
+    if (meta.students !== undefined) decoded.students = meta.students;
+    if (meta.classifications !== undefined) decoded.classifications = meta.classifications;
+    if (meta.feelings !== undefined) decoded.feelings = meta.feelings;
+    if (meta.feelings_observations !== undefined) decoded.feelings_observations = meta.feelings_observations;
+    if (meta.direction_referrals !== undefined) decoded.direction_referrals = meta.direction_referrals;
+    if (meta.status !== undefined) decoded.status = meta.status;
+    if (meta.createdAt !== undefined) decoded.createdAt = meta.createdAt;
+    if (meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
+    if (meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
+    if (meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
+    if (meta.editHistory !== undefined) decoded.editHistory = meta.editHistory;
+    if (meta.directorNotes !== undefined && (!decoded.directorNotes || !decoded.directorNotes.trim())) {
+      decoded.directorNotes = meta.directorNotes;
+    }
+  }
+
+  decoded.observations = obs;
+
+  // Guarantee standard default structures
+  if (!decoded.attended_people) decoded.attended_people = [];
+  if (!decoded.students || !Array.isArray(decoded.students) || decoded.students.length === 0) {
+    decoded.students = [{
+      studentName: decoded.studentName || 'Estudante',
+      sex: decoded.sex || '',
+      turn: decoded.turn || '',
+      gradeCycle: decoded.gradeCycle || '',
+      className: decoded.className || '',
+      teacherName: decoded.teacherName || '',
+      subject_matter: decoded.subject_matter || '',
+      guardian: {
+        name: decoded.guardianName || (decoded.attended_people[0]?.name || ''),
+        bond: decoded.attended_people[0]?.bond || 'Responsável',
+        contact: decoded.contacts || (decoded.attended_people[0]?.contact || '')
+      }
+    }];
+  }
+  if (!decoded.classifications) decoded.classifications = decoded.type ? [decoded.type] : [];
+  if (!decoded.feelings) decoded.feelings = [];
+  if (!decoded.feelings_observations) decoded.feelings_observations = '';
+  if (!decoded.direction_referrals) decoded.direction_referrals = [];
+  if (!decoded.status) decoded.status = 'finalizado';
+  if (!decoded.subject_matter) decoded.subject_matter = decoded.students[0]?.subject_matter || '';
+  if (!decoded.createdAt) decoded.createdAt = decoded.date ? `${decoded.date}T12:00:00.000Z` : new Date().toISOString();
+  if (!decoded.updatedAt) decoded.updatedAt = '';
+  if (!decoded.updatedById) decoded.updatedById = '';
+  if (!decoded.updatedByName) decoded.updatedByName = '';
+  if (!decoded.editHistory) decoded.editHistory = [];
+  if (!decoded.directorNotes) decoded.directorNotes = '';
+
+  return decoded;
+}
+
+export function encodeOccurrence(occurrence) {
+  const firstStudent = Array.isArray(occurrence.students) && occurrence.students.length > 0
+    ? occurrence.students[0]
+    : {};
+
+  const cleanObs = (occurrence.observations || '')
+    .replace(/<!--POME_META_START-->[\s\S]*?<!--POME_META_END-->/g, '')
+    .replace(/\[POME_META:[\s\S]*?\]/g, '')
+    .trim();
+
+  const meta = {
+    subject_matter: occurrence.subject_matter || firstStudent.subject_matter || '',
+    attended_people: occurrence.attended_people || [],
+    students: occurrence.students || [],
+    classifications: occurrence.classifications || (occurrence.type ? [occurrence.type] : []),
+    feelings: occurrence.feelings || [],
+    feelings_observations: occurrence.feelings_observations || '',
+    direction_referrals: occurrence.direction_referrals || [],
+    status: occurrence.status || 'finalizado',
+    directorNotes: occurrence.directorNotes || '',
+    createdAt: occurrence.createdAt || (occurrence.date ? `${occurrence.date}T12:00:00.000Z` : new Date().toISOString()),
+    updatedAt: occurrence.updatedAt || '',
+    updatedById: occurrence.updatedById || '',
+    updatedByName: occurrence.updatedByName || '',
+    editHistory: occurrence.editHistory || []
+  };
+
+  const metaTag = `<!--POME_META_START-->\n${JSON.stringify(meta)}\n<!--POME_META_END-->`;
+  const finalObservations = cleanObs ? `${cleanObs}\n\n${metaTag}` : metaTag;
+
+  const payload = {
+    id: occurrence.id,
+    schoolId: occurrence.schoolId || 'esc-1',
+    createdById: occurrence.createdById || 'usr-3',
+    createdByName: occurrence.createdByName || 'Pedagogo(a)',
+    date: occurrence.date || new Date().toISOString().split('T')[0],
+    studentName: occurrence.studentName || firstStudent.studentName || 'Estudante',
+    gradeCycle: occurrence.gradeCycle || firstStudent.gradeCycle || '',
+    className: occurrence.className || firstStudent.className || '',
+    teacherName: occurrence.teacherName || firstStudent.teacherName || '',
+    guardianName: occurrence.guardianName || firstStudent.guardian?.name || '',
+    contacts: occurrence.contacts || firstStudent.guardian?.contact || '',
+    type: occurrence.type || (Array.isArray(occurrence.classifications) && occurrence.classifications[0]) || 'Atendimento Geral',
+    subject: occurrence.subject || 'Atendimento POME',
+    referrals: occurrence.referrals || '',
+    observations: finalObservations,
+    directorNotes: occurrence.directorNotes || ''
+  };
+
+  return payload;
+}
+
+// Timeout wrapper for robust Supabase calls
+const withTimeout = (promise, ms = 12000) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase request timeout')), ms))
+  ]);
+};
+
+// =========================================================================
+// CORE DATABASE API (SUPABASE EXCLUSIVE AUTHORITY)
+// =========================================================================
+
+export const db = {
+  // Full Database State (Used for Metrics and Complete Backups)
+  getData: async () => {
+    const schools = await db.getSchools();
+    const users = await db.getUsers();
+    const occurrences = await db.getOccurrences();
+    return { schools, users, occurrences };
+  },
+
+  // Schools
+  getSchools: async () => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { data, error } = await withTimeout(supabase
+      .from('schools')
+      .select('*')
+      .order('name', { ascending: true }));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao buscar escolas no Supabase: ${error.message}`);
+      throw error;
+    }
+    return data || [];
+  },
+
+  saveSchool: async (school) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    if (!school.id) {
+      school.id = 'esc-' + Date.now();
+    }
+    const { data, error } = await withTimeout(supabase
+      .from('schools')
+      .upsert(school)
+      .select());
+    if (error) {
+      logEngine.log('ERROR', `Erro ao salvar escola no Supabase: ${error.message}`);
+      throw error;
+    }
+    return data[0];
+  },
+
+  deleteSchool: async (id) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { error } = await withTimeout(supabase
+      .from('schools')
+      .delete()
+      .eq('id', id));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao excluir escola no Supabase: ${error.message}`);
+      throw error;
+    }
+    return true;
+  },
+
+  // Users
+  getUsers: async () => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { data, error } = await withTimeout(supabase
+      .from('users')
+      .select('*')
+      .order('name', { ascending: true }));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao buscar usuários no Supabase: ${error.message}`);
+      throw error;
+    }
+    return (data || []).map(decodeUser);
+  },
+
+  saveUser: async (user) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const payload = encodeUser(user);
+    const { error } = await withTimeout(supabase
+      .from('users')
+      .upsert(payload));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao salvar usuário no Supabase: ${error.message}`);
+      throw error;
+    }
+    return decodeUser(payload);
+  },
+
+  deleteUser: async (id) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { error } = await withTimeout(supabase
+      .from('users')
+      .delete()
+      .eq('id', id));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao excluir usuário no Supabase: ${error.message}`);
+      throw error;
+    }
+    return true;
+  },
+
+  // Occurrences
+  getOccurrences: async () => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { data, error } = await withTimeout(supabase
+      .from('occurrences')
+      .select('*')
+      .order('date', { ascending: false }));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao buscar ocorrências no Supabase: ${error.message}`);
+      throw error;
+    }
+    return (data || []).map(decodeOccurrence);
+  },
+
+  saveOccurrence: async (occurrence) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    if (!occurrence.id) {
+      occurrence.id = 'occ-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+    }
+    const payload = encodeOccurrence(occurrence);
+    const { error } = await withTimeout(supabase
+      .from('occurrences')
+      .upsert(payload)
+      .select());
+    if (error) {
+      logEngine.log('ERROR', `Erro ao salvar ocorrência no Supabase: ${error.message}`);
+      throw error;
+    }
+    return decodeOccurrence(payload);
+  },
+
+  deleteOccurrence: async (id) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+    const { error } = await withTimeout(supabase
+      .from('occurrences')
+      .delete()
+      .eq('id', id));
+    if (error) {
+      logEngine.log('ERROR', `Erro ao excluir ocorrência no Supabase: ${error.message}`);
+      throw error;
+    }
+    return true;
+  }
+};
+
+// =========================================================================
+// AUTOMATIC BACKUP ENGINE & DISASTER RECOVERY
+// =========================================================================
+
 export const backupEngine = {
   createBackup: async (label = 'auto') => {
     try {
@@ -165,7 +435,8 @@ export const backupEngine = {
       
       const payload = {
         metadata: {
-          version: '2.0.0',
+          version: '3.0.0',
+          source: 'Supabase Cloud Database (POME Contagem)',
           createdAt: new Date().toISOString(),
           label,
           counts: {
@@ -178,8 +449,14 @@ export const backupEngine = {
       };
       
       fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
-      logEngine.log('INFO', `Backup criado com sucesso [${label}]: ${filename}`, { counts: payload.metadata.counts });
-      return { filename, ...payload.metadata };
+      
+      // Update local db.json as an offline mirror snapshot
+      try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+      } catch (_) {}
+
+      logEngine.log('INFO', `Backup snapshot gerado com sucesso [${label}]: ${filename}`, { counts: payload.metadata.counts });
+      return { filename, ...payload.metadata, fullData: payload };
     } catch (err) {
       logEngine.log('ERROR', `Falha ao criar backup: ${err.message}`, { error: String(err) });
       throw err;
@@ -226,7 +503,7 @@ export const backupEngine = {
       if (typeof filenameOrData === 'string') {
         const safeFilename = path.basename(filenameOrData);
         const filePath = path.join(BACKUP_DIR, safeFilename);
-        if (!fs.existsSync(filePath)) throw new Error('Arquivo de backup não encontrado.');
+        if (!fs.existsSync(filePath)) throw new Error('Arquivo de backup não encontrado no servidor.');
         const raw = fs.readFileSync(filePath, 'utf8');
         payload = JSON.parse(raw);
       }
@@ -236,696 +513,32 @@ export const backupEngine = {
         throw new Error('Formato de backup inválido: dados essenciais ausentes.');
       }
       
-      // Save to local file
-      writeDb(targetData);
-      
-      // If Supabase configured, restore to Supabase tables
-      if (isSupabaseConfigured) {
-        try {
-          if (targetData.schools?.length) await supabase.from('schools').upsert(targetData.schools);
-          if (targetData.users?.length) await supabase.from('users').upsert(targetData.users);
-          if (targetData.occurrences?.length) await supabase.from('occurrences').upsert(targetData.occurrences);
-        } catch (e) {
-          console.warn('Supabase restore warning:', e);
+      // 1. Restaurar escolas
+      if (Array.isArray(targetData.schools)) {
+        for (const s of targetData.schools) {
+          await db.saveSchool(s);
+        }
+      }
+
+      // 2. Restaurar usuários
+      if (Array.isArray(targetData.users)) {
+        for (const u of targetData.users) {
+          await db.saveUser(u);
+        }
+      }
+
+      // 3. Restaurar ocorrências
+      if (Array.isArray(targetData.occurrences)) {
+        for (const o of targetData.occurrences) {
+          await db.saveOccurrence(o);
         }
       }
       
-      logEngine.log('AUDIT', `Banco de dados restaurado a partir do backup`, { counts: payload.metadata?.counts });
+      logEngine.log('AUDIT', `Banco de dados Supabase restaurado com sucesso a partir do backup`, { counts: payload.metadata?.counts });
       return { success: true, metadata: payload.metadata };
     } catch (err) {
       logEngine.log('ERROR', `Falha na restauração do backup: ${err.message}`, { error: String(err) });
       throw err;
     }
-  }
-};
-
-// Initialize database with seed data if it doesn't exist (Local Fallback only)
-const initialData = {
-  schools: [
-    { id: 'esc-1', name: 'Escola Municipal Professor Wancleber Pacheco' },
-    { id: 'esc-2', name: 'Escola Municipal Anita Garibaldi' },
-    { id: 'esc-3', name: 'Escola Municipal Castro Alves' },
-    { id: 'esc-4', name: 'Escola Municipal Monteiro Lobato' },
-    { id: 'esc-5', name: 'Escola Municipal Cecília Meireles' },
-    { id: 'esc-6', name: 'Escola Municipal Duque de Caxias' },
-    { id: 'esc-7', name: 'Escola Municipal Ruy Barbosa' },
-    { id: 'esc-8', name: 'Escola Municipal Getúlio Vargas' },
-    { id: 'esc-9', name: 'Escola Municipal Machado de Assis' }
-  ],
-  users: [
-    {
-      id: 'usr-1',
-      name: 'Elisabette Leo (Super Admin)',
-      cpf: '00000000000',
-      email: 'admin@edu.contagem.mg.gov.br',
-      password: 'admin',
-      role: 'superadmin',
-      schoolId: null,
-      classes: [],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-felipe',
-      name: 'Felipe Marcelino (Super Admin)',
-      cpf: '99999999999',
-      email: 'felipe@edu.contagem.mg.gov.br',
-      phone: '(31) 99999-9999',
-      password: '2018@Senha',
-      role: 'superadmin',
-      schoolId: null,
-      classes: [],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-seduc',
-      name: 'Gestão Central SEDUC',
-      cpf: '11111111111',
-      email: 'gestor@edu.contagem.mg.gov.br',
-      password: 'seduc',
-      role: 'seduc',
-      schoolId: null,
-      classes: [],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-2',
-      name: 'Diretor(a) Wancleber',
-      cpf: '22222222222',
-      email: 'diretor@edu.contagem.mg.gov.br',
-      password: 'senha',
-      role: 'diretor',
-      schoolId: 'esc-1',
-      classes: [],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-3',
-      name: 'Pedagoga Maria Silva',
-      cpf: '33333333333',
-      email: 'pedagogo@edu.contagem.mg.gov.br',
-      password: 'senha',
-      role: 'pedagogo',
-      schoolId: 'esc-1',
-      classes: ['5º Ano A', '5º Ano B', '4º Ano A'],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-4',
-      name: 'Pedagoga Ana Costa',
-      cpf: '33333333334',
-      email: 'pedagoga2@edu.contagem.mg.gov.br',
-      password: 'senha',
-      role: 'pedagogo',
-      schoolId: 'esc-2',
-      classes: ['3º Ano A', '3º Ano B'],
-      lgpd_accepted: true
-    },
-    {
-      id: 'usr-5',
-      name: 'Assistente de Mediação',
-      cpf: '44444444444',
-      email: 'assistente@edu.contagem.mg.gov.br',
-      password: 'senha',
-      role: 'assistente',
-      schoolId: 'esc-1',
-      classes: [],
-      lgpd_accepted: true
-    }
-  ],
-  occurrences: [
-    {
-      id: 'occ-1',
-      schoolId: 'esc-1',
-      createdById: 'usr-3',
-      createdByName: 'Pedagoga Maria Silva',
-      date: '2026-07-13',
-      studentName: 'Gabriel Souza Lima',
-      gradeCycle: '5º Ano',
-      className: '5º Ano A',
-      teacherName: 'Profª Cláudia Mendes',
-      subject_matter: 'Língua Portuguesa',
-      attended_people: [
-        { name: 'Regina Souza Lima', bond: 'Mãe', contact: '(41) 98888-7777' }
-      ],
-      classifications: ['Bullying'],
-      type: 'Bullying',
-      status: 'finalizado',
-      subject: 'O estudante relatou sofrer apelidos depreciativos recorrentes por parte de colegas da mesma turma durante o recreio.',
-      referrals: 'Conversa individual com os alunos envolvidos. Ligação para os responsáveis e agendamento de atendimento presencial conjunto.',
-      observations: 'O aluno demonstrou-se bastante abalado. A professora de sala foi orientada a monitorar mais de perto as interações na sala.',
-      directorNotes: 'Acompanhei o caso e os responsáveis compareceram no dia 14/07. Comprometeram-se a acompanhar a rotina escolar.'
-    }
-  ]
-};
-
-function readDb() {
-  try {
-    if (!fs.existsSync(DB_FILE)) {
-      writeDb(initialData);
-      return initialData;
-    }
-    const content = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(content);
-  } catch (error) {
-    console.error('Error reading DB:', error);
-    return initialData;
-  }
-}
-
-function writeDb(data) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Error writing DB:', error);
-    return false;
-  }
-}
-
-function findClosingBracket(str, startIdx) {
-  let depth = 0;
-  for (let i = startIdx; i < str.length; i++) {
-    if (str[i] === '[') {
-      depth++;
-    } else if (str[i] === ']') {
-      depth--;
-      if (depth === 0) {
-        return i;
-      }
-    }
-  }
-  return -1;
-}
-
-const withTimeout = (promise, ms = 8000) => {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), ms))
-  ]);
-};
-
-export const db = {
-  getData: async () => {
-    if (isSupabaseConfigured) {
-      const schools = await db.getSchools();
-      const users = await db.getUsers();
-      const occurrences = await db.getOccurrences();
-      return { schools, users, occurrences };
-    }
-    return readDb();
-  },
-  
-  // Schools
-  getSchools: async () => {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await withTimeout(supabase
-          .from('schools')
-          .select('*')
-          .order('name', { ascending: true }));
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        console.warn('Supabase getSchools failed, using local fallback:', err.message || err);
-      }
-    }
-    return readDb().schools;
-  },
-  
-  saveSchool: async (school) => {
-    if (isSupabaseConfigured) {
-      try {
-        if (!school.id) {
-          school.id = 'esc-' + Date.now();
-        }
-        const { data, error } = await supabase
-          .from('schools')
-          .upsert(school)
-          .select();
-        if (error) throw error;
-        return data[0];
-      } catch (err) {
-        console.warn('Supabase saveSchool failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    if (school.id) {
-      data.schools = data.schools.map(s => s.id === school.id ? { ...s, ...school } : s);
-    } else {
-      school.id = 'esc-' + Date.now();
-      data.schools.push(school);
-    }
-    writeDb(data);
-    return school;
-  },
-  
-  deleteSchool: async (id) => {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase
-          .from('schools')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
-        return;
-      } catch (err) {
-        console.warn('Supabase deleteSchool failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    data.schools = data.schools.filter(s => s.id !== id);
-    writeDb(data);
-  },
-  
-  // Users
-  getUsers: async () => {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await withTimeout(supabase
-          .from('users')
-          .select('*')
-          .order('name', { ascending: true }));
-        if (error) throw error;
-        const list = data || [];
-        return list.map(u => {
-          let decoded = { ...u };
-          let cleanClasses = Array.isArray(decoded.classes) ? [...decoded.classes] : [];
-
-          // Extract encoded email if email column is missing
-          if (!schemaCache.users.hasEmail) {
-            const emailItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__email:'));
-            if (emailItem) {
-              decoded.email = emailItem.slice(8);
-              cleanClasses = cleanClasses.filter(c => c !== emailItem);
-            } else if (!decoded.email) {
-              decoded.email = '';
-            }
-          }
-
-          // Extract encoded phone if phone column is missing
-          if (!schemaCache.users.hasPhone) {
-            const phoneItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__phone:'));
-            if (phoneItem) {
-              decoded.phone = phoneItem.slice(8);
-              cleanClasses = cleanClasses.filter(c => c !== phoneItem);
-            } else if (!decoded.phone) {
-              decoded.phone = '';
-            }
-          }
-
-          // Extract encoded lgpd_accepted if column is missing
-          if (!schemaCache.users.hasLgpdAccepted) {
-            const lgpdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__lgpd:'));
-            if (lgpdItem) {
-              decoded.lgpd_accepted = true;
-              cleanClasses = cleanClasses.filter(c => c !== lgpdItem);
-            }
-          }
-
-          // Extract encoded createdAt if column is missing
-          if (!schemaCache.users.hasCreatedAt) {
-            const createdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__created:'));
-            if (createdItem) {
-              decoded.createdAt = createdItem.slice(10);
-              cleanClasses = cleanClasses.filter(c => c !== createdItem);
-            }
-          }
-
-          decoded.classes = cleanClasses;
-          return decoded;
-        });
-      } catch (err) {
-        console.warn('Supabase getUsers failed, using local fallback:', err.message || err);
-      }
-    }
-    return readDb().users;
-  },
-  
-  saveUser: async (user) => {
-    if (isSupabaseConfigured) {
-      try {
-        if (!user.id) {
-          user.id = 'usr-' + Date.now();
-        }
-
-        // Clean classes list excluding internal metadata tokens
-        const userClasses = Array.isArray(user.classes)
-          ? user.classes.filter(c => typeof c === 'string' && !c.startsWith('__'))
-          : [];
-
-        const classesPayload = [...userClasses];
-
-        // Construct clean, schema-safe payload with only verified columns
-        const payload = {
-          id: user.id,
-          name: (user.name || '').trim(),
-          cpf: (user.cpf || '').replace(/\D/g, ''),
-          password: user.password || 'senha',
-          role: (user.role || 'pedagogo').toLowerCase(),
-          schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId || null),
-          classes: classesPayload
-        };
-
-        // Handle email safely
-        if (schemaCache.users.hasEmail) {
-          payload.email = user.email || '';
-        } else if (user.email) {
-          payload.classes.push(`__email:${user.email.trim()}`);
-        }
-
-        // Handle phone safely
-        if (schemaCache.users.hasPhone) {
-          payload.phone = user.phone || '';
-        } else if (user.phone) {
-          payload.classes.push(`__phone:${user.phone.trim()}`);
-        }
-
-        // Handle lgpd_accepted safely
-        if (schemaCache.users.hasLgpdAccepted) {
-          payload.lgpd_accepted = !!user.lgpd_accepted;
-        } else if (user.lgpd_accepted) {
-          payload.classes.push('__lgpd:true');
-        }
-
-        // Handle createdAt safely
-        if (schemaCache.users.hasCreatedAt) {
-          payload.createdAt = user.createdAt || new Date().toISOString();
-        } else if (user.createdAt) {
-          payload.classes.push(`__created:${user.createdAt}`);
-        }
-
-        const { error } = await supabase
-          .from('users')
-          .upsert(payload)
-          .select();
-        if (error) throw error;
-
-        // Also keep local fallback updated
-        const localData = readDb();
-        const existingIdx = localData.users.findIndex(u => u.id === user.id);
-        if (existingIdx >= 0) {
-          localData.users[existingIdx] = { ...localData.users[existingIdx], ...user };
-        } else {
-          localData.users.push(user);
-        }
-        writeDb(localData);
-
-        return user;
-      } catch (err) {
-        console.warn('Supabase saveUser failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    if (!user.id) {
-      user.id = 'usr-' + Date.now();
-    }
-    const idx = data.users.findIndex(u => u.id === user.id);
-    if (idx >= 0) {
-      data.users[idx] = { ...data.users[idx], ...user };
-    } else {
-      data.users.push(user);
-    }
-    writeDb(data);
-    return user;
-  },
-  
-  deleteUser: async (id) => {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase
-          .from('users')
-          .delete()
-          .eq('id', id);
-        if (error) throw error;
-        return;
-      } catch (err) {
-        console.warn('Supabase deleteUser failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    data.users = data.users.filter(u => u.id !== id);
-    writeDb(data);
-  },
-
-  // Occurrences
-  getOccurrences: async () => {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await withTimeout(supabase
-          .from('occurrences')
-          .select('*')
-          .order('date', { ascending: false }));
-        if (error) throw error;
-        
-        const list = data || [];
-        return list.map(o => {
-          let decoded = { ...o };
-          
-          // Extract metadata from observations if present
-          if (decoded.observations && decoded.observations.includes('[POME_META:')) {
-            let obs = decoded.observations;
-            let startIdx;
-            while ((startIdx = obs.indexOf('[POME_META:')) !== -1) {
-              const endIdx = findClosingBracket(obs, startIdx);
-              if (endIdx !== -1) {
-                const jsonStr = obs.slice(startIdx + 11, endIdx);
-                try {
-                  const meta = JSON.parse(jsonStr);
-                  if (!schemaCache.occurrences.hasSubjectMatter && meta.subject_matter !== undefined) decoded.subject_matter = meta.subject_matter;
-                  if (!schemaCache.occurrences.hasAttendedPeople && meta.attended_people !== undefined) decoded.attended_people = meta.attended_people;
-                  if (!schemaCache.occurrences.hasStudents && meta.students !== undefined) decoded.students = meta.students;
-                  if (!schemaCache.occurrences.hasClassifications && meta.classifications !== undefined) decoded.classifications = meta.classifications;
-                  if (!schemaCache.occurrences.hasFeelings && meta.feelings !== undefined) decoded.feelings = meta.feelings;
-                  if (!schemaCache.occurrences.hasFeelingsObservations && meta.feelings_observations !== undefined) decoded.feelings_observations = meta.feelings_observations;
-                  if (!schemaCache.occurrences.hasDirectionReferrals && meta.direction_referrals !== undefined) decoded.direction_referrals = meta.direction_referrals;
-                  if (!schemaCache.occurrences.hasStatus && meta.status !== undefined) decoded.status = meta.status;
-                  if (!schemaCache.occurrences.hasUpdatedAt && meta.updatedAt !== undefined) decoded.updatedAt = meta.updatedAt;
-                  if (!schemaCache.occurrences.hasUpdatedById && meta.updatedById !== undefined) decoded.updatedById = meta.updatedById;
-                  if (!schemaCache.occurrences.hasUpdatedByName && meta.updatedByName !== undefined) decoded.updatedByName = meta.updatedByName;
-                  if (!schemaCache.occurrences.hasCreatedAt && meta.createdAt !== undefined) decoded.createdAt = meta.createdAt;
-                  if (!schemaCache.occurrences.hasEditHistory && meta.editHistory !== undefined) decoded.editHistory = meta.editHistory;
-                  if (meta.directorNotes !== undefined && (!decoded.directorNotes || !decoded.directorNotes.trim())) {
-                    decoded.directorNotes = meta.directorNotes;
-                  }
-                } catch (e) {
-                  console.error("Failed to parse serialized occurrence metadata:", e);
-                }
-                // Remove the metadata tag from obs
-                obs = (obs.slice(0, startIdx) + obs.slice(endIdx + 1)).trim();
-              } else {
-                break;
-              }
-            }
-            decoded.observations = obs;
-          }
-          
-          // Default values if missing
-          if (!decoded.attended_people) decoded.attended_people = [];
-          if (!decoded.students) {
-            decoded.students = [{
-              studentName: decoded.studentName || '',
-              sex: decoded.sex || '',
-              turn: decoded.turn || '',
-              gradeCycle: decoded.gradeCycle || '',
-              className: decoded.className || '',
-              teacherName: decoded.teacherName || '',
-              subject_matter: decoded.subject_matter || '',
-              guardian: {
-                name: decoded.guardianName || (decoded.attended_people[0]?.name || ''),
-                bond: decoded.attended_people[0]?.bond || 'Responsável',
-                contact: decoded.contacts || (decoded.attended_people[0]?.contact || '')
-              }
-            }];
-          }
-          if (!decoded.classifications) decoded.classifications = decoded.type ? [decoded.type] : [];
-          if (!decoded.feelings) decoded.feelings = [];
-          if (!decoded.feelings_observations) decoded.feelings_observations = '';
-          if (!decoded.direction_referrals) decoded.direction_referrals = [];
-          if (!decoded.status) decoded.status = 'finalizado';
-          if (!decoded.subject_matter) decoded.subject_matter = '';
-          if (!decoded.createdAt) decoded.createdAt = decoded.date ? `${decoded.date}T12:00:00.000Z` : new Date().toISOString();
-          if (!decoded.updatedAt) decoded.updatedAt = '';
-          if (!decoded.updatedById) decoded.updatedById = '';
-          if (!decoded.updatedByName) decoded.updatedByName = '';
-          if (!decoded.editHistory) decoded.editHistory = [];
-          
-          return decoded;
-        });
-      } catch (err) {
-        console.warn('Supabase getOccurrences failed, using local fallback:', err.message || err);
-      }
-    }
-    const localOccurrences = readDb().occurrences || [];
-    return localOccurrences.map(o => {
-      let decoded = { ...o };
-      if (!decoded.students) {
-        decoded.students = [{
-          studentName: decoded.studentName || '',
-          sex: decoded.sex || '',
-          turn: decoded.turn || '',
-          gradeCycle: decoded.gradeCycle || '',
-          className: decoded.className || '',
-          teacherName: decoded.teacherName || '',
-          subject_matter: decoded.subject_matter || '',
-          guardian: {
-            name: decoded.guardianName || (decoded.attended_people?.[0]?.name || ''),
-            bond: decoded.attended_people?.[0]?.bond || 'Responsável',
-            contact: decoded.contacts || (decoded.attended_people?.[0]?.contact || '')
-          }
-        }];
-      }
-      if (!decoded.feelings) decoded.feelings = [];
-      if (!decoded.feelings_observations) decoded.feelings_observations = '';
-      if (!decoded.direction_referrals) decoded.direction_referrals = [];
-      return decoded;
-    });
-  },
-  
-  saveOccurrence: async (occurrence) => {
-    if (isSupabaseConfigured) {
-      try {
-        if (!occurrence.id) {
-          occurrence.id = 'occ-' + Date.now();
-        }
-        
-        const payload = { ...occurrence };
-        const firstStudent = Array.isArray(occurrence.students) && occurrence.students.length > 0
-          ? occurrence.students[0]
-          : {};
-        
-        payload.studentName = payload.studentName || firstStudent.studentName || 'Estudante';
-        payload.gradeCycle = payload.gradeCycle || firstStudent.gradeCycle || '';
-        payload.className = payload.className || firstStudent.className || '';
-        payload.teacherName = payload.teacherName || firstStudent.teacherName || '';
-        payload.guardianName = payload.guardianName || firstStudent.guardian?.name || '';
-        payload.contacts = payload.contacts || firstStudent.guardian?.contact || '';
-        payload.type = payload.type || (Array.isArray(payload.classifications) && payload.classifications[0]) || 'Atendimento Geral';
-        payload.subject = payload.subject || '';
-        payload.referrals = payload.referrals || '';
-        payload.directorNotes = payload.directorNotes || '';
-        
-        // If schema is missing columns, serialize them into observations
-        if (!schemaCache.occurrences.hasSubjectMatter || 
-            !schemaCache.occurrences.hasAttendedPeople || 
-            !schemaCache.occurrences.hasStudents ||
-            !schemaCache.occurrences.hasClassifications || 
-            !schemaCache.occurrences.hasFeelings ||
-            !schemaCache.occurrences.hasFeelingsObservations ||
-            !schemaCache.occurrences.hasDirectionReferrals ||
-            !schemaCache.occurrences.hasStatus ||
-            !schemaCache.occurrences.hasUpdatedAt ||
-            !schemaCache.occurrences.hasUpdatedById ||
-            !schemaCache.occurrences.hasUpdatedByName) {
-          
-          const meta = {
-            subject_matter: occurrence.subject_matter || '',
-            attended_people: occurrence.attended_people || [],
-            students: occurrence.students || [],
-            classifications: occurrence.classifications || [],
-            feelings: occurrence.feelings || [],
-            feelings_observations: occurrence.feelings_observations || '',
-            direction_referrals: occurrence.direction_referrals || [],
-            status: occurrence.status || 'finalizado',
-            directorNotes: occurrence.directorNotes || '',
-            createdAt: occurrence.createdAt || (occurrence.date ? `${occurrence.date}T12:00:00.000Z` : new Date().toISOString()),
-            updatedAt: occurrence.updatedAt || '',
-            updatedById: occurrence.updatedById || '',
-            updatedByName: occurrence.updatedByName || '',
-            editHistory: occurrence.editHistory || []
-          };
-          
-          // Remove the columns that don't exist from the payload to avoid PostgREST insert errors
-          if (!schemaCache.occurrences.hasSubjectMatter) delete payload.subject_matter;
-          if (!schemaCache.occurrences.hasAttendedPeople) delete payload.attended_people;
-          if (!schemaCache.occurrences.hasStudents) delete payload.students;
-          if (!schemaCache.occurrences.hasClassifications) delete payload.classifications;
-          if (!schemaCache.occurrences.hasFeelings) delete payload.feelings;
-          if (!schemaCache.occurrences.hasFeelingsObservations) delete payload.feelings_observations;
-          if (!schemaCache.occurrences.hasDirectionReferrals) delete payload.direction_referrals;
-          if (!schemaCache.occurrences.hasStatus) delete payload.status;
-          if (!schemaCache.occurrences.hasCreatedAt) delete payload.createdAt;
-          if (!schemaCache.occurrences.hasUpdatedAt) delete payload.updatedAt;
-          if (!schemaCache.occurrences.hasUpdatedById) delete payload.updatedById;
-          if (!schemaCache.occurrences.hasUpdatedByName) delete payload.updatedByName;
-          if (!schemaCache.occurrences.hasEditHistory) delete payload.editHistory;
-          
-          // Append metadata to observations
-          const metaTag = `[POME_META:${JSON.stringify(meta)}]`;
-          payload.observations = `${occurrence.observations || ''}\n\n${metaTag}`.trim();
-        }
-
-        const { error } = await withTimeout(supabase
-          .from('occurrences')
-          .upsert(payload)
-          .select());
-        if (error) throw error;
-        
-        // Also update local db.json mirror
-        try {
-          const data = readDb();
-          if (occurrence.id) {
-            const exists = data.occurrences.some(o => o.id === occurrence.id);
-            if (exists) {
-              data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
-            } else {
-              data.occurrences.push(occurrence);
-            }
-          } else {
-            occurrence.id = 'occ-' + Date.now();
-            data.occurrences.push(occurrence);
-          }
-          writeDb(data);
-        } catch (_) {}
-
-        return occurrence;
-      } catch (err) {
-        console.warn('Supabase saveOccurrence failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    if (occurrence.id) {
-      const exists = data.occurrences.some(o => o.id === occurrence.id);
-      if (exists) {
-        data.occurrences = data.occurrences.map(o => o.id === occurrence.id ? { ...o, ...occurrence } : o);
-      } else {
-        data.occurrences.push(occurrence);
-      }
-    } else {
-      occurrence.id = 'occ-' + Date.now();
-      data.occurrences.push(occurrence);
-    }
-    writeDb(data);
-    return occurrence;
-  },
-  
-  deleteOccurrence: async (id) => {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await withTimeout(supabase
-          .from('occurrences')
-          .delete()
-          .eq('id', id));
-        if (error) throw error;
-        return true;
-      } catch (err) {
-        console.warn('Supabase deleteOccurrence failed, using local fallback:', err.message || err);
-      }
-    }
-    
-    // Local Fallback
-    const data = readDb();
-    data.occurrences = data.occurrences.filter(o => o.id !== id);
-    writeDb(data);
-    return true;
   }
 };

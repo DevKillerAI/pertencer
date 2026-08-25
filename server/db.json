@@ -5,20 +5,16 @@
       "name": "CEMEI Sagrado Coração"
     },
     {
+      "id": "esc-10",
+      "name": "EM Dona Cordelina Silveira Mattos"
+    },
+    {
       "id": "esc-2",
       "name": "EM Dona Gabriela Leite Araújo"
     },
     {
-      "id": "esc-3",
-      "name": "EM Professora Maria Olintha"
-    },
-    {
-      "id": "esc-4",
-      "name": "EM Maria Silva Lucas – CAIC"
-    },
-    {
-      "id": "esc-5",
-      "name": "EM Professor Wancleber Pacheco"
+      "id": "esc-8",
+      "name": "EM Francisco Sales da Silva Diniz"
     },
     {
       "id": "esc-6",
@@ -29,16 +25,20 @@
       "name": "EM Isabel Nascimento de Mattos"
     },
     {
-      "id": "esc-8",
-      "name": "EM Francisco Sales da Silva Diniz"
+      "id": "esc-4",
+      "name": "EM Maria Silva Lucas – CAIC"
+    },
+    {
+      "id": "esc-5",
+      "name": "EM Professor Wancleber Pacheco"
     },
     {
       "id": "esc-9",
       "name": "EM Professora Julia Kubitschek de Oliveira"
     },
     {
-      "id": "esc-10",
-      "name": "EM Dona Cordelina Silveira Mattos"
+      "id": "esc-3",
+      "name": "EM Professora Maria Olintha"
     }
   ],
   "users": [
@@ -50,7 +50,8 @@
       "role": "assistente",
       "schoolId": "esc-1",
       "classes": [],
-      "email": "assistente@edu.contagem.mg.gov.br"
+      "email": "assistente@edu.contagem.mg.gov.br",
+      "phone": ""
     },
     {
       "id": "usr-2",
@@ -60,7 +61,8 @@
       "role": "diretor",
       "schoolId": "esc-1",
       "classes": [],
-      "email": "diretor@edu.contagem.mg.gov.br"
+      "email": "diretor@edu.contagem.mg.gov.br",
+      "phone": ""
     },
     {
       "id": "usr-1787555633543",
@@ -70,7 +72,8 @@
       "role": "pedagogo",
       "schoolId": null,
       "classes": [],
-      "email": "gestor@pome.com"
+      "email": "gestor@pome.com",
+      "phone": ""
     },
     {
       "id": "usr-1",
@@ -80,7 +83,8 @@
       "role": "superadmin",
       "schoolId": null,
       "classes": [],
-      "email": "admin@edu.contagem.mg.gov.br"
+      "email": "admin@edu.contagem.mg.gov.br",
+      "phone": ""
     },
     {
       "id": "usr-felipe",
@@ -90,7 +94,21 @@
       "role": "superadmin",
       "schoolId": null,
       "classes": [],
-      "email": "felipe@edu.contagem.mg.gov.br"
+      "email": "felipe@edu.contagem.mg.gov.br",
+      "phone": ""
+    },
+    {
+      "id": "usr-1787628777447",
+      "name": "Felipe Vina Marcelino",
+      "cpf": "12345678900",
+      "password": "senha",
+      "role": "diretor",
+      "schoolId": "esc-1",
+      "classes": [],
+      "email": "vina@edu.contagem.mg.gov.br",
+      "phone": "(31) 98888-7777",
+      "lgpd_accepted": true,
+      "createdAt": "2026-08-25T03:32:57.447Z"
     },
     {
       "id": "usr-seduc",
@@ -100,7 +118,8 @@
       "role": "seduc",
       "schoolId": null,
       "classes": [],
-      "email": "gestor@edu.contagem.mg.gov.br"
+      "email": "gestor@edu.contagem.mg.gov.br",
+      "phone": ""
     },
     {
       "id": "usr-4",
@@ -113,7 +132,8 @@
         "3º Ano A",
         "3º Ano B"
       ],
-      "email": "pedagoga2@edu.contagem.mg.gov.br"
+      "email": "pedagoga2@edu.contagem.mg.gov.br",
+      "phone": ""
     },
     {
       "id": "usr-3",
@@ -127,36 +147,462 @@
         "5º Ano B",
         "4º Ano A"
       ],
-      "email": "pedagogo@edu.contagem.mg.gov.br"
-    },
-    {
-      "name": "Felipe Vina Marcelino",
-      "cpf": "123.456.789-00",
-      "email": "vina@edu.contagem.mg.gov.br",
-      "phone": "(31) 98888-7777",
-      "role": "diretor",
-      "schoolId": "esc-1",
-      "password": "senha",
-      "confirmPassword": "senha",
-      "lgpd_accepted": true,
-      "createdAt": "2026-08-25T03:30:21.377Z",
-      "id": "usr-1787628646435"
-    },
-    {
-      "name": "Felipe Vina Marcelino",
-      "cpf": "12345678900",
-      "email": "vina@edu.contagem.mg.gov.br",
-      "phone": "(31) 98888-7777",
-      "password": "senha",
-      "role": "diretor",
-      "schoolId": "esc-1",
-      "classes": [],
-      "lgpd_accepted": true,
-      "createdAt": "2026-08-25T03:32:57.447Z",
-      "id": "usr-1787628777447"
+      "email": "pedagogo@edu.contagem.mg.gov.br",
+      "phone": ""
     }
   ],
   "occurrences": [
+    {
+      "id": "occ-test-suite-1787637508097",
+      "schoolId": "esc-1",
+      "createdById": "usr-3",
+      "createdByName": "Pedagoga Maria Silva",
+      "date": "2026-08-25",
+      "studentName": "Lucas Ferreira Guimarães",
+      "gradeCycle": "6º Ano",
+      "className": "6º Ano B",
+      "teacherName": "Prof. Marcos Souza",
+      "guardianName": "Patrícia Guimarães",
+      "contacts": "(31) 97777-2222",
+      "type": "Bullying",
+      "subject": "Estudante sofreu humilhação reiterada por colegas de sala de aula.",
+      "referrals": "Mediação escolar e agendamento presencial com a família.",
+      "observations": "",
+      "directorNotes": "",
+      "subject_matter": "Matemática",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Lucas Ferreira Guimarães",
+          "sex": "Masculino",
+          "turn": "Tarde",
+          "gradeCycle": "6º Ano",
+          "className": "6º Ano B",
+          "teacherName": "Prof. Marcos Souza",
+          "subject_matter": "Matemática",
+          "guardian": {
+            "name": "Patrícia Guimarães",
+            "bond": "Mãe",
+            "contact": "(31) 97777-2222"
+          }
+        }
+      ],
+      "classifications": [
+        "Bullying",
+        "Agressão verbal"
+      ],
+      "feelings": [
+        "Tristeza",
+        "Frustração"
+      ],
+      "feelings_observations": "Aluno comunicou grande sofrimento com as ofensas reiteradas.",
+      "direction_referrals": [
+        "Conselho Tutelar"
+      ],
+      "status": "finalizado",
+      "createdAt": "2026-08-25T12:00:00.000Z",
+      "updatedAt": "",
+      "updatedById": "",
+      "updatedByName": "",
+      "editHistory": []
+    },
+    {
+      "id": "occ-seduc-1787636469601",
+      "schoolId": "esc-1",
+      "createdById": "usr-seduc",
+      "createdByName": "Gestão Central SEDUC",
+      "date": "2026-08-24",
+      "studentName": "Ana Clara Silveira",
+      "gradeCycle": "5º Ano",
+      "className": "5º Ano A",
+      "teacherName": "Profª Cláudia Mendes",
+      "guardianName": "Renata Silveira",
+      "contacts": "(31) 98888-1111",
+      "type": "Bullying",
+      "subject": "Atendimento de mediação sobre conflito escolar.",
+      "referrals": "Encaminhado para acolhimento pedagógico.",
+      "observations": "",
+      "directorNotes": "",
+      "subject_matter": "Língua Portuguesa",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ana Clara Silveira",
+          "sex": "Feminino",
+          "turn": "Manhã",
+          "gradeCycle": "5º Ano",
+          "className": "5º Ano A",
+          "teacherName": "Profª Cláudia Mendes",
+          "subject_matter": "Língua Portuguesa",
+          "guardian": {
+            "name": "Renata Silveira",
+            "bond": "Mãe",
+            "contact": "(31) 98888-1111"
+          }
+        }
+      ],
+      "classifications": [
+        "Bullying"
+      ],
+      "feelings": [
+        "Frustração"
+      ],
+      "feelings_observations": "",
+      "direction_referrals": [],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "",
+      "updatedById": "",
+      "updatedByName": "",
+      "editHistory": []
+    },
+    {
+      "id": "occ-visto-test",
+      "schoolId": "esc-1",
+      "createdById": "usr-3",
+      "createdByName": "Pedagogo(a)",
+      "date": "2026-08-24",
+      "studentName": "Aluno Teste",
+      "gradeCycle": "",
+      "className": "",
+      "teacherName": "",
+      "guardianName": "",
+      "contacts": "",
+      "type": "Conflito",
+      "subject": "Assunto Teste",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "Visto testado com sucesso!",
+      "subject_matter": "",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Aluno Teste",
+          "sex": "",
+          "turn": "",
+          "gradeCycle": "",
+          "className": "",
+          "teacherName": "",
+          "subject_matter": "",
+          "guardian": {
+            "name": "",
+            "bond": "Responsável",
+            "contact": ""
+          }
+        }
+      ],
+      "classifications": [
+        "Conflito"
+      ],
+      "feelings": [],
+      "feelings_observations": "",
+      "direction_referrals": [
+        "Conselho Tutelar"
+      ],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "",
+      "updatedById": "",
+      "updatedByName": "",
+      "editHistory": []
+    },
+    {
+      "id": "occ-1787601961328-1104",
+      "schoolId": "esc-1",
+      "createdById": "usr-5",
+      "createdByName": "Assistente de Mediação",
+      "date": "2026-08-24",
+      "studentName": "Ocorrencia Assistente",
+      "gradeCycle": "3 anos",
+      "className": "B",
+      "teacherName": "MArcia Campos",
+      "guardianName": "MArio Vale",
+      "contacts": "(31) 94562-365",
+      "type": "Indisciplina recorrente",
+      "subject": "Deu promeblema",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "dei o visto",
+      "subject_matter": "Educação Física",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ocorrencia Assistente",
+          "sex": "Feminino",
+          "turn": "Manhã",
+          "gradeCycle": "3 anos",
+          "className": "B",
+          "teacherName": "MArcia Campos",
+          "subject_matter": "Educação Física",
+          "customSubject": "",
+          "guardian": {
+            "name": "MArio Vale",
+            "bond": "Pai",
+            "customBond": "",
+            "contact": "(31) 94562-365"
+          }
+        }
+      ],
+      "classifications": [
+        "Indisciplina recorrente",
+        "Ameaça",
+        "Incêndio ou tentativa de incêndio",
+        "Furto e/ou roubo"
+      ],
+      "feelings": [
+        "Alegria"
+      ],
+      "feelings_observations": "",
+      "direction_referrals": [
+        "Conselho tutelar"
+      ],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "2026-08-24T20:10:36.510Z",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor(a) Wancleber",
+      "editHistory": [
+        {
+          "timestamp": "2026-08-24T20:06:01.328Z",
+          "userId": "usr-5",
+          "userName": "Assistente de Mediação",
+          "userRole": "assistente",
+          "action": "Criação do atendimento"
+        },
+        {
+          "timestamp": "2026-08-24T20:10:36.510Z",
+          "userId": "usr-2",
+          "userName": "Diretor(a) Wancleber",
+          "userRole": "diretor",
+          "action": "Visto e parecer da diretoria"
+        }
+      ]
+    },
+    {
+      "id": "occ-1787602337086-3813",
+      "schoolId": "esc-1",
+      "createdById": "usr-2",
+      "createdByName": "Diretor(a) Wancleber",
+      "date": "2026-08-24",
+      "studentName": "Ocorrencia diretor",
+      "gradeCycle": "3º Ano",
+      "className": "E",
+      "teacherName": "Marcio Campos",
+      "guardianName": "Juca Kifouri",
+      "contacts": "(31) 56987-4",
+      "type": "Atendimento Geral",
+      "subject": "meio nao tao bom ",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "",
+      "subject_matter": "Matemática",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ocorrencia diretor",
+          "sex": "Masculino",
+          "turn": "Tarde",
+          "gradeCycle": "3º Ano",
+          "className": "E",
+          "teacherName": "Marcio Campos",
+          "subject_matter": "Matemática",
+          "customSubject": "",
+          "guardian": {
+            "name": "Juca Kifouri",
+            "bond": "Tio/Tia",
+            "customBond": "",
+            "contact": "(31) 56987-4"
+          }
+        }
+      ],
+      "classifications": [],
+      "feelings": [],
+      "feelings_observations": "",
+      "direction_referrals": [],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "2026-08-24T20:12:17.086Z",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor(a) Wancleber",
+      "editHistory": [
+        {
+          "timestamp": "2026-08-24T20:12:17.086Z",
+          "userId": "usr-2",
+          "userName": "Diretor(a) Wancleber",
+          "userRole": "diretor",
+          "action": "Criação do atendimento"
+        }
+      ]
+    },
+    {
+      "id": "occ-pome-1787636490919",
+      "schoolId": "esc-1",
+      "createdById": "usr-3",
+      "createdByName": "Pedagoga Maria Silva",
+      "date": "2026-08-24",
+      "studentName": "Estudante Teste Supabase",
+      "gradeCycle": "5º Ano",
+      "className": "5º Ano B",
+      "teacherName": "Profª Cláudia Mendes",
+      "guardianName": "Maria Responsável",
+      "contacts": "(31) 98888-0000",
+      "type": "Bullying",
+      "subject": "Relato de apelidos depreciativos e exclusão das atividades de recreação por colegas.",
+      "referrals": "Mediação individual realizada e agendamento de conversa com os responsáveis.",
+      "observations": "Acompanhar o comportamento na próxima semana.",
+      "directorNotes": "Visto da diretoria registrado e homologado com sucesso.",
+      "subject_matter": "Língua Portuguesa",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Estudante Teste Supabase",
+          "sex": "Feminino",
+          "turn": "Manhã",
+          "gradeCycle": "5º Ano",
+          "className": "5º Ano B",
+          "teacherName": "Profª Cláudia Mendes",
+          "subject_matter": "Língua Portuguesa",
+          "guardian": {
+            "name": "Maria Responsável",
+            "bond": "Mãe",
+            "contact": "(31) 98888-0000"
+          }
+        }
+      ],
+      "classifications": [
+        "Bullying",
+        "Intimidação (ato isolado, não sistemático)"
+      ],
+      "feelings": [
+        "Frustração",
+        "Insegurança"
+      ],
+      "feelings_observations": "A aluna relatou sentir-se isolada durante as brincadeiras em grupo.",
+      "direction_referrals": [
+        "Conselho Tutelar"
+      ],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor Wancleber",
+      "editHistory": []
+    },
+    {
+      "id": "occ-1787602093804-6337",
+      "schoolId": "esc-1",
+      "createdById": "usr-3",
+      "createdByName": "Pedagoga Maria Silva",
+      "date": "2026-08-24",
+      "studentName": "Ocorrencia Pedagoga",
+      "gradeCycle": "6º Ano",
+      "className": "C",
+      "teacherName": "Joao Augusto",
+      "guardianName": "Valeria Lima",
+      "contacts": "(31) 65978-95",
+      "type": "Transgressão",
+      "subject": "nao foi bom ",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "",
+      "subject_matter": "História",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ocorrencia Pedagoga",
+          "sex": "Masculino",
+          "turn": "Noite",
+          "gradeCycle": "6º Ano",
+          "className": "C",
+          "teacherName": "Joao Augusto",
+          "subject_matter": "História",
+          "customSubject": "",
+          "guardian": {
+            "name": "Valeria Lima",
+            "bond": "Avó/Avô",
+            "customBond": "",
+            "contact": "(31) 65978-95"
+          }
+        }
+      ],
+      "classifications": [
+        "Transgressão",
+        "Cyberagressão"
+      ],
+      "feelings": [],
+      "feelings_observations": "",
+      "direction_referrals": [],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "2026-08-24T20:08:13.804Z",
+      "updatedById": "usr-3",
+      "updatedByName": "Pedagoga Maria Silva",
+      "editHistory": [
+        {
+          "timestamp": "2026-08-24T20:08:13.804Z",
+          "userId": "usr-3",
+          "userName": "Pedagoga Maria Silva",
+          "userRole": "pedagogo",
+          "action": "Criação do atendimento"
+        }
+      ]
+    },
+    {
+      "id": "occ-1787602556434-3614",
+      "schoolId": "esc-1",
+      "createdById": "usr-seduc",
+      "createdByName": "Gestão Central SEDUC",
+      "date": "2026-08-24",
+      "studentName": "Ocorrencia Seduc",
+      "gradeCycle": "6º Ano",
+      "className": "A",
+      "teacherName": "dsadasdsadasd",
+      "guardianName": "sdasdasdasdas",
+      "contacts": "(32) 31546-847",
+      "type": "Atendimento Geral",
+      "subject": "dsadsdasdasd",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "",
+      "subject_matter": "Educação Física",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ocorrencia Seduc",
+          "sex": "Feminino",
+          "turn": "Tarde",
+          "gradeCycle": "6º Ano",
+          "className": "A",
+          "teacherName": "dsadasdsadasd",
+          "subject_matter": "Educação Física",
+          "customSubject": "",
+          "guardian": {
+            "name": "sdasdasdasdas",
+            "bond": "Mãe",
+            "customBond": "",
+            "contact": "(32) 31546-847"
+          }
+        }
+      ],
+      "classifications": [],
+      "feelings": [],
+      "feelings_observations": "",
+      "direction_referrals": [],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "2026-08-24T20:15:56.434Z",
+      "updatedById": "usr-seduc",
+      "updatedByName": "Gestão Central SEDUC",
+      "editHistory": [
+        {
+          "timestamp": "2026-08-24T20:15:56.434Z",
+          "userId": "usr-seduc",
+          "userName": "Gestão Central SEDUC",
+          "userRole": "seduc",
+          "action": "Criação do atendimento"
+        }
+      ]
+    },
     {
       "id": "occ-multi-test",
       "schoolId": "esc-1",
@@ -220,10 +666,10 @@
         "Conselho tutelar"
       ],
       "status": "finalizado",
+      "createdAt": "2026-08-22T12:00:00.000Z",
       "updatedAt": "",
       "updatedById": "",
       "updatedByName": "",
-      "createdAt": "2026-08-22T12:00:00.000Z",
       "editHistory": []
     },
     {
@@ -266,270 +712,11 @@
       "feelings_observations": "",
       "direction_referrals": [],
       "status": "rascunho",
+      "createdAt": "2026-07-31T12:00:00.000Z",
       "updatedAt": "",
       "updatedById": "",
       "updatedByName": "",
-      "createdAt": "2026-07-31T12:00:00.000Z",
       "editHistory": []
-    },
-    {
-      "id": "occ-visto-test",
-      "schoolId": "esc-1",
-      "date": "2026-08-24",
-      "studentName": "Aluno Teste",
-      "subject": "Assunto Teste",
-      "type": "Conflito",
-      "direction_referrals": [
-        "Conselho Tutelar"
-      ],
-      "directorNotes": "Visto testado com sucesso!"
-    },
-    {
-      "id": "occ-1787601961328-1104",
-      "schoolId": "esc-1",
-      "students": [
-        {
-          "studentName": "Ocorrencia Assistente",
-          "sex": "Feminino",
-          "turn": "Manhã",
-          "gradeCycle": "3 anos",
-          "className": "B",
-          "teacherName": "MArcia Campos",
-          "subject_matter": "Educação Física",
-          "customSubject": "",
-          "guardian": {
-            "name": "MArio Vale",
-            "bond": "Pai",
-            "customBond": "",
-            "contact": "(31) 94562-365"
-          }
-        }
-      ],
-      "date": "2026-08-24",
-      "subject": "Deu promeblema",
-      "classifications": [
-        "Indisciplina recorrente",
-        "Ameaça",
-        "Incêndio ou tentativa de incêndio",
-        "Furto e/ou roubo"
-      ],
-      "type": "Indisciplina recorrente",
-      "feelings": [
-        "Alegria"
-      ],
-      "customFeeling": "",
-      "feelings_observations": "",
-      "referrals": "",
-      "observations": "",
-      "direction_referrals": [
-        "Conselho tutelar"
-      ],
-      "customDirectionReferral": "",
-      "directorNotes": "dei o visto",
-      "status": "finalizado",
-      "createdAt": "2026-08-24T12:00:00.000Z",
-      "createdById": "usr-5",
-      "createdByName": "Assistente de Mediação",
-      "updatedAt": "2026-08-24T20:10:36.510Z",
-      "updatedById": "usr-2",
-      "updatedByName": "Diretor(a) Wancleber",
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T20:06:01.328Z",
-          "userId": "usr-5",
-          "userName": "Assistente de Mediação",
-          "userRole": "assistente",
-          "action": "Criação do atendimento"
-        },
-        {
-          "timestamp": "2026-08-24T20:10:36.510Z",
-          "userId": "usr-2",
-          "userName": "Diretor(a) Wancleber",
-          "userRole": "diretor",
-          "action": "Visto e parecer da diretoria"
-        }
-      ],
-      "studentName": "Ocorrencia Assistente",
-      "gradeCycle": "3 anos",
-      "className": "B",
-      "teacherName": "MArcia Campos",
-      "subject_matter": "Educação Física",
-      "guardianName": "MArio Vale",
-      "contacts": "(31) 94562-365"
-    },
-    {
-      "id": "occ-1787602093804-6337",
-      "schoolId": "esc-1",
-      "students": [
-        {
-          "studentName": "Ocorrencia Pedagoga",
-          "sex": "Masculino",
-          "turn": "Noite",
-          "gradeCycle": "6º Ano",
-          "className": "C",
-          "teacherName": "Joao Augusto",
-          "subject_matter": "História",
-          "customSubject": "",
-          "guardian": {
-            "name": "Valeria Lima",
-            "bond": "Avó/Avô",
-            "customBond": "",
-            "contact": "(31) 65978-95"
-          }
-        }
-      ],
-      "date": "2026-08-24",
-      "subject": "nao foi bom ",
-      "classifications": [
-        "Transgressão",
-        "Cyberagressão"
-      ],
-      "type": "Transgressão",
-      "feelings": [],
-      "customFeeling": "",
-      "feelings_observations": "",
-      "referrals": "",
-      "observations": "",
-      "direction_referrals": [],
-      "customDirectionReferral": "",
-      "directorNotes": "",
-      "status": "finalizado",
-      "createdAt": "2026-08-24T12:00:00.000Z",
-      "createdById": "usr-3",
-      "createdByName": "Pedagoga Maria Silva",
-      "updatedAt": "2026-08-24T20:08:13.804Z",
-      "updatedById": "usr-3",
-      "updatedByName": "Pedagoga Maria Silva",
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T20:08:13.804Z",
-          "userId": "usr-3",
-          "userName": "Pedagoga Maria Silva",
-          "userRole": "pedagogo",
-          "action": "Criação do atendimento"
-        }
-      ],
-      "studentName": "Ocorrencia Pedagoga",
-      "gradeCycle": "6º Ano",
-      "className": "C",
-      "teacherName": "Joao Augusto",
-      "subject_matter": "História",
-      "guardianName": "Valeria Lima",
-      "contacts": "(31) 65978-95"
-    },
-    {
-      "id": "occ-1787602337086-3813",
-      "schoolId": "esc-1",
-      "students": [
-        {
-          "studentName": "Ocorrencia diretor",
-          "sex": "Masculino",
-          "turn": "Tarde",
-          "gradeCycle": "3º Ano",
-          "className": "E",
-          "teacherName": "Marcio Campos",
-          "subject_matter": "Matemática",
-          "customSubject": "",
-          "guardian": {
-            "name": "Juca Kifouri",
-            "bond": "Tio/Tia",
-            "customBond": "",
-            "contact": "(31) 56987-4"
-          }
-        }
-      ],
-      "date": "2026-08-24",
-      "subject": "meio nao tao bom ",
-      "classifications": [],
-      "type": "Atendimento Geral",
-      "feelings": [],
-      "customFeeling": "",
-      "feelings_observations": "",
-      "referrals": "",
-      "observations": "",
-      "direction_referrals": [],
-      "customDirectionReferral": "",
-      "directorNotes": "",
-      "status": "finalizado",
-      "createdAt": "2026-08-24T12:00:00.000Z",
-      "createdById": "usr-2",
-      "createdByName": "Diretor(a) Wancleber",
-      "updatedAt": "2026-08-24T20:12:17.086Z",
-      "updatedById": "usr-2",
-      "updatedByName": "Diretor(a) Wancleber",
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T20:12:17.086Z",
-          "userId": "usr-2",
-          "userName": "Diretor(a) Wancleber",
-          "userRole": "diretor",
-          "action": "Criação do atendimento"
-        }
-      ],
-      "studentName": "Ocorrencia diretor",
-      "gradeCycle": "3º Ano",
-      "className": "E",
-      "teacherName": "Marcio Campos",
-      "subject_matter": "Matemática",
-      "guardianName": "Juca Kifouri",
-      "contacts": "(31) 56987-4"
-    },
-    {
-      "id": "occ-1787602556434-3614",
-      "schoolId": "esc-1",
-      "students": [
-        {
-          "studentName": "Ocorrencia Seduc",
-          "sex": "Feminino",
-          "turn": "Tarde",
-          "gradeCycle": "6º Ano",
-          "className": "A",
-          "teacherName": "dsadasdsadasd",
-          "subject_matter": "Educação Física",
-          "customSubject": "",
-          "guardian": {
-            "name": "sdasdasdasdas",
-            "bond": "Mãe",
-            "customBond": "",
-            "contact": "(32) 31546-847"
-          }
-        }
-      ],
-      "date": "2026-08-24",
-      "subject": "dsadsdasdasd",
-      "classifications": [],
-      "type": "Atendimento Geral",
-      "feelings": [],
-      "customFeeling": "",
-      "feelings_observations": "",
-      "referrals": "",
-      "observations": "",
-      "direction_referrals": [],
-      "customDirectionReferral": "",
-      "directorNotes": "",
-      "status": "finalizado",
-      "createdAt": "2026-08-24T12:00:00.000Z",
-      "createdById": "usr-seduc",
-      "createdByName": "Gestão Central SEDUC",
-      "updatedAt": "2026-08-24T20:15:56.434Z",
-      "updatedById": "usr-seduc",
-      "updatedByName": "Gestão Central SEDUC",
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T20:15:56.434Z",
-          "userId": "usr-seduc",
-          "userName": "Gestão Central SEDUC",
-          "userRole": "seduc",
-          "action": "Criação do atendimento"
-        }
-      ],
-      "studentName": "Ocorrencia Seduc",
-      "gradeCycle": "6º Ano",
-      "className": "A",
-      "teacherName": "dsadasdsadasd",
-      "subject_matter": "Educação Física",
-      "guardianName": "sdasdasdasdas",
-      "contacts": "(32) 31546-847"
     }
   ]
 }

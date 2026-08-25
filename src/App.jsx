@@ -957,51 +957,13 @@ function MainApp() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-          let localStore = [];
-          try {
-            localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
-          } catch (_) {}
-          
-          const mergedMap = new Map();
-          data.forEach(item => mergedMap.set(item.id, { ...item }));
-          
-          localStore.forEach(loc => {
-            const existing = mergedMap.get(loc.id);
-            if (!existing) {
-              mergedMap.set(loc.id, loc);
-            } else {
-              const mergedRecord = { ...existing };
-              // Preserve director notes from localStore if server didn't have it yet
-              if (loc.directorNotes && loc.directorNotes.trim() && (!existing.directorNotes || !existing.directorNotes.trim())) {
-                mergedRecord.directorNotes = loc.directorNotes;
-              }
-              if (loc.updatedAt && (!existing.updatedAt || new Date(loc.updatedAt) > new Date(existing.updatedAt))) {
-                if (loc.directorNotes) mergedRecord.directorNotes = loc.directorNotes;
-              }
-              mergedMap.set(loc.id, mergedRecord);
-            }
-          });
-
-          const merged = Array.from(mergedMap.values());
-          setOccurrences(merged);
-          try {
-            localStorage.setItem('pome_local_occurrences', JSON.stringify(merged));
-          } catch (_) {}
-          return merged;
+          setOccurrences(data);
+          return data;
         }
       }
     } catch (err) {
-      console.error('Error fetching occurrences:', err);
+      console.error('Error fetching occurrences from Supabase:', err);
     }
-    
-    try {
-      const localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
-      if (localStore.length > 0) {
-        setOccurrences(localStore);
-        return localStore;
-      }
-    } catch (_) {}
-    
     return null;
   };
 
@@ -1211,53 +1173,130 @@ function MainApp() {
     }
   };
 
-  // Handler: Create Manual Backup
+  // Handler: Create Manual Backup with Instant Browser File Download
   const handleCreateBackup = async (label = 'manual') => {
     try {
-      setBackupActionStatus('Gerando backup...');
+      setBackupActionStatus('Gerando backup completo do Supabase...');
       const res = await fetch('/api/admin/backups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ label })
       });
       if (res.ok) {
-        setBackupActionStatus('✅ Backup gerado com sucesso!');
-        fetchAdminData();
+        const result = await res.json();
+        setBackupActionStatus('✅ Backup gerado com sucesso! Baixando arquivo...');
+        
+        // Direct reliable Blob Download in browser
+        try {
+          const payload = result.backup?.fullData || result.backup || result;
+          const jsonStr = JSON.stringify(payload, null, 2);
+          const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = result.backup?.filename || `pome_backup_supabase_${Date.now()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          }, 400);
+        } catch (downloadErr) {
+          console.warn('Blob download fallback:', downloadErr);
+          if (result.backup?.filename) {
+            window.open(`/api/admin/backups/${result.backup.filename}`, '_blank');
+          }
+        }
+        
+        if (user.role === 'superadmin' || impersonatedOriginalUser) {
+          fetchAdminData();
+        }
         setTimeout(() => setBackupActionStatus(''), 4000);
       } else {
-        alert('Erro ao criar backup.');
+        const err = await res.json();
+        alert(err.error || 'Erro ao criar backup do Supabase.');
         setBackupActionStatus('');
       }
     } catch (err) {
       console.error('Error creating backup:', err);
-      alert('Erro ao gerar backup.');
+      alert('Erro de conexão ao gerar backup.');
       setBackupActionStatus('');
     }
   };
 
-  // Handler: Restore Backup
+  // Handler: Restore Backup from Server Snapshot
   const handleRestoreBackup = async (filename) => {
-    if (!confirm(`⚠️ ATENÇÃO: Deseja restaurar a base de dados a partir do arquivo "${filename}"?\n\nOs dados atuais serão atualizados com as informações deste backup.`)) return;
+    if (!confirm(`⚠️ ATENÇÃO: Deseja restaurar a base de dados do Supabase a partir do arquivo "${filename}"?\n\nOs dados atuais do Supabase serão atualizados com as informações deste backup.`)) return;
     try {
-      setBackupActionStatus('Restaurando dados do backup...');
+      setBackupActionStatus('Restaurando dados do backup no Supabase...');
       const res = await fetch('/api/admin/backups/restore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename })
       });
       if (res.ok) {
-        setBackupActionStatus('✅ Base de dados restaurada com sucesso!');
-        await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers(), fetchAdminData()]);
+        setBackupActionStatus('✅ Base de dados Supabase restaurada com sucesso!');
+        await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers()]);
+        if (user.role === 'superadmin' || impersonatedOriginalUser) {
+          await fetchAdminData();
+        }
         setTimeout(() => setBackupActionStatus(''), 4000);
       } else {
         const err = await res.json();
-        alert(err.error || 'Erro ao restaurar backup.');
+        alert(err.error || 'Erro ao restaurar backup no Supabase.');
         setBackupActionStatus('');
       }
     } catch (err) {
       console.error('Error restoring backup:', err);
-      alert('Erro de conexão ao restaurar backup.');
+      alert('Erro de conexão ao restaurar backup no Supabase.');
       setBackupActionStatus('');
+    }
+  };
+
+  // Handler: Restore Backup from User's Local .json File Upload
+  const handleRestoreFromFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`⚠️ ATENÇÃO: Deseja restaurar a base de dados do Supabase a partir do arquivo "${file.name}"?\n\nTodas as informações do Supabase serão atualizadas com o conteúdo deste arquivo de backup.`)) {
+      e.target.value = '';
+      return;
+    }
+    try {
+      setBackupActionStatus('Lendo e restaurando arquivo de backup no Supabase...');
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          const res = await fetch('/api/admin/backups/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: parsed })
+          });
+          if (res.ok) {
+            setBackupActionStatus('✅ Base Supabase restaurada com sucesso!');
+            await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers()]);
+            if (user.role === 'superadmin' || impersonatedOriginalUser) {
+              await fetchAdminData();
+            }
+            setTimeout(() => setBackupActionStatus(''), 4000);
+          } else {
+            const err = await res.json();
+            alert(err.error || 'Erro ao restaurar arquivo no Supabase.');
+            setBackupActionStatus('');
+          }
+        } catch (parseErr) {
+          alert('Arquivo de backup inválido: formato JSON corrompido ou incorreto.');
+          setBackupActionStatus('');
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      console.error('Error reading backup file:', err);
+      alert('Erro ao carregar arquivo de backup.');
+      setBackupActionStatus('');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -1411,13 +1450,7 @@ function MainApp() {
     // 1. Gravar imediatamente no estado da interface (feedback instantâneo sem perda)
     setOccurrences(prev => [payload, ...prev.filter(o => o.id !== payload.id)]);
 
-    // 2. Gravar backup de emergência no LocalStorage do navegador
-    try {
-      const localStore = JSON.parse(localStorage.getItem('pome_local_occurrences') || '[]');
-      localStorage.setItem('pome_local_occurrences', JSON.stringify([payload, ...localStore.filter(o => o.id !== payload.id)]));
-    } catch (_) {}
-
-    // 3. Tentar persistência no backend (com fila de sincronização automática se offline)
+    // 2. Persistir no Supabase (Fonte única e exclusiva de verdade)
     try {
       const res = await fetch('/api/occurrences', {
         method: 'POST',
@@ -1427,13 +1460,12 @@ function MainApp() {
       if (res.ok) {
         await fetchOccurrences();
       } else {
-        const queue = JSON.parse(localStorage.getItem('pome_sync_queue') || '[]');
-        localStorage.setItem('pome_sync_queue', JSON.stringify([payload, ...queue.filter(o => o.id !== payload.id)]));
+        const err = await res.json();
+        alert(err.error || 'Erro ao persistir atendimento no Supabase.');
       }
     } catch (err) {
-      console.warn('Network offline or backend timeout, queued for sync:', err);
-      const queue = JSON.parse(localStorage.getItem('pome_sync_queue') || '[]');
-      localStorage.setItem('pome_sync_queue', JSON.stringify([payload, ...queue.filter(o => o.id !== payload.id)]));
+      console.error('Network or server error saving occurrence:', err);
+      alert('Erro de conexão ao salvar no Supabase.');
     }
 
     // Feedback visual imediato e transição suave
@@ -2675,7 +2707,7 @@ function MainApp() {
              user.role === 'diretor' ? 'Relatórios da Direção' : 'Relatórios de Gestão'}
           </button>
 
-          {(user.role === 'superadmin' || impersonatedOriginalUser) && (
+          {(user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor' || impersonatedOriginalUser) && (
             <button 
               className={`btn ${activeTab === 'sysadmin' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => { setActiveTab('sysadmin'); setShowForm(false); fetchAdminData(); }}
@@ -2686,7 +2718,7 @@ function MainApp() {
                 fontWeight: '700'
               }}
             >
-              <IconLightning style={{ marginRight: '6px' }} /> Administração do Sistema
+              <IconLightning style={{ marginRight: '6px' }} /> Administração & Backups
             </button>
           )}
         </div>
@@ -2701,14 +2733,24 @@ function MainApp() {
                   {user.role === 'gestor' || user.role === 'seduc' ? 'Visão global da rede municipal' : `Visão geral: ${user.schoolName || 'Escola Municipal'}`} | Hoje {new Date().toLocaleDateString('pt-BR')}
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button className="btn btn-primary" onClick={() => { setFormData(initialFormState); setShowForm(true); setFormStep(1); }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconSchool /> Novo Atendimento</span>
                 </button>
-                {(user.role === 'gestor' || user.role === 'seduc') && (
-                  <button className="btn btn-success" onClick={() => handleExportSPSS()}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
-                  </button>
+                {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                  <>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => handleCreateBackup('manual')}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                      title="Gerar e baixar backup completo da base de dados do Supabase"
+                    >
+                      <IconDatabase /> Fazer Backup (JSON)
+                    </button>
+                    <button className="btn btn-success" onClick={() => handleExportSPSS()}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -3495,14 +3537,24 @@ function MainApp() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <button 
-                      type="button"
-                      className="btn btn-warning"
-                      style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
-                      onClick={() => handleSaveOccurrence('rascunho')}
-                    >
-                      💾 Salvar Rascunho
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => { setShowForm(false); setActiveTab('occurrences'); }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        ⬅️ Voltar / Cancelar
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-warning"
+                        style={{ backgroundColor: 'var(--accent-orange)', color: 'white', border: 'none' }}
+                        onClick={() => handleSaveOccurrence('rascunho')}
+                      >
+                        💾 Salvar Rascunho
+                      </button>
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button 
                         type="button"
@@ -5170,14 +5222,14 @@ function MainApp() {
           </div>
         )}
 
-        {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN) ----------------- */}
-        {activeTab === 'sysadmin' && (user.role === 'superadmin' || impersonatedOriginalUser) && (
+        {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN / GESTÃO SEDUC) ----------------- */}
+        {activeTab === 'sysadmin' && (user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor' || impersonatedOriginalUser) && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h2>⚡ Painel de Administração do Sistema</h2>
+                <h2>⚡ Painel de Administração & Backups do Sistema</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Super Administrador Master | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
+                  Gestão Master e SEDUC | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -5371,14 +5423,30 @@ function MainApp() {
                     O sistema executa snapshots automáticos contínuos de todas as informações inseridas na rede escolar (escolas, usuários e ocorrências).
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={() => handleCreateBackup('manual')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
-                >
-                  <IconDownload /> Gerar Novo Snapshot Agora
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label 
+                    className="btn btn-secondary" 
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer', margin: 0 }}
+                    title="Restaurar base de dados do Supabase enviando um arquivo .json salvo no seu computador"
+                  >
+                    <IconFolder /> Restaurar de Arquivo (.json)
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      onChange={handleRestoreFromFile} 
+                      style={{ display: 'none' }} 
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={() => handleCreateBackup('manual')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                    title="Gerar e baixar backup completo da base de dados do Supabase"
+                  >
+                    <IconDownload /> Fazer & Baixar Backup (.json)
+                  </button>
+                </div>
               </div>
               <div className="card-body" style={{ padding: 0 }}>
                 {adminBackups.length === 0 ? (
@@ -7061,13 +7129,26 @@ function MainApp() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
-                  Fechar
-                </button>
-                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
-                  Atualizar Perfil
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                {(user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor') && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => handleCreateBackup('profile')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                    title="Fazer e baixar backup completo da base de dados do Supabase"
+                  >
+                    <IconDatabase /> Fazer Backup (JSON)
+                  </button>
+                )}
+                <div style={{ display: 'flex', gap: '0.75rem', marginLeft: 'auto' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
+                    Fechar
+                  </button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
+                    Atualizar Perfil
+                  </button>
+                </div>
               </div>
             </form>
           </div>

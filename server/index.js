@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 const SERVER_START_TIME = new Date();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Request logging & Audit Trail middleware
 app.use((req, res, next) => {
@@ -152,7 +152,7 @@ app.get('/api/schools', async (req, res) => {
     res.json(schools);
   } catch (error) {
     console.error('Error fetching schools:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro interno ao buscar escolas no Supabase.' });
   }
 });
 
@@ -164,11 +164,25 @@ app.post('/api/schools', async (req, res) => {
       return res.status(400).json({ error: 'Nome da escola é obrigatório.' });
     }
     const saved = await db.saveSchool({ id, name });
-    logEngine.log('AUDIT', `Escola salva: ${name} (${saved.id})`);
+    backupEngine.createBackup('school_saved').catch(() => {});
+    logEngine.log('AUDIT', `Escola salva no Supabase: ${name} (${saved.id})`);
     res.json(saved);
   } catch (error) {
     console.error('Error saving school:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro ao salvar escola no Supabase: ' + error.message });
+  }
+});
+
+// DELETE School (Gestor / Superadmin)
+app.delete('/api/schools/:id', async (req, res) => {
+  try {
+    await db.deleteSchool(req.params.id);
+    backupEngine.createBackup('school_deleted').catch(() => {});
+    logEngine.log('AUDIT', `Escola excluída no Supabase: ID ${req.params.id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting school:', error);
+    res.status(500).json({ error: 'Erro ao excluir escola no Supabase.' });
   }
 });
 
@@ -234,21 +248,21 @@ app.post('/api/register', async (req, res) => {
       console.warn('Background Supabase auth email trigger warning:', err?.message || err);
     });
 
-    // Auto backup snapshot
+    // Auto backup snapshot on new registration
     backupEngine.createBackup('auto_register').catch(() => {});
 
-    logEngine.log('AUDIT', `Novo usuário auto-registrado: ${name} (${role}) - E-mail: ${cleanEmail}`);
+    logEngine.log('AUDIT', `Novo usuário auto-registrado no Supabase: ${name} (${role}) - E-mail: ${cleanEmail}`);
 
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.status(201).json(savedWithoutPassword);
   } catch (error) {
     logEngine.log('ERROR', `Erro durante autocadastro: ${error.message}`, { error: String(error) });
     console.error('Error during self-registration:', error);
-    res.status(500).json({ error: 'Erro interno do servidor ao solicitar cadastro: ' + error.message });
+    res.status(500).json({ error: 'Erro ao cadastrar usuário no Supabase: ' + error.message });
   }
 });
 
-// GET Occurrences (Filtered by role and school)
+// GET Occurrences (Filtered by role and school from Supabase)
 app.get('/api/occurrences', async (req, res) => {
   try {
     const { schoolId, role, userId } = req.query;
@@ -268,12 +282,11 @@ app.get('/api/occurrences', async (req, res) => {
     res.json(occurrences);
   } catch (error) {
     console.error('Error fetching occurrences:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro ao carregar ocorrências do Supabase: ' + error.message });
   }
 });
 
-// POST Occurrence (Create/Update with Auto Backup)
-// POST Occurrence (Create/Update with Ultra-Resilient Multi-Layer Persistence)
+// POST Occurrence (Create/Update directly in Supabase with Immediate Snapshot)
 app.post('/api/occurrences', async (req, res) => {
   try {
     const occurrence = req.body || {};
@@ -341,29 +354,34 @@ app.post('/api/occurrences', async (req, res) => {
       occurrence.status = 'finalizado';
     }
 
-    // 7. Salvar com persistência multi-camada
-    let saved = null;
-    try {
-      saved = await db.saveOccurrence(occurrence);
-    } catch (dbErr) {
-      console.warn('db.saveOccurrence failed, executing emergency local fallback:', dbErr);
-      // Emergency write to db.json
-      saved = occurrence;
-    }
+    // 7. Salvar diretamente no Supabase (Fonte única da verdade)
+    const saved = await db.saveOccurrence(occurrence);
     
-    // Snapshot automático de backup incremental
-    backupEngine.createBackup('auto_occurrence').catch(() => {});
+    // Snapshot automático de backup incremental a cada ocorrência criada/alterada
+    const backupLabel = occurrence.directorNotes ? 'visto_diretoria' : (occurrence.updatedAt ? 'occurrence_update' : 'occurrence_create');
+    backupEngine.createBackup(backupLabel).catch(() => {});
     
-    logEngine.log('AUDIT', `Ocorrência salva com sucesso: ID ${saved.id} - Escola ${saved.schoolId} - Criador: ${saved.createdByName || saved.createdById || 'Sistema'}`);
+    logEngine.log('AUDIT', `Ocorrência salva no Supabase: ID ${saved.id} - Escola ${saved.schoolId} - Criador: ${saved.createdByName || saved.createdById || 'Sistema'}`);
 
     res.json(saved);
   } catch (error) {
-    logEngine.log('ERROR', `Erro de emergência ao salvar ocorrência: ${error.message}`, { error: String(error) });
+    logEngine.log('ERROR', `Erro ao salvar ocorrência no Supabase: ${error.message}`, { error: String(error) });
     console.error('Critical save occurrence handler error:', error);
-    
-    // Mesmo em falha inesperada, retornar a ocorrência preservada
-    const fallbackOcc = req.body || { id: 'occ-' + Date.now(), error: true };
-    res.json(fallbackOcc);
+    res.status(500).json({ error: 'Erro ao salvar ocorrência no Supabase: ' + error.message });
+  }
+});
+
+// DELETE Occurrence (Protected)
+app.delete('/api/occurrences/:id', async (req, res) => {
+  try {
+    const { role, userId } = req.query;
+    await db.deleteOccurrence(req.params.id);
+    backupEngine.createBackup('occurrence_deleted').catch(() => {});
+    logEngine.log('AUDIT', `Ocorrência excluída no Supabase: ID ${req.params.id} por usuário ${userId || 'sistema'} (${role || 'geral'})`);
+    res.json({ success: true, message: 'Ocorrência excluída com sucesso no Supabase.' });
+  } catch (error) {
+    console.error('Error deleting occurrence:', error);
+    res.status(500).json({ error: 'Erro ao excluir ocorrência no Supabase: ' + error.message });
   }
 });
 
@@ -375,7 +393,7 @@ app.get('/api/users', async (req, res) => {
     res.json(usersWithoutPassword);
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro ao buscar usuários no Supabase: ' + error.message });
   }
 });
 
@@ -419,6 +437,9 @@ app.post('/api/users', async (req, res) => {
       schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId ? user.schoolId.trim() : null)
     });
 
+    // Auto backup snapshot on user creation
+    backupEngine.createBackup('user_create').catch(() => {});
+
     // Trigger Supabase Auth Email asynchronously
     if (user.password) {
       triggerSupabaseAuthEmail(cleanEmail, user.password, user).catch(err => {
@@ -426,14 +447,14 @@ app.post('/api/users', async (req, res) => {
       });
     }
 
-    logEngine.log('AUDIT', `Usuário criado/atualizado pela gestão: ${user.name} (${user.role})`);
+    logEngine.log('AUDIT', `Usuário criado/atualizado no Supabase: ${user.name} (${user.role})`);
 
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
   } catch (error) {
-    logEngine.log('ERROR', `Erro ao salvar usuário: ${error.message}`, { error: String(error) });
+    logEngine.log('ERROR', `Erro ao salvar usuário no Supabase: ${error.message}`, { error: String(error) });
     console.error('Error saving user:', error);
-    res.status(500).json({ error: 'Erro interno do servidor ao salvar usuário: ' + error.message });
+    res.status(500).json({ error: 'Erro ao salvar usuário no Supabase: ' + error.message });
   }
 });
 
@@ -456,12 +477,13 @@ app.put('/api/users/:id', async (req, res) => {
     };
 
     const saved = await db.saveUser(merged);
-    logEngine.log('AUDIT', `Usuário atualizado: ${merged.name} (${merged.role})`);
+    backupEngine.createBackup('user_update').catch(() => {});
+    logEngine.log('AUDIT', `Usuário atualizado no Supabase: ${merged.name} (${merged.role})`);
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar usuário.' });
+    res.status(500).json({ error: 'Erro interno ao atualizar usuário no Supabase.' });
   }
 });
 
@@ -491,12 +513,13 @@ app.put('/api/profile', async (req, res) => {
     if (phone !== undefined) existing.phone = phone.trim();
 
     const saved = await db.saveUser(existing);
-    logEngine.log('AUDIT', `Perfil atualizado pelo próprio usuário: ${existing.name}`);
+    backupEngine.createBackup('profile_update').catch(() => {});
+    logEngine.log('AUDIT', `Perfil atualizado no Supabase: ${existing.name}`);
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
   } catch (error) {
     console.error('Error updating profile:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar perfil.' });
+    res.status(500).json({ error: 'Erro interno ao atualizar perfil no Supabase.' });
   }
 });
 
@@ -504,36 +527,12 @@ app.put('/api/profile', async (req, res) => {
 app.delete('/api/users/:id', async (req, res) => {
   try {
     await db.deleteUser(req.params.id);
-    logEngine.log('AUDIT', `Usuário excluído: ID ${req.params.id}`);
+    backupEngine.createBackup('user_delete').catch(() => {});
+    logEngine.log('AUDIT', `Usuário excluído no Supabase: ID ${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
-  }
-});
-
-// DELETE School (Gestor / Superadmin)
-app.delete('/api/schools/:id', async (req, res) => {
-  try {
-    await db.deleteSchool(req.params.id);
-    logEngine.log('AUDIT', `Escola excluída: ID ${req.params.id}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting school:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
-  }
-});
-
-// DELETE Occurrence (Protected)
-app.delete('/api/occurrences/:id', async (req, res) => {
-  try {
-    const { role, userId } = req.query;
-    await db.deleteOccurrence(req.params.id);
-    logEngine.log('AUDIT', `Ocorrência excluída: ID ${req.params.id} por usuário ${userId || 'sistema'} (${role || 'geral'})`);
-    res.json({ success: true, message: 'Ocorrência excluída com sucesso.' });
-  } catch (error) {
-    console.error('Error deleting occurrence:', error);
-    res.status(500).json({ error: 'Erro interno ao excluir ocorrência.' });
+    res.status(500).json({ error: 'Erro ao excluir usuário no Supabase.' });
   }
 });
 
@@ -555,7 +554,7 @@ app.get('/api/admin/metrics', async (req, res) => {
       serverStartTime: SERVER_START_TIME.toISOString(),
       supabase: {
         configured: isSupabaseConfigured,
-        status: isSupabaseConfigured ? '🟢 Conectado (Nuvem Supabase)' : '🟡 Modo Fallback Local (db.json)'
+        status: isSupabaseConfigured ? '🟢 Conectado (Nuvem Supabase)' : '🔴 Supabase Indisponível'
       },
       counts: {
         schools: schools.length,
@@ -569,7 +568,7 @@ app.get('/api/admin/metrics', async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching admin metrics:', err);
-    res.status(500).json({ error: 'Erro ao obter métricas do sistema.' });
+    res.status(500).json({ error: 'Erro ao obter métricas do Supabase.' });
   }
 });
 
@@ -603,18 +602,34 @@ app.get('/api/admin/backups', (req, res) => {
   }
 });
 
-// POST Create Manual Backup Now
+// POST Create Manual Backup Snapshot Now
 app.post('/api/admin/backups', async (req, res) => {
   try {
     const label = req.body.label || 'manual';
     const backup = await backupEngine.createBackup(label);
     res.json({ success: true, backup });
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Erro ao gerar backup.' });
+    res.status(500).json({ error: err.message || 'Erro ao gerar backup do Supabase.' });
   }
 });
 
-// GET Download Backup File
+// GET Export Live Backup Direct Download
+app.get('/api/admin/backups/export/download', async (req, res) => {
+  try {
+    const backup = await backupEngine.createBackup('export_manual');
+    const content = backupEngine.getBackupContent(backup.filename);
+    if (!content) {
+      return res.status(404).json({ error: 'Arquivo de backup não encontrado.' });
+    }
+    res.setHeader('Content-Disposition', `attachment; filename="${backup.filename}"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(content);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao gerar arquivo de exportação do Supabase.' });
+  }
+});
+
+// GET Download Specific Backup File
 app.get('/api/admin/backups/:filename', (req, res) => {
   try {
     const content = backupEngine.getBackupContent(req.params.filename);
@@ -629,14 +644,16 @@ app.get('/api/admin/backups/:filename', (req, res) => {
   }
 });
 
-// POST Restore Backup
+// POST Restore Backup to Supabase
 app.post('/api/admin/backups/restore', async (req, res) => {
   try {
     const { filename, data } = req.body;
     const result = await backupEngine.restoreBackup(filename || data);
+    // Create a new snapshot right after restore
+    backupEngine.createBackup('post_restore').catch(() => {});
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Erro ao restaurar backup.' });
+    res.status(500).json({ error: err.message || 'Erro ao restaurar backup no Supabase.' });
   }
 });
 
@@ -681,4 +698,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
