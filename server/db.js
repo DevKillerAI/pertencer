@@ -33,7 +33,8 @@ export const schemaCache = {
   users: {
     hasEmail: false,
     hasPhone: false,
-    hasLgpdAccepted: false
+    hasLgpdAccepted: false,
+    hasCreatedAt: false
   }
 };
 
@@ -90,6 +91,9 @@ async function detectSchema() {
 
     const { error: errLgpd } = await supabase.from('users').select('lgpd_accepted').limit(1);
     schemaCache.users.hasLgpdAccepted = !errLgpd;
+
+    const { error: errUserCreatedAt } = await supabase.from('users').select('createdAt').limit(1);
+    schemaCache.users.hasCreatedAt = !errUserCreatedAt;
 
     console.log('Database: Schema detection completed:', JSON.stringify(schemaCache));
   } catch (error) {
@@ -509,16 +513,49 @@ export const db = {
         const list = data || [];
         return list.map(u => {
           let decoded = { ...u };
-          // Extract email from classes if present and email column is missing
-          if (!schemaCache.users.hasEmail && Array.isArray(decoded.classes)) {
-            const emailItem = decoded.classes.find(c => c && c.startsWith('__email:'));
+          let cleanClasses = Array.isArray(decoded.classes) ? [...decoded.classes] : [];
+
+          // Extract encoded email if email column is missing
+          if (!schemaCache.users.hasEmail) {
+            const emailItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__email:'));
             if (emailItem) {
               decoded.email = emailItem.slice(8);
-              decoded.classes = decoded.classes.filter(c => c !== emailItem);
-            } else {
+              cleanClasses = cleanClasses.filter(c => c !== emailItem);
+            } else if (!decoded.email) {
               decoded.email = '';
             }
           }
+
+          // Extract encoded phone if phone column is missing
+          if (!schemaCache.users.hasPhone) {
+            const phoneItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__phone:'));
+            if (phoneItem) {
+              decoded.phone = phoneItem.slice(8);
+              cleanClasses = cleanClasses.filter(c => c !== phoneItem);
+            } else if (!decoded.phone) {
+              decoded.phone = '';
+            }
+          }
+
+          // Extract encoded lgpd_accepted if column is missing
+          if (!schemaCache.users.hasLgpdAccepted) {
+            const lgpdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__lgpd:'));
+            if (lgpdItem) {
+              decoded.lgpd_accepted = true;
+              cleanClasses = cleanClasses.filter(c => c !== lgpdItem);
+            }
+          }
+
+          // Extract encoded createdAt if column is missing
+          if (!schemaCache.users.hasCreatedAt) {
+            const createdItem = cleanClasses.find(c => typeof c === 'string' && c.startsWith('__created:'));
+            if (createdItem) {
+              decoded.createdAt = createdItem.slice(10);
+              cleanClasses = cleanClasses.filter(c => c !== createdItem);
+            }
+          }
+
+          decoded.classes = cleanClasses;
           return decoded;
         });
       } catch (err) {
@@ -534,19 +571,51 @@ export const db = {
         if (!user.id) {
           user.id = 'usr-' + Date.now();
         }
-        // Ensure classes is stored as JSON array in Supabase JSONB
+
+        // Clean classes list excluding internal metadata tokens
+        const userClasses = Array.isArray(user.classes)
+          ? user.classes.filter(c => typeof c === 'string' && !c.startsWith('__'))
+          : [];
+
+        const classesPayload = [...userClasses];
+
+        // Construct clean, schema-safe payload with only verified columns
         const payload = {
-          ...user,
-          classes: Array.isArray(user.classes) ? [...user.classes] : []
+          id: user.id,
+          name: (user.name || '').trim(),
+          cpf: (user.cpf || '').replace(/\D/g, ''),
+          password: user.password || 'senha',
+          role: (user.role || 'pedagogo').toLowerCase(),
+          schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId || null),
+          classes: classesPayload
         };
-        
-        if (!schemaCache.users.hasEmail) {
-          // Store email in classes array as a special item
-          if (user.email) {
-            payload.classes.push(`__email:${user.email}`);
-          }
-          // Remove email column from payload to avoid PostgREST error
-          delete payload.email;
+
+        // Handle email safely
+        if (schemaCache.users.hasEmail) {
+          payload.email = user.email || '';
+        } else if (user.email) {
+          payload.classes.push(`__email:${user.email.trim()}`);
+        }
+
+        // Handle phone safely
+        if (schemaCache.users.hasPhone) {
+          payload.phone = user.phone || '';
+        } else if (user.phone) {
+          payload.classes.push(`__phone:${user.phone.trim()}`);
+        }
+
+        // Handle lgpd_accepted safely
+        if (schemaCache.users.hasLgpdAccepted) {
+          payload.lgpd_accepted = !!user.lgpd_accepted;
+        } else if (user.lgpd_accepted) {
+          payload.classes.push('__lgpd:true');
+        }
+
+        // Handle createdAt safely
+        if (schemaCache.users.hasCreatedAt) {
+          payload.createdAt = user.createdAt || new Date().toISOString();
+        } else if (user.createdAt) {
+          payload.classes.push(`__created:${user.createdAt}`);
         }
 
         const { error } = await supabase
@@ -554,6 +623,16 @@ export const db = {
           .upsert(payload)
           .select();
         if (error) throw error;
+
+        // Also keep local fallback updated
+        const localData = readDb();
+        if (user.id) {
+          localData.users = localData.users.map(u => u.id === user.id ? { ...u, ...user } : u);
+        } else {
+          localData.users.push(user);
+        }
+        writeDb(localData);
+
         return user;
       } catch (err) {
         console.warn('Supabase saveUser failed, using local fallback:', err.message || err);
