@@ -807,6 +807,8 @@ function MainApp() {
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState('');
   const [registerError, setRegisterError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [registerData, setRegisterData] = useState({
     name: '',
     cpf: '',
@@ -1097,6 +1099,27 @@ function MainApp() {
     setRegisterError('');
     setRegisterSuccess('');
 
+    if (!registerData.name || !registerData.name.trim()) {
+      setRegisterError('Por favor, informe seu nome completo.');
+      return;
+    }
+
+    const cleanCpf = (registerData.cpf || '').replace(/\D/g, '');
+    if (cleanCpf.length < 11) {
+      setRegisterError('Por favor, informe um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    if (!registerData.email || !registerData.email.trim()) {
+      setRegisterError('Por favor, informe seu e-mail institucional.');
+      return;
+    }
+
+    if (registerData.role !== 'seduc' && !registerData.schoolId) {
+      setRegisterError('Por favor, selecione sua unidade escolar vinculada.');
+      return;
+    }
+
     if (!registerData.password || registerData.password.length < 4) {
       setRegisterError('A senha é obrigatória e deve conter pelo menos 4 caracteres.');
       return;
@@ -1108,20 +1131,22 @@ function MainApp() {
     }
 
     if (!registerData.lgpd_accepted) {
-      setRegisterError('Você deve concordar com os termos da LGPD e sigilo.');
+      setRegisterError('É necessário marcar o aceite dos termos de proteção de dados (LGPD) e sigilo profissional.');
       return;
     }
 
+    setIsRegistering(true);
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registerData)
       });
+      const data = await res.json();
       if (res.ok) {
         setRegisterSuccess('Cadastro realizado com sucesso! Você já pode entrar imediatamente no sistema.');
         const registeredIdentifier = registerData.cpf || registerData.email;
-        setLoginData(prev => ({ ...prev, cpf: registeredIdentifier, password: registerData.password }));
+        setLoginData({ cpf: registeredIdentifier, password: registerData.password });
         setRegisterData({
           name: '', cpf: '', email: '', phone: '', role: 'pedagogo', schoolId: '', password: '', confirmPassword: '', lgpd_accepted: false
         });
@@ -1130,12 +1155,13 @@ function MainApp() {
           setRegisterSuccess('');
         }, 1800);
       } else {
-        const data = await res.json();
         setRegisterError(data.error || 'Erro ao realizar cadastro.');
       }
     } catch (err) {
       console.error('Register connection error:', err);
-      setRegisterError('Erro de conexão com o servidor.');
+      setRegisterError('Erro de conexão com o servidor: ' + (err.message || 'Verifique sua conexão.'));
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -2448,8 +2474,13 @@ function MainApp() {
                   <button type="button" className="btn btn-secondary" onClick={() => setShowRegisterModal(false)}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '0.625rem 1.75rem', fontWeight: '700' }} disabled={!registerData.lgpd_accepted}>
-                    Cadastrar
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    style={{ padding: '0.625rem 1.75rem', fontWeight: '700' }} 
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? 'Cadastrando conta...' : 'Cadastrar'}
                   </button>
                 </div>
               </form>
@@ -6553,20 +6584,27 @@ function MainApp() {
 
             <form className="card-body" onSubmit={async (e) => {
               e.preventDefault();
+              const cleanCpf = (newUserData.cpf || '').replace(/\D/g, '');
+              if (cleanCpf.length < 11) {
+                alert('Por favor, informe um CPF válido com 11 dígitos.');
+                return;
+              }
+
               const classes = newUserData.classesInput
                 ? newUserData.classesInput.split(',').map(c => c.trim().toUpperCase()).filter(Boolean)
                 : [];
               const payload = {
                 name: newUserData.name.trim(),
-                email: newUserData.email.trim(),
-                phone: newUserData.phone.trim(),
-                cpf: newUserData.cpf.replace(/\D/g, ''),
-                password: newUserData.password,
+                email: (newUserData.email || '').trim(),
+                phone: (newUserData.phone || '').trim(),
+                cpf: cleanCpf,
+                password: (newUserData.password || 'senha').trim(),
                 role: newUserData.role,
-                schoolId: (newUserData.role === 'gestor' || newUserData.role === 'seduc' || newUserData.role === 'superadmin') ? null : newUserData.schoolId,
+                schoolId: (newUserData.role === 'gestor' || newUserData.role === 'seduc' || newUserData.role === 'superadmin') ? null : (newUserData.schoolId ? newUserData.schoolId.trim() : null),
                 classes: classes
               };
 
+              setIsCreatingUser(true);
               try {
                 const res = await fetch('/api/users', {
                   method: 'POST',
@@ -6576,8 +6614,8 @@ function MainApp() {
                 if (res.ok) {
                   setShowCreateUserModal(false);
                   setNewUserData({ name: '', cpf: '', email: '', phone: '', password: '', role: 'pedagogo', schoolId: '', classesInput: '' });
-                  fetchUsers();
-                  setNotification({ type: 'success', message: 'Usuário cadastrado com sucesso!' });
+                  await fetchUsers();
+                  setNotification({ type: 'success', message: 'Usuário cadastrado com sucesso no sistema e no Supabase!' });
                 } else {
                   const err = await res.json();
                   alert(err.error || 'Erro ao criar usuário.');
@@ -6585,6 +6623,8 @@ function MainApp() {
               } catch (err) {
                 console.error('Create user error:', err);
                 alert('Erro de conexão ao criar usuário.');
+              } finally {
+                setIsCreatingUser(false);
               }
             }} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
               <div className="form-group">
@@ -6702,8 +6742,13 @@ function MainApp() {
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateUserModal(false)}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}>
-                  Confirmar Cadastro
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ padding: '0.6rem 1.5rem', fontWeight: '700' }}
+                  disabled={isCreatingUser}
+                >
+                  {isCreatingUser ? 'Cadastrando servidor...' : 'Confirmar Cadastro'}
                 </button>
               </div>
             </form>

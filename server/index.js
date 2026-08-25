@@ -175,7 +175,7 @@ app.post('/api/schools', async (req, res) => {
 // API Register (Public user request with LGPD compliance and Supabase Auth confirmation)
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, cpf, email, phone, role, schoolId, lgpd_accepted } = req.body;
+    const { name, cpf, email, phone, role, schoolId, lgpd_accepted } = req.body || {};
     
     if (!name || !cpf || !email || !role) {
       return res.status(400).json({ error: 'Campos obrigatórios ausentes (nome, CPF, e-mail e perfil são necessários).' });
@@ -185,19 +185,24 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'É necessário aceitar os termos de consentimento e sigilo da LGPD.' });
     }
 
-    const cleanCpf = cpf.replace(/\D/g, '');
+    const cleanCpf = (cpf || '').replace(/\D/g, '');
+    if (cleanCpf.length < 11) {
+      return res.status(400).json({ error: 'Por favor, informe um CPF válido com 11 dígitos.' });
+    }
+
+    const cleanEmail = (email || '').trim().toLowerCase();
     const users = await db.getUsers();
 
     // Check duplicate CPF
-    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf);
+    const duplicateCpf = users.find(u => (u.cpf || '').replace(/\D/g, '') === cleanCpf);
     if (duplicateCpf) {
       return res.status(400).json({ error: 'CPF já cadastrado no sistema.' });
     }
 
     // Check duplicate Email
-    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    const duplicateEmail = users.find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
     if (duplicateEmail) {
-      return res.status(400).json({ error: 'E-mail já cadastrado no sistema.' });
+      return res.status(400).json({ error: 'E-mail institucional já cadastrado no sistema.' });
     }
 
     const userPassword = (req.body.password || '').trim();
@@ -205,18 +210,18 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'A senha é obrigatória e deve ter pelo menos 4 caracteres.' });
     }
 
-    if (req.body.confirmPassword && req.body.confirmPassword !== userPassword) {
+    if (req.body.confirmPassword && req.body.confirmPassword.trim() !== userPassword) {
       return res.status(400).json({ error: 'As senhas digitadas não coincidem.' });
     }
 
     const newUser = {
       name: name.trim(),
       cpf: cleanCpf,
-      email: email.trim().toLowerCase(),
-      phone: phone || '',
+      email: cleanEmail,
+      phone: (phone || '').trim(),
       password: userPassword,
-      role: role.toLowerCase(), // superadmin, seduc, pedagogo, diretor, assistente
-      schoolId: (role.toLowerCase() === 'seduc' || role.toLowerCase() === 'superadmin') ? null : (schoolId || null),
+      role: (role || 'pedagogo').toLowerCase(), // superadmin, seduc, pedagogo, diretor, assistente
+      schoolId: (role.toLowerCase() === 'seduc' || role.toLowerCase() === 'superadmin' || role.toLowerCase() === 'gestor') ? null : (schoolId ? schoolId.trim() : null),
       classes: [],
       lgpd_accepted: true,
       createdAt: new Date().toISOString()
@@ -224,20 +229,22 @@ app.post('/api/register', async (req, res) => {
 
     const saved = await db.saveUser(newUser);
 
-    // Trigger Supabase Auth Email Confirmation
-    await triggerSupabaseAuthEmail(email, userPassword, newUser);
+    // Trigger Supabase Auth Email Confirmation asynchronously without blocking response
+    triggerSupabaseAuthEmail(cleanEmail, userPassword, newUser).catch(err => {
+      console.warn('Background Supabase auth email trigger warning:', err?.message || err);
+    });
 
     // Auto backup snapshot
     backupEngine.createBackup('auto_register').catch(() => {});
 
-    logEngine.log('AUDIT', `Novo usuário auto-registrado: ${name} (${role}) - E-mail: ${email}`);
+    logEngine.log('AUDIT', `Novo usuário auto-registrado: ${name} (${role}) - E-mail: ${cleanEmail}`);
 
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.status(201).json(savedWithoutPassword);
   } catch (error) {
     logEngine.log('ERROR', `Erro durante autocadastro: ${error.message}`, { error: String(error) });
     console.error('Error during self-registration:', error);
-    res.status(500).json({ error: 'Erro interno do servidor ao solicitar cadastro.' });
+    res.status(500).json({ error: 'Erro interno do servidor ao solicitar cadastro: ' + error.message });
   }
 });
 
@@ -375,32 +382,48 @@ app.get('/api/users', async (req, res) => {
 // POST User (Gestor / Superadmin)
 app.post('/api/users', async (req, res) => {
   try {
-    const user = req.body;
-    if (!user.name || !user.cpf || !user.password || !user.role || !user.email) {
-      return res.status(400).json({ error: 'Campos obrigatórios ausentes (nome, cpf, e-mail, senha e perfil são necessários).' });
+    const user = req.body || {};
+    if (!user.name || !user.cpf || !user.role || !user.email) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes (nome, cpf, e-mail e perfil são necessários).' });
     }
 
     // Clean CPF for validation
-    const cleanCpf = user.cpf.replace(/\D/g, '');
+    const cleanCpf = (user.cpf || '').replace(/\D/g, '');
+    if (cleanCpf.length < 11) {
+      return res.status(400).json({ error: 'Por favor, informe um CPF válido com 11 dígitos.' });
+    }
+
+    const cleanEmail = (user.email || '').trim().toLowerCase();
     const users = await db.getUsers();
     
     // Check duplicate CPF
-    const duplicateCpf = users.find(u => u.cpf.replace(/\D/g, '') === cleanCpf && u.id !== user.id);
+    const duplicateCpf = users.find(u => (u.cpf || '').replace(/\D/g, '') === cleanCpf && u.id !== user.id);
     if (duplicateCpf) {
-      return res.status(400).json({ error: 'CPF já cadastrado.' });
+      return res.status(400).json({ error: 'CPF já cadastrado para outro usuário.' });
     }
 
     // Check duplicate Email
-    const duplicateEmail = users.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase() && u.id !== user.id);
+    const duplicateEmail = users.find(u => (u.email || '').trim().toLowerCase() === cleanEmail && u.id !== user.id);
     if (duplicateEmail) {
-      return res.status(400).json({ error: 'E-mail já cadastrado.' });
+      return res.status(400).json({ error: 'E-mail institucional já cadastrado para outro usuário.' });
     }
 
-    const saved = await db.saveUser(user);
+    const saved = await db.saveUser({
+      ...user,
+      name: user.name.trim(),
+      cpf: cleanCpf,
+      email: cleanEmail,
+      phone: (user.phone || '').trim(),
+      password: (user.password || 'senha').trim(),
+      role: (user.role || 'pedagogo').toLowerCase(),
+      schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId ? user.schoolId.trim() : null)
+    });
 
-    // Trigger Supabase Auth Email
+    // Trigger Supabase Auth Email asynchronously
     if (user.password) {
-      await triggerSupabaseAuthEmail(user.email, user.password, user);
+      triggerSupabaseAuthEmail(cleanEmail, user.password, user).catch(err => {
+        console.warn('Background Supabase auth email trigger warning:', err?.message || err);
+      });
     }
 
     logEngine.log('AUDIT', `Usuário criado/atualizado pela gestão: ${user.name} (${user.role})`);
@@ -410,7 +433,7 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     logEngine.log('ERROR', `Erro ao salvar usuário: ${error.message}`, { error: String(error) });
     console.error('Error saving user:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    res.status(500).json({ error: 'Erro interno do servidor ao salvar usuário: ' + error.message });
   }
 });
 
