@@ -474,6 +474,7 @@ export const LEGAL_GLOSSARY = {
     significado: 'Privação de cuidados básicos, alimentação, saúde ou educação (ECA, arts. 4º, 13 e art. 56, IV, incluído pela Lei 15.240/2025). Comunicação obrigatória ao Conselho Tutelar.',
     termoAdequado: 'Manter "negligência"; especificar se é material (higiene, alimentação) ou educacional.',
     situacaoEscola: 'Sinais de que necessidades básicas de saúde, alimentação, higiene ou acompanhamento escolar não estão sendo supridas.',
+    protocoloResposta: 'Acolher o estudante, documentar detalhadamente os sinais observados e realizar a comunicação formal ao Conselho Tutelar e à direção escolar conforme o art. 245 do ECA.',
     fonteLegal: 'Estatuto da Criança e do Adolescente, arts. 4º, 13, 56, IV (Lei 15.240/2025) e 245; CP, arts. 133, 244 e 246.'
   },
   'Porte de arma': {
@@ -482,7 +483,44 @@ export const LEGAL_GLOSSARY = {
     significado: 'Porte ilegal de arma de fogo (Lei 10.826/2003, arts. 14 e 16). O porte de arma branca (faca, estilete) configura infração gravíssima e agravante legal.',
     termoAdequado: 'Especificar se arma de fogo ou arma branca/objeto perfurocortante. Comunicação imediata à direção, autoridade policial e Conselho Tutelar.',
     situacaoEscola: 'Estudante flagrado com arma de fogo, faca, estilete ou objeto adaptado perfurocortante na escola.',
+    protocoloResposta: 'Isolar a área com calma sem gerar pânico coletivo, acionar imediatamente a direção escolar, acionar as autoridades de segurança pública (190) e o Conselho Tutelar.',
     fonteLegal: 'Lei 10.826/2003 (Estatuto do Desarmamento); ECA, art. 13.'
+  },
+  'Automutilação / autolesão': {
+    termo: 'Automutilação / autolesão',
+    dimensao: '7. Situações de risco à vida, à saúde e à segurança',
+    significado: 'Ato de causar lesões ao próprio corpo, geralmente como forma de lidar com sofrimento emocional intenso; não é figura jurídico-penal. A Lei 13.819/2019 institui a Política Nacional de Prevenção da Automutilação e do Suicídio, prevendo notificação compulsória e sigilosa dos casos. Desde a Lei 15.231/2025, que alterou a Lei 13.819/2019 e a LDB (Lei 9.394/1996), os estabelecimentos de ensino têm o dever legal expresso de notificar ao Conselho Tutelar os casos de automutilação identificados entre estudantes.',
+    termoAdequado: 'Registrar como "automutilação/autolesão"; a comunicação à família e à direção é obrigatória, e a notificação ao Conselho Tutelar deve seguir o novo dever legal da Lei 15.231/2025 — a escola não deve tratar o caso apenas internamente.',
+    situacaoEscola: 'Estudante apresenta cortes, queimaduras ou outras lesões autoprovocadas, com ou sem ideação suicida associada, identificadas ou relatadas no ambiente escolar.',
+    protocoloResposta: 'Acolher sem julgamento e sem alarde diante da turma. NÃO pedir para mostrar os ferimentos nem tirar fotos. Comunicar imediatamente a direção e a família. Encaminhar para atendimento de saúde mental (CAPS, UBS, psicólogo) e manter contato com a rede de apoio do estudante. CVV — 188 (apoio emocional, 24h).',
+    fonteLegal: 'Lei 13.819/2019 (Política Nacional de Prevenção da Automutilação e do Suicídio); Lei 15.231/2025 (altera a Lei 13.819/2019 e a LDB); Estatuto da Criança e do Adolescente, arts. 13, 56 e 245.'
+  },
+  'Ideação ou tentativa de suicídio': {
+    termo: 'Ideação ou tentativa de suicídio',
+    dimensao: '7. Situações de risco à vida, à saúde e à segurança',
+    significado: 'Pensamentos, planejamento ou tentativa de tirar a própria vida; não é figura jurídico-penal. Assim como a automutilação, está sob o alcance da Lei 13.819/2019 (Política Nacional de Prevenção da Automutilação e do Suicídio) e do dever legal de notificação ao Conselho Tutelar introduzido pela Lei 15.231/2025 (que alterou a Lei 13.819/2019 e a LDB) para estabelecimentos de ensino.',
+    termoAdequado: 'Registrar como "ideação ou tentativa de suicídio"; tratar sempre como situação de risco iminente à vida, com prioridade máxima de resposta — nunca minimizar ou tratar como "chamar atenção".',
+    situacaoEscola: 'Estudante verbaliza pensamentos ou planos suicidas, deixa sinais indiretos (cartas, mudanças bruscas de comportamento, despedidas) ou é identificado em tentativa de suicídio no ambiente escolar ou relatada por terceiros.',
+    protocoloResposta: 'Levar SEMPRE a sério, nunca minimizar. Não deixar o estudante sozinho. Comunicar imediatamente a direção e a família. Acionar o CAPS/rede de saúde mental e, em caso de tentativa/risco iminente, o SAMU (192). Evitar exposição do caso para a turma ou nas redes sociais.',
+    fonteLegal: 'Lei 13.819/2019 (Política Nacional de Prevenção da Automutilação e do Suicídio); Lei 15.231/2025 (altera a Lei 13.819/2019 e a LDB); Estatuto da Criança e do Adolescente, arts. 13, 56 e 245.'
+  },
+  'Uso, porte ou consumo de álcool e outras drogas': {
+    termo: 'Uso, porte ou consumo de álcool e outras drogas',
+    dimensao: '7. Situações de risco à vida, à saúde e à segurança',
+    significado: 'Situações envolvendo consumo, porte ou comercialização de substâncias psicoativas no ambiente escolar. O porte de drogas para consumo pessoal (art. 28 da Lei 11.343/2006) não é punido com prisão, apenas com advertência, prestação de serviços à comunidade ou medida educativa; quando praticado por adolescente, o ato infracional correspondente também não admite medida restritiva de liberdade. Já a comercialização/tráfico (art. 33) é conduta muito mais grave. Fornecer ou vender bebida alcoólica ou droga a criança/adolescente é crime do adulto responsável (ECA, art. 243).',
+    termoAdequado: 'Diferenciar sempre o porte para consumo pessoal (medida educativa/de saúde) da comercialização/tráfico (conduta grave, art. 33 da Lei de Drogas), pois exigem respostas institucionais muito distintas.',
+    situacaoEscola: 'Estudante flagrado consumindo, portando álcool ou outras drogas no ambiente escolar ou em atividades vinculadas à escola.',
+    protocoloResposta: 'Garantir a segurança imediata do estudante (verificar necessidade de atendimento de saúde). Comunicar a direção e a família. Em caso de porte/comercialização, avaliar com a direção a comunicação ao Conselho Tutelar e, se for o caso, à polícia. Encaminhar para a rede de saúde/CAPS-AD.',
+    fonteLegal: 'Lei 11.343/2006 (Lei de Drogas), arts. 28 e 33; Estatuto da Criança e do Adolescente, art. 243.'
+  },
+  'Indícios de violência doméstica/familiar': {
+    termo: 'Indícios de violência doméstica/familiar',
+    dimensao: '7. Situações de risco à vida, à saúde e à segurança',
+    significado: 'Sinais de que o estudante pode estar sofrendo violência (física, psicológica, sexual) ou negligência em casa. A comunicação ao Conselho Tutelar é obrigatória por lei diante de qualquer suspeita, mesmo sem confirmação (ECA, art. 245, que também prevê multa pela omissão). A Lei 13.431/2017 (Lei da Escuta Protegida) estabelece que a escola não deve reinquirir repetidamente a criança sobre o ocorrido, para evitar revitimização.',
+    termoAdequado: 'Registrar como "indícios de violência doméstica/familiar"; a escola não deve investigar, confrontar a família ou buscar confirmação — apenas observar, documentar e comunicar.',
+    situacaoEscola: 'Sinais físicos (machucados incompatíveis com a explicação dada), comportamentais (medo, retraimento, agressividade súbita) ou relatos espontâneos do estudante que sugiram violência ou negligência praticada por familiares ou responsáveis.',
+    protocoloResposta: 'A comunicação ao Conselho Tutelar é OBRIGATÓRIA por lei (art. 245 do ECA), mesmo que sejam apenas indícios. Não cabe à escola investigar ou confirmar o caso. Documentar os sinais observados e acolher o estudante sem confrontar a família.',
+    fonteLegal: 'Estatuto da Criança e do Adolescente, arts. 13, 56 e 245; Lei 13.431/2017 (Lei da Escuta Protegida).'
   },
 
   // 8. Violência sexual

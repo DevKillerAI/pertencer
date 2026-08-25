@@ -458,7 +458,11 @@ const TAXONOMY_DIMENSIONS = {
   ],
   '7. Situações de risco à vida, à saúde e à segurança': [
     'Negligência',
-    'Porte de arma'
+    'Porte de arma',
+    'Automutilação / autolesão',
+    'Ideação ou tentativa de suicídio',
+    'Uso, porte ou consumo de álcool e outras drogas',
+    'Indícios de violência doméstica/familiar'
   ],
   '8. Violência sexual': [
     'Assédio sexual',
@@ -3631,7 +3635,7 @@ function MainApp() {
                   <div className="form-group full-width">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <label className="form-label" style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0 }}>
-                        Classificação da Ocorrência pelas 8 Dimensões (Selecione uma ou mais)
+                        Classificação da Ocorrência por Dimensões
                       </label>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         Itens organizados do menos grave para o mais grave dentro de cada dimensão.
@@ -4911,9 +4915,9 @@ function MainApp() {
                         const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
                         const itemColor = colors[idx % colors.length];
                         return (
-                          <div key={s.feeling} style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                          <div key={s.name || s.feeling || idx} style={{ backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                              <strong>💬 {s.feeling}</strong>
+                              <strong style={{ color: 'var(--text-primary)' }}>💬 {s.name || s.feeling}</strong>
                               <span style={{ fontWeight: '700', color: itemColor }}>{s.count} vezes ({pct}%)</span>
                             </div>
                             <div className="chart-bar-track">
@@ -6748,6 +6752,19 @@ function MainApp() {
                   </h5>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
                     {selectedGlossaryTerm.situacaoEscola}
+                  </p>
+                </div>
+              )}
+
+              {/* Protocolo de Resposta Imediata (quando aplicável, ex: Dimensão 7) */}
+              {selectedGlossaryTerm.protocoloResposta && (
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: '#fff1f2', border: '1px solid #fecdd3', borderLeft: '4px solid #e11d48' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: '#be123c', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconShield style={{ width: '16px', height: '16px', color: '#be123c', flexShrink: 0 }} />
+                    <span>Protocolo de Resposta Imediata</span>
+                  </h5>
+                  <p style={{ fontSize: '0.86rem', color: '#9f1239', lineHeight: '1.55', margin: 0, fontWeight: '500' }}>
+                    {selectedGlossaryTerm.protocoloResposta}
                   </p>
                 </div>
               )}
