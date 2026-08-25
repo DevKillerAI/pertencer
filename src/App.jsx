@@ -884,6 +884,7 @@ function MainApp() {
     // Passo 2: Assunto e Classificações
     subject: '',
     classifications: [],
+    customOtherClassification: '',
     type: '',
     
     // Passo 3: Sentimentos Identificados (CNV)
@@ -1382,6 +1383,12 @@ function MainApp() {
         setFormStep(2);
         return;
       }
+
+      if ((formData.classifications || []).includes('Outra') && !(formData.customOtherClassification || '').trim()) {
+        alert('Por favor, especifique e descreva a ocorrência atípica no campo "Outra ocorrência" (Passo 2) antes de finalizar.');
+        setFormStep(2);
+        return;
+      }
     }
 
     const primaryType = formData.classifications && formData.classifications.length > 0
@@ -1522,6 +1529,7 @@ function MainApp() {
       date: occ.date ? occ.date.split('T')[0] : getLocalDateString(),
       subject: occ.subject || '',
       classifications: Array.isArray(occ.classifications) ? occ.classifications : (occ.type ? [occ.type] : []),
+      customOtherClassification: occ.customOtherClassification || '',
       type: occ.type || '',
       feelings: Array.isArray(occ.feelings) ? occ.feelings : [],
       customFeeling: occ.customFeeling || '',
@@ -1721,9 +1729,9 @@ function MainApp() {
       const studentsList = Array.isArray(o.students) && o.students.length > 0 ? o.students : [];
       const studentNames = studentsList.map(s => s.studentName).join(', ') || o.studentName || '';
       const sexesStr = studentsList.map(s => s.sex).filter(Boolean).join(', ') || o.sex || '';
-      const turnsStr = studentsList.map(s => s.turn).filter(Boolean).join(', ') || o.turn || '';
-      const classificationsStr = Array.isArray(o.classifications) ? o.classifications.join(' | ') : (o.type || '');
-      const feelingsStr = Array.isArray(o.feelings) ? o.feelings.join(', ') : '';
+      const classificationsStr = Array.isArray(o.classifications) 
+        ? o.classifications.map(c => c === 'Outra' && o.customOtherClassification ? `Outra (${o.customOtherClassification})` : c).join(' | ') 
+        : (o.type || '');
       const directionRefStr = Array.isArray(o.direction_referrals) ? o.direction_referrals.join(', ') : '';
       
       const detectedDimensions = (Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || ''])
@@ -3751,19 +3759,19 @@ function MainApp() {
                         <button
                           type="button"
                           className="glossary-circle-btn"
-                          data-tooltip="Ver orientação sobre a categoria Outra"
+                          data-tooltip="Ver orientação sobre a opção Outra"
                           data-tooltip-pos="left"
-                          title="Ver orientação sobre a categoria Outra"
+                          title="Ver orientação sobre a opção Outra"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             setSelectedGlossaryTerm(LEGAL_GLOSSARY['Outra'] || {
-                              termo: 'Outra Ocorrência',
+                              termo: 'Outra Ocorrência (Não Contemplada)',
                               dimensao: 'Outra / Não contemplada',
-                              significado: 'Situação de convivência, conflito ou evento escolar atípico que não se enquadra nas 8 dimensões catalogadas.',
-                              termoAdequado: 'Outra (relatar detalhadamente no campo descritivo).',
-                              situacaoEscola: 'Eventos imprevistos ou dinâmicas institucionais particulares.',
-                              fonteLegal: 'Regimento Escolar e Legislação Vigente.'
+                              significado: 'Esta opção deve ser preenchida obrigatoriamente se o ocorrido não coincide com nenhum dos itens das 8 dimensões citadas acima.',
+                              termoAdequado: 'Descrever no campo de texto a situação atípica ou específica observada.',
+                              situacaoEscola: 'Fato atípico, conflito externo ou evento que não coincide com nenhuma das condutas catalogadas nas dimensões pedagógicas anteriores.',
+                              fonteLegal: 'Regimento Escolar e Diretrizes da SEDUC Contagem.'
                             });
                           }}
                         >
@@ -3771,8 +3779,28 @@ function MainApp() {
                         </button>
                       </div>
                       <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem', marginLeft: '1.85rem' }}>
-                        Utilize esta opção quando a situação registrada não estiver prevista ou contemplada nas 8 dimensões acima descritas.
+                        Utilize e preencha este campo se o ocorrido não coincide com nenhum dos itens das 8 dimensões acima citadas.
                       </span>
+
+                      {/* Campo de descrição condicional quando "Outra" estiver selecionada */}
+                      {(formData.classifications || []).includes('Outra') && (
+                        <div style={{ marginTop: '0.9rem', marginLeft: '1.85rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#15803d', marginBottom: '0.35rem' }}>
+                            Descreva o ocorrido que não se encaixa nas dimensões acima: <span style={{ color: '#dc2626' }}>*</span>
+                          </label>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            placeholder="Descreva detalhadamente a situação atípica ou específica observada..."
+                            value={formData.customOtherClassification || ''}
+                            onChange={(e) => setFormData({ ...formData, customOtherClassification: e.target.value })}
+                            style={{ fontSize: '0.85rem', width: '100%', borderColor: '#86efac', backgroundColor: '#ffffff' }}
+                          />
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                            Preenchimento obrigatório para especificar o motivo ou a tipologia da ocorrência atípica.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -5798,7 +5826,9 @@ function MainApp() {
                 <strong>Classificações:</strong>
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
                   {(Array.isArray(selectedOccurrence.classifications) ? selectedOccurrence.classifications : [selectedOccurrence.type]).filter(Boolean).map(c => (
-                    <span key={c} className="badge badge-primary">{c}</span>
+                    <span key={c} className="badge badge-primary">
+                      {c === 'Outra' && selectedOccurrence.customOtherClassification ? `Outra: ${selectedOccurrence.customOtherClassification}` : c}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -6081,7 +6111,7 @@ function MainApp() {
                 <span className="print-field-label">Data da Ocorrência:</span> {formatDisplayDate(occ.date)}
               </div>
               <div className="print-field col-6">
-                <span className="print-field-label">Classificação(ões):</span> {(Array.isArray(occ.classifications) ? occ.classifications : [occ.type]).filter(Boolean).join(', ')}
+                <span className="print-field-label">Classificação(ões):</span> {(Array.isArray(occ.classifications) ? occ.classifications : [occ.type]).filter(Boolean).map(c => c === 'Outra' && occ.customOtherClassification ? `Outra (${occ.customOtherClassification})` : c).join(', ')}
               </div>
 
               {Array.isArray(occ.feelings) && occ.feelings.length > 0 && (

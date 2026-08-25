@@ -521,11 +521,11 @@ export const LEGAL_GLOSSARY = {
 
   // Outra / Não contemplada
   'Outra': {
-    termo: 'Outra',
-    dimensao: 'Outra',
-    significado: 'Ocorrência que não se enquadra nas 8 dimensões catalogadas ou possui especificidades pedagógicas/administrativas singulares.',
-    termoAdequado: 'Outra / Não contemplada na grade principal.',
-    situacaoEscola: 'Fato atípico registrado para fins de acolhimento e mediação escolar.',
-    fonteLegal: 'Regimento Escolar e Legislação Vigente.'
+    termo: 'Outra ocorrência / Não contemplada',
+    dimensao: 'Outra / Não contemplada',
+    significado: 'Esta opção deve ser utilizada e preenchida obrigatoriamente quando o ocorrido não coincide com nenhum dos itens das 8 dimensões citadas acima.',
+    termoAdequado: 'Outra (com especificação descritiva detalhada no campo fornecido).',
+    situacaoEscola: 'Fato atípico, conflito externo ou situação institucional que não coincide com nenhuma das condutas catalogadas nas dimensões pedagógicas anteriores.',
+    fonteLegal: 'Regimento Escolar e Diretrizes da SEDUC Contagem.'
   }
 };
