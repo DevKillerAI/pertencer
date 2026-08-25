@@ -1,11 +1,17 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE = path.join(__dirname, 'db.json');
+
+// Detect serverless environment (Vercel, AWS Lambda, etc.)
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
+const BASE_DATA_DIR = isServerless ? os.tmpdir() : __dirname;
+
+const DB_FILE = path.join(BASE_DATA_DIR, 'db.json');
 
 // Supabase Configuration (Single Source of Truth)
 const supabaseUrl = process.env.SUPABASE_URL || 'https://mowvehesrsawbxqhtytk.supabase.co';
@@ -23,16 +29,20 @@ if (isSupabaseConfigured) {
 }
 
 // Paths for logging and automatic backups
-const LOGS_DIR = path.join(__dirname, 'logs');
+const LOGS_DIR = path.join(BASE_DATA_DIR, 'logs');
 const LOG_FILE = path.join(LOGS_DIR, 'pome_activity.log');
-const BACKUP_DIR = path.join(__dirname, 'backups');
+const BACKUP_DIR = path.join(BASE_DATA_DIR, 'backups');
 
-if (!fs.existsSync(LOGS_DIR)) {
-  try { fs.mkdirSync(LOGS_DIR, { recursive: true }); } catch (_) {}
-}
-if (!fs.existsSync(BACKUP_DIR)) {
-  try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch (_) {}
-}
+try {
+  if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, { recursive: true });
+} catch (_) {}
+
+try {
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+} catch (_) {}
+
+// In-Memory Backup Ring Buffer (Serverless Safe)
+const memoryBackups = [];
 
 // In-Memory Log Ring Buffer (last 300 logs)
 const memoryLogs = [];
@@ -431,7 +441,6 @@ export const backupEngine = {
       const data = await db.getData();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `pome_backup_${label}_${timestamp}.json`;
-      const filePath = path.join(BACKUP_DIR, filename);
       
       const payload = {
         metadata: {
@@ -447,10 +456,30 @@ export const backupEngine = {
         },
         data
       };
-      
-      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
-      
-      // Update local db.json as an offline mirror snapshot
+
+      // In-memory backup snapshot (serverless resilient)
+      const memEntry = {
+        filename,
+        sizeBytes: Buffer.byteLength(JSON.stringify(payload)),
+        createdAt: payload.metadata.createdAt,
+        metadata: payload.metadata,
+        fullData: payload
+      };
+      memoryBackups.unshift(memEntry);
+      if (memoryBackups.length > 50) memoryBackups.pop();
+
+      // Safe write to disk if supported
+      try {
+        const filePath = path.join(BACKUP_DIR, filename);
+        fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+      } catch (fsErr) {
+        try {
+          const fallbackTmp = path.join(os.tmpdir(), filename);
+          fs.writeFileSync(fallbackTmp, JSON.stringify(payload, null, 2), 'utf8');
+        } catch (_) {}
+      }
+
+      // Safe update local db.json
       try {
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
       } catch (_) {}
@@ -465,36 +494,73 @@ export const backupEngine = {
   
   listBackups: () => {
     try {
-      if (!fs.existsSync(BACKUP_DIR)) return [];
-      const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
-      return files.map(file => {
-        const filePath = path.join(BACKUP_DIR, file);
-        const stats = fs.statSync(filePath);
-        let meta = null;
+      const diskBackups = [];
+      const searchDirs = [BACKUP_DIR, os.tmpdir()].filter((d, i, arr) => d && fs.existsSync(d) && arr.indexOf(d) === i);
+      
+      for (const bDir of searchDirs) {
         try {
-          const raw = fs.readFileSync(filePath, 'utf8');
-          const parsed = JSON.parse(raw);
-          meta = parsed.metadata || null;
+          const files = fs.readdirSync(bDir).filter(f => f.startsWith('pome_backup_') && f.endsWith('.json'));
+          for (const file of files) {
+            if (!diskBackups.some(b => b.filename === file)) {
+              try {
+                const filePath = path.join(bDir, file);
+                const stats = fs.statSync(filePath);
+                let meta = null;
+                try {
+                  const raw = fs.readFileSync(filePath, 'utf8');
+                  meta = JSON.parse(raw)?.metadata || null;
+                } catch (_) {}
+                diskBackups.push({
+                  filename: file,
+                  sizeBytes: stats.size,
+                  createdAt: stats.mtime.toISOString(),
+                  metadata: meta
+                });
+              } catch (_) {}
+            }
+          }
         } catch (_) {}
-        
-        return {
-          filename: file,
-          sizeBytes: stats.size,
-          createdAt: stats.mtime.toISOString(),
-          metadata: meta
-        };
-      }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      const mergedMap = new Map();
+      memoryBackups.forEach(mb => mergedMap.set(mb.filename, {
+        filename: mb.filename,
+        sizeBytes: mb.sizeBytes,
+        createdAt: mb.createdAt,
+        metadata: mb.metadata
+      }));
+      diskBackups.forEach(db => {
+        if (!mergedMap.has(db.filename)) mergedMap.set(db.filename, db);
+      });
+
+      return Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } catch (err) {
       console.error('Error listing backups:', err);
-      return [];
+      return memoryBackups.map(mb => ({
+        filename: mb.filename,
+        sizeBytes: mb.sizeBytes,
+        createdAt: mb.createdAt,
+        metadata: mb.metadata
+      }));
     }
   },
   
   getBackupContent: (filename) => {
     const safeFilename = path.basename(filename);
-    const filePath = path.join(BACKUP_DIR, safeFilename);
-    if (!fs.existsSync(filePath)) return null;
-    return fs.readFileSync(filePath, 'utf8');
+    const inMem = memoryBackups.find(b => b.filename === safeFilename);
+    if (inMem) {
+      return JSON.stringify(inMem.fullData, null, 2);
+    }
+    const searchDirs = [BACKUP_DIR, os.tmpdir()].filter((d, i, arr) => d && fs.existsSync(d) && arr.indexOf(d) === i);
+    for (const bDir of searchDirs) {
+      const filePath = path.join(bDir, safeFilename);
+      if (fs.existsSync(filePath)) {
+        try {
+          return fs.readFileSync(filePath, 'utf8');
+        } catch (_) {}
+      }
+    }
+    return null;
   },
   
   restoreBackup: async (filenameOrData) => {
@@ -502,10 +568,25 @@ export const backupEngine = {
       let payload = filenameOrData;
       if (typeof filenameOrData === 'string') {
         const safeFilename = path.basename(filenameOrData);
-        const filePath = path.join(BACKUP_DIR, safeFilename);
-        if (!fs.existsSync(filePath)) throw new Error('Arquivo de backup não encontrado no servidor.');
-        const raw = fs.readFileSync(filePath, 'utf8');
-        payload = JSON.parse(raw);
+        const inMem = memoryBackups.find(b => b.filename === safeFilename);
+        if (inMem) {
+          payload = inMem.fullData;
+        } else {
+          const searchDirs = [BACKUP_DIR, os.tmpdir()].filter((d, i, arr) => d && fs.existsSync(d) && arr.indexOf(d) === i);
+          let found = false;
+          for (const bDir of searchDirs) {
+            const filePath = path.join(bDir, safeFilename);
+            if (fs.existsSync(filePath)) {
+              try {
+                const raw = fs.readFileSync(filePath, 'utf8');
+                payload = JSON.parse(raw);
+                found = true;
+                break;
+              } catch (_) {}
+            }
+          }
+          if (!found) throw new Error('Arquivo de backup não encontrado no servidor.');
+        }
       }
       
       const targetData = payload.data || payload;
