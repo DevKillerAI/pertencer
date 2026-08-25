@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import logoVetor from './logo-vetor.svg';
 import LandingLoginPage from './components/LandingLoginPage';
-import { LEGAL_GLOSSARY } from './constants/legalGlossary';
+import { LEGAL_GLOSSARY, DIMENSIONS_INFO } from './constants/legalGlossary';
 import { LGPD_DOCUMENT } from './constants/lgpdTerms';
 
 // Constants: 10 Unidades Escolares Oficiais do Piloto POME
@@ -396,81 +396,80 @@ export const getOccurrenceStatus = (o) => {
   };
 };
 
-// Constants: New 3-Level Scientific Taxonomy (Nomenclatura ajustada - Item 5)
-const TAXONOMY_TREE = {
-  'Perturbadoras': {
-    'Descumprimento de normas escolares': [
-      'Indisciplina recorrente',
-      'Saída injustificada da sala',
-      'Uso indevido de aparelhos eletrônicos',
-      'Incivilidade (desordens, provocações, zombarias, falta de polidez, interrupções, indiferença)',
-      'Transgressão'
-    ],
-    'Intimidação isolada': [
-      'Intimidação (ato isolado, não sistemático)'
-    ]
-  },
-  'Agressivas e/ou Violentas': {
-    'Violências interpessoais': [
-      'Agressão física',
-      'Agressão verbal',
-      'Ameaça',
-      'Intimidação sistemática (bullying)',
-      'Intimidação sistemática virtual (cyberbullying)',
-      'Cyberagressão',
-      'Sexting não consensual',
-      'Shaming',
-      'Linchamento virtual',
-      'Violência psicológica',
-      'Assédio moral',
-      'Assédio moral institucional / violência institucional',
-      'Perseguição (stalking)',
-      'Extorsão',
-      'Violência entre grupos ou gangues'
-    ],
-    'Discriminação e preconceito (violências estruturais)': [
-      'Racismo',
-      'Injúria racial',
-      'LGBTfobia (homofobia/transfobia)',
-      'Machismo',
-      'Misoginia',
-      'Classismo',
-      'Gordofobia',
-      'Capacitismo',
-      'Xenofobia',
-      'Discriminação regional',
-      'Preconceito religioso',
-      'Preconceito linguístico',
-      'Preconceito socioeconômico',
-      'Discriminação por aparência',
-      'Discriminação por gênero',
-      'Etarismo'
-    ],
-    'Violência sexual': [
-      'Assédio sexual',
-      'Abuso sexual',
-      'Importunação sexual',
-      'Estupro / estupro de vulnerável',
-      'Exploração sexual',
-      'Divulgação não consensual de imagem íntima'
-    ],
-    'Patrimônio escolar': [
-      'Furto e/ou roubo',
-      'Dano ao patrimônio (depredação)',
-      'Incêndio ou tentativa de incêndio'
-    ]
-  },
-  'Situações de Risco': {
-    'Situações de risco': [
-      'Automutilação / autolesão',
-      'Ideação ou tentativa de suicídio',
-      'Uso, porte ou consumo de álcool e outras drogas',
-      'Indícios de violência doméstica/familiar',
-      'Negligência ou evasão escolar recorrente',
-      'Porte de arma'
-    ]
-  }
+// Constants: 8 Dimensões Oficiais do POME (Classificação das Ocorrências - Ordem Crescente de Complexidade/Gravidade)
+const TAXONOMY_DIMENSIONS = {
+  '1. Comportamentos e situações típicas da primeira infância': [
+    'Mordida entre crianças',
+    'Disputa por objetos/brinquedos',
+    'Agressividade física entre crianças pequenas',
+    'Dificuldade de adaptação / choro persistente',
+    'Birra / crise comportamental',
+    'Regressão comportamental',
+    'Recusa alimentar / seletividade alimentar'
+  ],
+  '2. Reclamações pedagógicas e institucionais': [
+    'Reclamação pedagógica',
+    'Reclamação institucional / administrativa'
+  ],
+  '3. Descumprimento de normas escolares': [
+    'Indisciplina recorrente',
+    'Saída injustificada da sala',
+    'Uso indevido de aparelhos eletrônicos',
+    'Transgressão',
+    'Incivilidade',
+    'Atraso recorrente',
+    'Fraude em avaliação (cola)'
+  ],
+  '4. Patrimônio escolar': [
+    'Furto',
+    'Roubo',
+    'Dano ao patrimônio'
+  ],
+  '5. Discriminação e preconceito': [
+    'Racismo',
+    'Injúria racial',
+    'Discriminação por orientação sexual',
+    'Gordofobia',
+    'Capacitismo',
+    'Xenofobia',
+    'Preconceito religioso',
+    'Preconceito linguístico',
+    'Preconceito socioeconômico',
+    'Discriminação por aparência',
+    'Discriminação de gênero',
+    'Etarismo',
+    'Machismo',
+    'Misoginia',
+    'Classismo',
+    'Discriminação regional'
+  ],
+  '6. Violências interpessoais': [
+    'Agressão física',
+    'Agressão verbal',
+    'Ameaça',
+    'Intimidação sistemática (bullying)',
+    'Intimidação sistemática virtual (cyberbullying)',
+    'Intimidação (ato isolado)',
+    'Extorsão',
+    'Shaming',
+    'Perseguição (stalking)',
+    'Linchamento virtual',
+    'Assédio moral'
+  ],
+  '7. Situações de risco à vida, à saúde e à segurança': [
+    'Negligência',
+    'Porte de arma'
+  ],
+  '8. Violência sexual': [
+    'Assédio sexual',
+    'Importunação sexual',
+    'Abuso sexual',
+    'Divulgação não consensual de imagem íntima'
+  ]
 };
+
+// Aliases para compatibilidade
+const TAXONOMY_TREE = TAXONOMY_DIMENSIONS;
 
 // Constants: Sentimentos Identificados (CNV - Comunicação Não-Violenta)
 const FEELINGS_LIST = [
@@ -526,13 +525,13 @@ const ROLE_TUTORIALS_DATA = {
     iconType: 'book',
     color: '#d97706',
     tagline: 'Atendimento direto, escuta ativa (CNV), mediação e registro de ocorrências escolares.',
-    overview: 'O perfil de Pedagogo(a) é o coração da mediação escolar. Ele é responsável pelo acolhimento de estudantes e responsáveis, realização de escuta qualificada sem julgamentos morais, registro das ocorrências com a taxonomia de 3 níveis, aplicação de práticas restaurativas e acompanhamento contínuo.',
+    overview: 'O perfil de Pedagogo(a) é o coração da mediação escolar. Ele é responsável pelo acolhimento de estudantes e responsáveis, realização de escuta qualificada sem julgamentos morais, registro das ocorrências com a classificação em 8 dimensões pedagógicas, aplicação de práticas restaurativas e acompanhamento contínuo.',
     permissions: {
       allowed: [
         'Cadastrar novos atendimentos e ocorrências no fluxo estruturado em 5 etapas',
         'Incluir múltiplos estudantes, turnos, turmas, professores e responsáveis no mesmo registro',
         'Mapear sentimentos identificados na escuta ativa baseada em Comunicação Não-Violenta (CNV)',
-        'Classificar ocorrências nas dimensões: Perturbadoras, Agressivas/Violentas ou Situações de Risco',
+        'Classificar ocorrências nas 8 dimensões oficiais do POME e suas categorias ordenadas por gravidade',
         'Salvar ocorrências em modo "Rascunho" para complementação posterior com total privacidade',
         'Editar e excluir suas próprias ocorrências ANTES que a diretoria emita o visto formal',
         'Acessar "Meus Relatórios" com distribuição por turma, sentimentos e exportação em planilha CSV',
@@ -629,7 +628,7 @@ const ROLE_TUTORIALS_DATA = {
         'Cadastrar, vincular e gerenciar contas de usuários (Diretores, Pedagogos, Assistentes)',
         'Acessar o Relatório Consolidado de Clima Escolar com comparativo entre escolas',
         'Exportar bases de dados completas em formato SPSS (para pesquisas estatísticas) e CSV',
-        'Filtrar ocorrências por qualquer escola, ciclo, natureza ou período',
+        'Filtrar ocorrências por qualquer escola, ciclo, dimensão ou período',
         'Editar ou excluir ocorrências para saneamento ou correção de dados'
       ],
       restricted: [
@@ -1699,7 +1698,7 @@ function MainApp() {
       'Professor_Principal',
       'Responsavel_Nome',
       'Responsavel_Contato',
-      'Naturezas_Detectadas',
+      'Dimensoes_Detectadas',
       'Classificacoes_Texto',
       'Sentimentos_Mapeados',
       'Assunto_Descricao',
@@ -1723,14 +1722,14 @@ function MainApp() {
       const studentNames = studentsList.map(s => s.studentName).join(', ') || o.studentName || '';
       const sexesStr = studentsList.map(s => s.sex).filter(Boolean).join(', ') || o.sex || '';
       const turnsStr = studentsList.map(s => s.turn).filter(Boolean).join(', ') || o.turn || '';
-      const classificationsStr = Array.isArray(o.classifications) ? o.classifications.join(' | ') : o.type;
+      const classificationsStr = Array.isArray(o.classifications) ? o.classifications.join(' | ') : (o.type || '');
       const feelingsStr = Array.isArray(o.feelings) ? o.feelings.join(', ') : '';
       const directionRefStr = Array.isArray(o.direction_referrals) ? o.direction_referrals.join(', ') : '';
       
-      const natures = [];
-      if (occurrenceHasNature(o, 'Perturbadora')) natures.push('Perturbadora');
-      if (occurrenceHasNature(o, 'Agressiva')) natures.push('Agressiva/Violenta');
-      if (occurrenceHasNature(o, 'Risco')) natures.push('Situação de Risco');
+      const detectedDimensions = (Array.isArray(o.classifications) && o.classifications.length > 0 ? o.classifications : [o.type || ''])
+        .map(c => getDimensionForClassification(c))
+        .filter(Boolean)
+        .filter((v, i, a) => a.indexOf(v) === i);
 
       return [
         escape(o.id),
@@ -1746,7 +1745,7 @@ function MainApp() {
         escape(o.teacherName || studentsList[0]?.teacherName),
         escape(o.guardianName || studentsList[0]?.guardian?.name),
         escape(o.contacts || studentsList[0]?.guardian?.contact),
-        escape(natures.join(' | ')),
+        escape(detectedDimensions.join(' | ')),
         escape(classificationsStr),
         escape(feelingsStr),
         escape(o.subject),
@@ -1771,31 +1770,38 @@ function MainApp() {
     document.body.removeChild(link);
   };
 
-  // Helper: Match classification to taxonomy nature
-  const getNatureForClassification = (classificationTerm) => {
+  // Helper: Match classification to taxonomy dimension
+  const getDimensionForClassification = (classificationTerm) => {
     if (!classificationTerm) return null;
     const termLower = classificationTerm.toLowerCase().trim();
-    for (const [natureName, dimensions] of Object.entries(TAXONOMY_TREE)) {
-      for (const [dimName, terms] of Object.entries(dimensions)) {
-        if (terms.some(t => {
-          const tLower = t.toLowerCase();
-          return tLower === termLower || termLower.includes(tLower) || tLower.includes(termLower);
-        })) {
-          if (natureName.includes('Perturbadora')) return 'Perturbadora';
-          if (natureName.includes('Agressiva')) return 'Agressiva';
-          if (natureName.includes('risco') || natureName.includes('Risco')) return 'Risco';
-        }
+    for (const [dimName, terms] of Object.entries(TAXONOMY_DIMENSIONS)) {
+      if (terms.some(t => {
+        const tLower = t.toLowerCase();
+        return tLower === termLower || termLower.includes(tLower) || tLower.includes(termLower);
+      })) {
+        return dimName;
       }
     }
-    return null;
+    if (termLower.includes('outra')) return 'Outra';
+    return 'Outra';
   };
 
-  const occurrenceHasNature = (occ, natureType) => {
+  const occurrenceHasDimension = (occ, dimensionQuery) => {
+    if (!dimensionQuery || dimensionQuery === 'all') return true;
     const list = Array.isArray(occ.classifications) && occ.classifications.length > 0
       ? occ.classifications
       : [occ.type || ''];
-    return list.some(term => getNatureForClassification(term) === natureType);
+    return list.some(term => {
+      const dim = getDimensionForClassification(term);
+      if (!dim) return false;
+      return dim.toLowerCase().includes(dimensionQuery.toLowerCase()) || 
+             dimensionQuery.toLowerCase().includes(dim.toLowerCase());
+    });
   };
+
+  // Backward compatibility aliases
+  const getNatureForClassification = (term) => getDimensionForClassification(term);
+  const occurrenceHasNature = (occ, dimQuery) => occurrenceHasDimension(occ, dimQuery);
 
   // Filter & Search Logic (Tabela Geral e Dashboard)
   const filteredOccurrences = occurrences.filter(o => {
@@ -1831,18 +1837,19 @@ function MainApp() {
         (Array.isArray(o.students) && o.students.some(st => (st.className || '').toLowerCase().includes(filterClass.toLowerCase()) || `${st.gradeCycle || ''} ${st.className || ''}`.toLowerCase().includes(filterClass.toLowerCase())))
       : true;
     
-    // Nature filter (Search page dropdown)
-    const matchesNature = filterNature
-      ? (Array.isArray(o.classifications) && o.classifications.some(c => c.toLowerCase().includes(filterNature.toLowerCase()))) ||
+    // Dimension filter (Search page dropdown)
+    const matchesDimension = filterNature
+      ? occurrenceHasDimension(o, filterNature) ||
+        (Array.isArray(o.classifications) && o.classifications.some(c => c.toLowerCase().includes(filterNature.toLowerCase()))) ||
         (o.type && o.type.toLowerCase().includes(filterNature.toLowerCase()))
       : true;
 
     // Dashboard Dimension Panorama Filter (Pill buttons)
     const matchesDashboard = (activeTab === 'dashboard' && dashboardFilter !== 'all')
-      ? occurrenceHasNature(o, dashboardFilter)
+      ? occurrenceHasDimension(o, dashboardFilter)
       : true;
 
-    return matchesSearch && matchesNature && matchesSchool && matchesClass && matchesDashboard;
+    return matchesSearch && matchesDimension && matchesSchool && matchesClass && matchesDashboard;
   });
 
   // Advanced Report Filters (Filtros Específicos para Relatórios & Gráficos)
@@ -1872,8 +1879,8 @@ function MainApp() {
       if (!matchFeeling) return false;
     }
 
-    // Filter by Nature
-    if (reportFilterNature && !occurrenceHasNature(o, reportFilterNature)) return false;
+    // Filter by Dimension
+    if (reportFilterNature && !occurrenceHasDimension(o, reportFilterNature)) return false;
 
     // Filter by Specific Classification
     if (reportFilterClassification) {
@@ -1938,15 +1945,18 @@ function MainApp() {
   // Calculate Metrics/Statistics for current context (Real database counts)
   const getMetrics = (source = occurrences) => {
     const total = source.length;
-    const perturbadoras = source.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
-    const agressivas = source.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
-    const riscos = source.filter(o => occurrenceHasNature(o, 'Risco')).length;
+    const dimCounts = {};
+    Object.keys(TAXONOMY_DIMENSIONS).forEach(dim => {
+      dimCounts[dim] = source.filter(o => occurrenceHasDimension(o, dim)).length;
+    });
+    dimCounts['Outra'] = source.filter(o => occurrenceHasDimension(o, 'Outra')).length;
+
     const comVisto = source.filter(o => Boolean(o.directorNotes && o.directorNotes.trim())).length;
     const vistoObrigatorio = source.filter(o => !o.directorNotes && o.status !== 'rascunho' && Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0).length;
     const registrados = source.filter(o => o.status !== 'rascunho' && (!Array.isArray(o.direction_referrals) || o.direction_referrals.length === 0) && !o.directorNotes).length;
     const rascunhos = source.filter(o => o.status === 'rascunho').length;
 
-    return { total, perturbadoras, agressivas, riscos, comVisto, vistoObrigatorio, registrados, rascunhos };
+    return { total, dimCounts, comVisto, vistoObrigatorio, registrados, rascunhos };
   };
 
   const metrics = getMetrics();
@@ -2012,9 +2022,6 @@ function MainApp() {
           comVisto: 0,
           vistoObrigatorio: 0,
           semVisto: 0,
-          perturbadoras: 0,
-          agressivas: 0,
-          risco: 0,
           myCount: 0
         };
       }
@@ -2029,9 +2036,6 @@ function MainApp() {
           map[classKey].vistoObrigatorio += 1;
         }
       }
-      if (occurrenceHasNature(o, 'Perturbadora')) map[classKey].perturbadoras += 1;
-      if (occurrenceHasNature(o, 'Agressiva')) map[classKey].agressivas += 1;
-      if (occurrenceHasNature(o, 'Risco')) map[classKey].risco += 1;
     });
     return Object.values(map).sort((a, b) => b.count - a.count);
   };
@@ -2125,19 +2129,39 @@ function MainApp() {
     };
   };
 
-  const getNaturesDistributionReport = (source = reportFilteredOccurrences) => {
+  const getDimensionsDistributionReport = (source = reportFilteredOccurrences) => {
     const total = source.length || 1;
-    const pert = source.filter(o => occurrenceHasNature(o, 'Perturbadora')).length;
-    const agr = source.filter(o => occurrenceHasNature(o, 'Agressiva')).length;
-    const risc = source.filter(o => occurrenceHasNature(o, 'Risco')).length;
-    return {
-      total: source.length,
-      pert, agr, risc,
-      pertPct: Math.round((pert / total) * 100),
-      agrPct: Math.round((agr / total) * 100),
-      riscPct: Math.round((risc / total) * 100)
-    };
+    const items = Object.entries(TAXONOMY_DIMENSIONS).map(([dimName, terms], idx) => {
+      const info = DIMENSIONS_INFO[dimName] || {};
+      const count = source.filter(o => occurrenceHasDimension(o, dimName)).length;
+      return {
+        dimName,
+        shortName: `${info.numero || (idx + 1)}. ${info.nome || dimName}`,
+        numero: info.numero || (idx + 1),
+        icone: info.icone || '📌',
+        color: info.cor || '#0ea5e9',
+        count,
+        pct: Math.round((count / total) * 100)
+      };
+    });
+
+    const countOutra = source.filter(o => occurrenceHasDimension(o, 'Outra')).length;
+    if (countOutra > 0) {
+      items.push({
+        dimName: 'Outra',
+        shortName: '9. Outra / Não contemplada',
+        numero: 9,
+        icone: '➕',
+        color: '#64748b',
+        count: countOutra,
+        pct: Math.round((countOutra / total) * 100)
+      });
+    }
+
+    return items;
   };
+
+  const getNaturesDistributionReport = (source = reportFilteredOccurrences) => getDimensionsDistributionReport(source);
 
   const getTurnsDistributionReport = (source = reportFilteredOccurrences) => {
     const map = { 'Manhã': 0, 'Tarde': 0, 'Noite': 0, 'Integral': 0 };
@@ -2756,36 +2780,36 @@ function MainApp() {
             </div>
 
             {/* Dashboard Filter Options */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Visualização por Panorama:</span>
+            <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', marginRight: '4px' }}>Panorama por Dimensão:</span>
               <button 
                 className={`btn btn-secondary ${dashboardFilter === 'all' ? 'active' : ''}`}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', backgroundColor: dashboardFilter === 'all' ? 'var(--primary-light)' : 'transparent', color: dashboardFilter === 'all' ? 'var(--primary)' : 'inherit', fontWeight: dashboardFilter === 'all' ? '700' : 'normal' }}
+                style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem', backgroundColor: dashboardFilter === 'all' ? 'var(--primary-light)' : 'transparent', color: dashboardFilter === 'all' ? 'var(--primary)' : 'inherit', fontWeight: dashboardFilter === 'all' ? '700' : 'normal' }}
                 onClick={() => setDashboardFilter('all')}
               >
-                Todas as Dimensões
+                🌐 Todas
               </button>
-              <button 
-                className={`btn btn-secondary ${dashboardFilter === 'Perturbadora' ? 'active' : ''}`}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', backgroundColor: dashboardFilter === 'Perturbadora' ? 'var(--warning-light)' : 'transparent', color: dashboardFilter === 'Perturbadora' ? 'var(--accent-orange)' : 'inherit', fontWeight: dashboardFilter === 'Perturbadora' ? '700' : 'normal' }}
-                onClick={() => setDashboardFilter('Perturbadora')}
-              >
-                Perturbadoras
-              </button>
-              <button 
-                className={`btn btn-secondary ${dashboardFilter === 'Agressiva' ? 'active' : ''}`}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', backgroundColor: dashboardFilter === 'Agressiva' ? 'var(--danger-light)' : 'transparent', color: dashboardFilter === 'Agressiva' ? 'var(--danger)' : 'inherit', fontWeight: dashboardFilter === 'Agressiva' ? '700' : 'normal' }}
-                onClick={() => setDashboardFilter('Agressiva')}
-              >
-                Agressivas / Violentas
-              </button>
-              <button 
-                className={`btn btn-secondary ${dashboardFilter === 'Risco' ? 'active' : ''}`}
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', backgroundColor: dashboardFilter === 'Risco' ? 'var(--primary-light)' : 'transparent', color: dashboardFilter === 'Risco' ? 'var(--primary)' : 'inherit', fontWeight: dashboardFilter === 'Risco' ? '700' : 'normal' }}
-                onClick={() => setDashboardFilter('Risco')}
-              >
-                Situações de Risco
-              </button>
+              {Object.entries(DIMENSIONS_INFO).map(([key, info]) => {
+                const isActive = dashboardFilter === key;
+                return (
+                  <button 
+                    key={key}
+                    className={`btn btn-secondary ${isActive ? 'active' : ''}`}
+                    style={{ 
+                      padding: '0.3rem 0.65rem', 
+                      fontSize: '0.78rem', 
+                      backgroundColor: isActive ? 'var(--primary-light)' : 'transparent', 
+                      color: isActive ? 'var(--primary)' : 'inherit', 
+                      fontWeight: isActive ? '700' : 'normal',
+                      borderColor: isActive ? info.cor : 'var(--border-color)'
+                    }}
+                    onClick={() => setDashboardFilter(key)}
+                    title={key}
+                  >
+                    {info.icone} {info.numero}. {info.nome.length > 22 ? info.nome.substring(0, 20) + '...' : info.nome}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Counters Grid */}
@@ -2797,28 +2821,14 @@ function MainApp() {
                   <div className="metric-value">{metrics.total}</div>
                 </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-icon bullying" style={{ color: 'var(--warning)' }}><IconWarning /></div>
+              <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
+                <div className="metric-icon" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}><IconCheckCircle /></div>
                 <div className="metric-details">
-                  <h4>Perturbadoras</h4>
-                  <div className="metric-value">{metrics.perturbadoras}</div>
+                  <h4>Visto da Direção</h4>
+                  <div className="metric-value">{metrics.comVisto}</div>
                 </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-icon homophobia" style={{ color: 'var(--danger)' }}><IconShield /></div>
-                <div className="metric-details">
-                  <h4>Agressivas / Violentas</h4>
-                  <div className="metric-value">{metrics.agressivas}</div>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon" style={{ backgroundColor: 'var(--danger-light)', color: 'var(--danger)' }}><IconActivity /></div>
-                <div className="metric-details">
-                  <h4>Situações de Risco</h4>
-                  <div className="metric-value">{metrics.riscos}</div>
-                </div>
-              </div>
-              <div className="metric-card" style={{ borderColor: metrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: metrics.vistoObrigatorio > 0 ? '#fffbeb' : 'inherit' }}>
+              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b', borderColor: metrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: metrics.vistoObrigatorio > 0 ? '#fffbeb' : 'inherit' }}>
                 <div className="metric-icon" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}><IconWarning /></div>
                 <div className="metric-details">
                   <h4 style={{ color: metrics.vistoObrigatorio > 0 ? '#92400e' : 'inherit', fontWeight: '700' }}>Visto Obrigatório</h4>
@@ -2826,10 +2836,10 @@ function MainApp() {
                 </div>
               </div>
               <div className="metric-card">
-                <div className="metric-icon" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)' }}><IconSchool /></div>
+                <div className="metric-icon" style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)' }}><IconClock /></div>
                 <div className="metric-details">
-                  <h4>Visto Diretoria</h4>
-                  <div className="metric-value">{metrics.comVisto}</div>
+                  <h4>Em Rascunho</h4>
+                  <div className="metric-value">{metrics.rascunhos}</div>
                 </div>
               </div>
             </div>
@@ -3012,14 +3022,17 @@ function MainApp() {
 
               <select 
                 className="form-select" 
-                style={{ width: '200px' }} 
+                style={{ width: '230px' }} 
                 value={filterNature} 
                 onChange={(e) => setFilterNature(e.target.value)}
               >
-                <option value="">Todas as Naturezas</option>
-                <option value="Perturbadora">Perturbadoras</option>
-                <option value="Agressiva">Agressivas / Violentas</option>
-                <option value="Risco">Situações de Risco</option>
+                <option value="">Todas as Dimensões</option>
+                {Object.entries(DIMENSIONS_INFO).map(([key, info]) => (
+                  <option key={key} value={key}>
+                    {info.icone} {info.numero}. {info.nome}
+                  </option>
+                ))}
+                <option value="Outra">➕ 9. Outra / Não contemplada</option>
               </select>
 
               <input
@@ -3606,30 +3619,59 @@ function MainApp() {
                     </div>
                   </div>
 
-                  {/* 2. Classificação da Ocorrência em 3 Níveis (Apontamento 4b) */}
+                  {/* 2. Classificação da Ocorrência nas 8 Dimensões Oficiais */}
                   <div className="form-group full-width">
-                    <label className="form-label" style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
-                      Classificação da Ocorrência (Selecione uma ou mais)
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <label className="form-label" style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0 }}>
+                        Classificação da Ocorrência pelas 8 Dimensões (Selecione uma ou mais)
+                      </label>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Itens organizados do menos grave para o mais grave dentro de cada dimensão.
+                      </span>
+                    </div>
 
-                    <div className="taxonomy-nature-container">
-                      {Object.entries(TAXONOMY_TREE).map(([nature, dimensions]) => (
-                        <div key={nature} className="taxonomy-nature-card">
-                          <div className="taxonomy-nature-header">
-                            <IconTag style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
-                            <span>{nature}</span>
-                          </div>
-                          
-                          {Object.entries(dimensions).map(([dimension, terms]) => (
-                            <div key={dimension} className="taxonomy-dimension-block">
-                              <div className="taxonomy-dimension-title">
-                                Dimensão: {dimension}
+                    <div className="taxonomy-dimensions-container">
+                      {Object.entries(TAXONOMY_DIMENSIONS).map(([dimension, terms]) => {
+                        const info = DIMENSIONS_INFO[dimension] || {};
+                        return (
+                          <div key={dimension} className="taxonomy-dimension-card">
+                            <div className="taxonomy-dimension-header" style={{ borderLeft: `5px solid ${info.cor || 'var(--primary)'}` }}>
+                              <div className="taxonomy-dimension-header-left">
+                                <span style={{ fontSize: '1.2rem' }}>{info.icone || '📌'}</span>
+                                <span style={{ fontWeight: '800', fontSize: '0.95rem', color: 'var(--primary)' }}>{dimension}</span>
                               </div>
+                              <button
+                                type="button"
+                                className="glossary-circle-btn"
+                                data-tooltip={`Ver definição e diretrizes da "${dimension}"`}
+                                data-tooltip-pos="left"
+                                title={`Ver definição da dimensão: "${dimension}"`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setSelectedGlossaryTerm({
+                                    isDimension: true,
+                                    termo: dimension,
+                                    dimensao: dimension,
+                                    numero: info.numero,
+                                    icone: info.icone,
+                                    cor: info.cor,
+                                    significado: info.descricao || 'Definição oficial da dimensão pedagógica conforme as diretrizes do POME.',
+                                    encaminhamentoPedagogico: info.orientacaoPedagogica || 'Atuação preventiva, acolhimento e mediação pedagógica.',
+                                    fonteLegal: 'Glossário Jurídico das Classificações do POME - SEDUC Contagem / Legislação Federal Brasileira.'
+                                  });
+                                }}
+                              >
+                                ?
+                              </button>
+                            </div>
+                            
+                            <div className="taxonomy-dimension-body">
                               <div className="taxonomy-items-grid">
                                 {terms.map(term => {
                                   const isChecked = (formData.classifications || []).includes(term);
                                   return (
-                                    <div key={term} className="taxonomy-item-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', background: isChecked ? '#f0fdf4' : 'transparent', borderRadius: '6px', padding: '2px 6px' }}>
+                                    <div key={term} className="taxonomy-item-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', background: isChecked ? '#f0fdf4' : 'transparent', border: isChecked ? '1px solid #bbf7d0' : '1px solid transparent', borderRadius: '6px', padding: '4px 8px' }}>
                                       <label className="taxonomy-item-label" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                                         <input
                                           type="checkbox"
@@ -3644,7 +3686,7 @@ function MainApp() {
                                             setFormData({ ...formData, classifications: updatedList });
                                           }}
                                         />
-                                        <span style={{ fontSize: '0.84rem' }}>{term}</span>
+                                        <span style={{ fontSize: '0.84rem', fontWeight: isChecked ? '600' : 'normal', color: isChecked ? '#15803d' : 'inherit' }}>{term}</span>
                                       </label>
                                       <button
                                         type="button"
@@ -3657,7 +3699,6 @@ function MainApp() {
                                           e.stopPropagation();
                                           setSelectedGlossaryTerm(LEGAL_GLOSSARY[term] || {
                                             termo: term,
-                                            natureza: nature,
                                             dimensao: dimension,
                                             significado: 'Classificação pedagógica para fins de monitoramento e mediação no POME.',
                                             termoAdequado: term,
@@ -3673,9 +3714,65 @@ function MainApp() {
                                 })}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Botão e Bloco Independente: Outra Ocorrência (Fora da grade das 8 dimensões) */}
+                    <div 
+                      className="taxonomy-other-container" 
+                      style={{ 
+                        marginTop: '1.25rem', 
+                        padding: '1rem 1.25rem', 
+                        backgroundColor: (formData.classifications || []).includes('Outra') ? '#f0fdf4' : 'var(--bg-app)', 
+                        border: (formData.classifications || []).includes('Outra') ? '2px solid #22c55e' : '1px dashed var(--border-color)', 
+                        borderRadius: 'var(--radius-md)' 
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', margin: 0, fontWeight: '700', fontSize: '0.92rem', color: (formData.classifications || []).includes('Outra') ? '#15803d' : 'inherit' }}>
+                          <input
+                            type="checkbox"
+                            checked={(formData.classifications || []).includes('Outra')}
+                            onChange={(e) => {
+                              let updatedList = [...(formData.classifications || [])];
+                              if (e.target.checked) {
+                                if (!updatedList.includes('Outra')) updatedList.push('Outra');
+                              } else {
+                                updatedList = updatedList.filter(item => item !== 'Outra');
+                              }
+                              setFormData({ ...formData, classifications: updatedList });
+                            }}
+                            style={{ width: '18px', height: '18px' }}
+                          />
+                          <span>➕ Outra ocorrência / Não contemplada nas 8 dimensões propostas</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="glossary-circle-btn"
+                          data-tooltip="Ver orientação sobre a categoria Outra"
+                          data-tooltip-pos="left"
+                          title="Ver orientação sobre a categoria Outra"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedGlossaryTerm(LEGAL_GLOSSARY['Outra'] || {
+                              termo: 'Outra Ocorrência',
+                              dimensao: 'Outra / Não contemplada',
+                              significado: 'Situação de convivência, conflito ou evento escolar atípico que não se enquadra nas 8 dimensões catalogadas.',
+                              termoAdequado: 'Outra (relatar detalhadamente no campo descritivo).',
+                              situacaoEscola: 'Eventos imprevistos ou dinâmicas institucionais particulares.',
+                              fonteLegal: 'Regimento Escolar e Legislação Vigente.'
+                            });
+                          }}
+                        >
+                          ?
+                        </button>
+                      </div>
+                      <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem', marginLeft: '1.85rem' }}>
+                        Utilize esta opção quando a situação registrada não estiver prevista ou contemplada nas 8 dimensões acima descritas.
+                      </span>
                     </div>
                   </div>
 
@@ -4440,19 +4537,22 @@ function MainApp() {
                   </select>
                 </div>
 
-                {/* Filtro por Natureza da Ocorrência */}
+                {/* Filtro por Dimensão da Ocorrência */}
                 <div className="report-filter-group">
-                  <label className="report-filter-label">Natureza (Gravidade)</label>
+                  <label className="report-filter-label">Dimensão da Ocorrência</label>
                   <select
                     className="form-select"
                     style={{ fontSize: '0.825rem', padding: '0.4rem 0.6rem' }}
                     value={reportFilterNature}
                     onChange={(e) => setReportFilterNature(e.target.value)}
                   >
-                    <option value="">Todas as Naturezas</option>
-                    <option value="Perturbadora">🟡 Perturbadoras (Clima)</option>
-                    <option value="Agressiva">🔴 Agressivas / Violentas</option>
-                    <option value="Risco">🟣 Situações de Risco</option>
+                    <option value="">Todas as Dimensões</option>
+                    {Object.entries(DIMENSIONS_INFO).map(([key, info]) => (
+                      <option key={key} value={key}>
+                        {info.icone} {info.numero}. {info.nome}
+                      </option>
+                    ))}
+                    <option value="Outra">➕ 9. Outra / Não contemplada</option>
                   </select>
                 </div>
 
@@ -4617,30 +4717,21 @@ function MainApp() {
                 </div>
               </div>
 
-              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-                <div className="metric-icon" style={{ color: '#f59e0b', backgroundColor: '#fef3c7' }}>⚡</div>
+              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b', borderColor: reportMetrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: reportMetrics.vistoObrigatorio > 0 ? '#fffbeb' : 'inherit' }}>
+                <div className="metric-icon" style={{ color: '#92400e', backgroundColor: '#fef3c7' }}><IconWarning /></div>
                 <div className="metric-details">
-                  <h4>Perturbadoras</h4>
-                  <div className="metric-value">{reportMetrics.perturbadoras}</div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Clima e dinâmica de aula</span>
+                  <h4 style={{ color: reportMetrics.vistoObrigatorio > 0 ? '#92400e' : 'inherit' }}>Visto Obrigatório</h4>
+                  <div className="metric-value" style={{ color: reportMetrics.vistoObrigatorio > 0 ? '#b45309' : 'inherit' }}>{reportMetrics.vistoObrigatorio}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Demandam visto imediato</span>
                 </div>
               </div>
 
-              <div className="metric-card" style={{ borderLeft: '4px solid var(--danger)' }}>
-                <div className="metric-icon" style={{ color: 'var(--danger)' }}><IconActivity /></div>
+              <div className="metric-card" style={{ borderLeft: '4px solid #64748b' }}>
+                <div className="metric-icon" style={{ color: '#64748b', backgroundColor: 'var(--bg-app)' }}><IconClock /></div>
                 <div className="metric-details">
-                  <h4>Agressivas / Violentas</h4>
-                  <div className="metric-value">{reportMetrics.agressivas}</div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Agressões físicas ou verbais</span>
-                </div>
-              </div>
-
-              <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
-                <div className="metric-icon" style={{ color: '#8b5cf6', backgroundColor: '#ede9fe' }}>🚨</div>
-                <div className="metric-details">
-                  <h4>Situações de Risco</h4>
-                  <div className="metric-value">{reportMetrics.riscos}</div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vulnerabilidade e risco social</span>
+                  <h4>Em Rascunho</h4>
+                  <div className="metric-value">{reportMetrics.rascunhos}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Não finalizadas</span>
                 </div>
               </div>
             </div>
@@ -4652,11 +4743,11 @@ function MainApp() {
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <button 
                     type="button"
-                    className={`btn ${reportActiveChartTab === 'nature' ? 'btn-primary' : 'btn-secondary'}`}
+                    className={`btn ${(reportActiveChartTab === 'nature' || reportActiveChartTab === 'dimensions') ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
-                    onClick={() => setReportActiveChartTab('nature')}
+                    onClick={() => setReportActiveChartTab('dimensions')}
                   >
-                    ⚖️ Naturezas & Gravidade
+                    ⚖️ Distribuição por Dimensão
                   </button>
                   <button 
                     type="button"
@@ -4703,52 +4794,56 @@ function MainApp() {
                 </div>
               </div>
 
-              {/* GRÁFICO 1: NATUREZAS E GRAVIDADE */}
-              {reportActiveChartTab === 'nature' && (
+              {/* GRÁFICO 1: DISTRIBUIÇÃO PELAS 8 DIMENSÕES OFICIAIS */}
+              {(reportActiveChartTab === 'nature' || reportActiveChartTab === 'dimensions') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {(() => {
-                    const nat = getNaturesDistributionReport(reportFilteredOccurrences);
+                    const dims = getDimensionsDistributionReport(reportFilteredOccurrences);
+                    const totalOccs = reportFilteredOccurrences.length || 1;
+                    
+                    // Build gradient string for donut
+                    let accumPct = 0;
+                    const segments = dims.map(d => {
+                      const start = accumPct;
+                      const end = accumPct + d.pct;
+                      accumPct = end;
+                      return `${d.color} ${start}% ${end}%`;
+                    });
+                    const donutGradient = segments.length > 0 && dims.some(d => d.count > 0)
+                      ? `conic-gradient(${segments.join(', ')})`
+                      : 'conic-gradient(#e2e8f0 0% 100%)';
+
                     return (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          <div className="chart-bar-row">
-                            <div className="chart-bar-info">
-                              <span style={{ fontWeight: '600', color: '#d97706' }}>🟡 Condutas Perturbadoras do Clima</span>
-                              <strong>{nat.pert} ({nat.pertPct}%)</strong>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {dims.map(d => (
+                            <div key={d.dimName} className="chart-bar-row">
+                              <div className="chart-bar-info" style={{ marginBottom: '2px' }}>
+                                <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>{d.icone}</span>
+                                  <span>{d.shortName}</span>
+                                </span>
+                                <strong style={{ fontSize: '0.84rem', color: d.color }}>{d.count} ({d.pct}%)</strong>
+                              </div>
+                              <div className="chart-bar-track" style={{ height: '8px' }}>
+                                <div 
+                                  className="chart-bar-fill" 
+                                  style={{ 
+                                    width: `${d.pct}%`, 
+                                    backgroundColor: d.color,
+                                    borderRadius: '4px'
+                                  }}
+                                ></div>
+                              </div>
                             </div>
-                            <div className="chart-bar-track">
-                              <div className="chart-bar-fill" style={{ width: `${nat.pertPct}%`, backgroundColor: '#f59e0b', backgroundImage: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}></div>
-                            </div>
-                          </div>
-
-                          <div className="chart-bar-row">
-                            <div className="chart-bar-info">
-                              <span style={{ fontWeight: '600', color: '#dc2626' }}>🔴 Condutas Agressivas / Violentas</span>
-                              <strong>{nat.agr} ({nat.agrPct}%)</strong>
-                            </div>
-                            <div className="chart-bar-track">
-                              <div className="chart-bar-fill" style={{ width: `${nat.agrPct}%`, backgroundColor: '#ef4444', backgroundImage: 'linear-gradient(90deg, #ef4444, #f87171)' }}></div>
-                            </div>
-                          </div>
-
-                          <div className="chart-bar-row">
-                            <div className="chart-bar-info">
-                              <span style={{ fontWeight: '600', color: '#7c3aed' }}>🟣 Situações de Risco & Vulnerabilidade</span>
-                              <strong>{nat.risc} ({nat.riscPct}%)</strong>
-                            </div>
-                            <div className="chart-bar-track">
-                              <div className="chart-bar-fill" style={{ width: `${nat.riscPct}%`, backgroundColor: '#8b5cf6', backgroundImage: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }}></div>
-                            </div>
-                          </div>
+                          ))}
                         </div>
 
-                        {/* Donut Indicador */}
-                        <div className="chart-donut-container" style={{ backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                        {/* Donut Indicador e Legenda Consolidada */}
+                        <div className="chart-donut-container" style={{ backgroundColor: 'var(--bg-app)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                           <div 
                             className="chart-donut-circle" 
-                            style={{ 
-                              background: `conic-gradient(#f59e0b 0% ${nat.pertPct}%, #ef4444 ${nat.pertPct}% ${nat.pertPct + nat.agrPct}%, #8b5cf6 ${nat.pertPct + nat.agrPct}% 100%)` 
-                            }}
+                            style={{ background: donutGradient }}
                           >
                             <div className="chart-donut-inner">
                               <span>{reportFilteredOccurrences.length}</span>
@@ -4756,19 +4851,15 @@ function MainApp() {
                             </div>
                           </div>
 
-                          <div className="chart-legend">
-                            <div className="chart-legend-item">
-                              <div className="chart-legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
-                              <span>Perturbadoras: <strong>{nat.pert}</strong></span>
-                            </div>
-                            <div className="chart-legend-item">
-                              <div className="chart-legend-color" style={{ backgroundColor: '#ef4444' }}></div>
-                              <span>Agressivas: <strong>{nat.agr}</strong></span>
-                            </div>
-                            <div className="chart-legend-item">
-                              <div className="chart-legend-color" style={{ backgroundColor: '#8b5cf6' }}></div>
-                              <span>Risco: <strong>{nat.risc}</strong></span>
-                            </div>
+                          <div className="chart-legend" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem 0.75rem', marginTop: '1rem' }}>
+                            {dims.map(d => (
+                              <div key={d.dimName} className="chart-legend-item" style={{ fontSize: '0.74rem' }}>
+                                <div className="chart-legend-color" style={{ backgroundColor: d.color, width: '10px', height: '10px', borderRadius: '2px' }}></div>
+                                <span title={d.dimName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {d.numero}. {d.shortName.split('.')[1] || d.shortName}: <strong>{d.count}</strong>
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -4976,10 +5067,8 @@ function MainApp() {
                         <th>Total Ocorrências</th>
                         {(user.role === 'pedagogo' || user.role === 'assistente') && <th>Cadastrados por Mim</th>}
                         <th>Estudantes Atendidos</th>
-                        <th>Perturbadoras</th>
-                        <th>Agressivas/Violentas</th>
-                        <th>Situações de Risco</th>
-                        <th>Com Visto</th>
+                        <th>Visto Obrigatório</th>
+                        <th>Com Visto Diretoria</th>
                         <th>Taxa de Homologação</th>
                       </tr>
                     </thead>
@@ -4994,9 +5083,7 @@ function MainApp() {
                               <td><span className="badge badge-secondary" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '700' }}>{t.myCount}</span></td>
                             )}
                             <td>{t.studentsCount}</td>
-                            <td>{t.perturbadoras}</td>
-                            <td>{t.agressivas}</td>
-                            <td>{t.risco > 0 ? <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{t.risco}</span> : 0}</td>
+                            <td>{t.vistoObrigatorio > 0 ? <span className="badge badge-warning" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontWeight: '700' }}>{t.vistoObrigatorio}</span> : '0'}</td>
                             <td><span className="badge badge-success">{t.comVisto}</span></td>
                             <td>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -6090,7 +6177,7 @@ function MainApp() {
             <span>Sexo: {reportFilterSex || 'Todos'} | </span>
             <span>Turno: {reportFilterTurn || 'Todos'} | </span>
             <span>Ciclo: {reportFilterGrade || 'Todos'} | </span>
-            <span>Natureza: {reportFilterNature || 'Todas'} | </span>
+            <span>Dimensão: {reportFilterNature || 'Todas'} | </span>
             <span>Classificação: {reportFilterClassification || 'Todas'} | </span>
             <span>Sentimento: {reportFilterFeeling || 'Todos'} | </span>
             <span>Status: {reportFilterStatus === 'com_visto' ? 'Com Visto' : reportFilterStatus === 'sem_visto' ? 'Pendente de Visto' : reportFilterStatus === 'rascunho' ? 'Em Rascunho' : (reportFilterStatus || 'Todos')}</span>
@@ -6107,12 +6194,12 @@ function MainApp() {
               <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#2b8a3e' }}>{reportFilteredOccurrences.filter(o => o.directorNotes).length}</div>
             </div>
             <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
-              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Sem Visto</div>
-              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#e67700' }}>{reportFilteredOccurrences.filter(o => !o.directorNotes && o.status !== 'rascunho').length}</div>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Visto Obrigatório</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#e67700' }}>{reportFilteredOccurrences.filter(o => !o.directorNotes && o.status !== 'rascunho' && Array.isArray(o.direction_referrals) && o.direction_referrals.length > 0).length}</div>
             </div>
             <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
-              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Casos de Risco</div>
-              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#c92a2a' }}>{reportFilteredOccurrences.filter(o => { const cls = Array.isArray(o.classifications) ? o.classifications : [o.type]; return cls.some(c => getNatureForClassification(c) === 'Risco'); }).length}</div>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Risco à Vida/Saúde</div>
+              <div style={{ fontSize: '13pt', fontWeight: 'bold', color: '#c92a2a' }}>{reportFilteredOccurrences.filter(o => occurrenceHasDimension(o, '7. Situações de risco à vida, à saúde e à segurança') || occurrenceHasDimension(o, '8. Violência sexual')).length}</div>
             </div>
             <div style={{ border: '1px solid #333', padding: '5px', textAlign: 'center', borderRadius: '4px' }}>
               <div style={{ fontSize: '7pt', fontWeight: 'bold', textTransform: 'uppercase' }}>Rascunhos</div>
@@ -6554,18 +6641,23 @@ function MainApp() {
               <div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <IconBookOpen style={{ width: '15px', height: '15px' }} />
-                  <span>Glossário Jurídico & Pedagógico POME</span>
+                  <span>{selectedGlossaryTerm.isDimension ? 'Definição e Diretrizes da Dimensão POME' : 'Glossário Jurídico & Pedagógico POME'}</span>
                 </div>
                 <h3 style={{ fontSize: '1.3rem', margin: '0.35rem 0 0 0', color: 'var(--primary)', fontWeight: '800', lineHeight: '1.2' }}>
+                  {selectedGlossaryTerm.icone && <span style={{ marginRight: '8px' }}>{selectedGlossaryTerm.icone}</span>}
                   {selectedGlossaryTerm.termo}
                 </h3>
                 <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
-                    {selectedGlossaryTerm.dimensao}
-                  </span>
-                  <span className="badge" style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}>
-                    {selectedGlossaryTerm.natureza}
-                  </span>
+                  {selectedGlossaryTerm.dimensao && (
+                    <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '0.75rem', padding: '3px 9px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', fontWeight: '700' }}>
+                      Dimensão: {selectedGlossaryTerm.dimensao}
+                    </span>
+                  )}
+                  {selectedGlossaryTerm.isDimension && (
+                    <span className="badge" style={{ backgroundColor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontSize: '0.75rem', padding: '3px 9px', borderRadius: '6px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', fontWeight: '700' }}>
+                      Classificação Oficial POME
+                    </span>
+                  )}
                 </div>
               </div>
               <button 
@@ -6580,20 +6672,35 @@ function MainApp() {
             </div>
 
             <div className="card-body" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
-              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+              {/* Conceito / Definição */}
+              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderLeft: '3px solid var(--primary)' }}>
                 <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <IconScale style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
-                  <span>Significado Conforme a Legislação</span>
+                  <span>{selectedGlossaryTerm.isDimension ? 'Definição e Abrangência da Dimensão' : 'Significado Conforme a Legislação'}</span>
                 </h5>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: '1.55', margin: 0 }}>
                   {selectedGlossaryTerm.significado}
                 </p>
               </div>
 
+              {/* Orientação Pedagógica / Diretrizes (para Dimensões) */}
+              {selectedGlossaryTerm.encaminhamentoPedagogico && (
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderLeft: '3px solid #22c55e' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: '#15803d', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconSchool style={{ width: '16px', height: '16px', color: '#15803d', flexShrink: 0 }} />
+                    <span>Diretrizes e Orientação Pedagógica</span>
+                  </h5>
+                  <p style={{ fontSize: '0.875rem', color: '#166534', lineHeight: '1.55', margin: 0 }}>
+                    {selectedGlossaryTerm.encaminhamentoPedagogico}
+                  </p>
+                </div>
+              )}
+
+              {/* Termo Adequado (para Itens) */}
               {selectedGlossaryTerm.termoAdequado && (
-                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderLeft: '3px solid var(--primary)' }}>
-                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <IconTarget style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderLeft: '3px solid var(--accent-orange)' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--accent-orange)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconTarget style={{ width: '16px', height: '16px', color: 'var(--accent-orange)', flexShrink: 0 }} />
                     <span>Termo Tecnicamente Adequado</span>
                   </h5>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0, lineHeight: '1.45' }}>
@@ -6602,25 +6709,31 @@ function MainApp() {
                 </div>
               )}
 
-              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
-                <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <IconSchool style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
-                  <span>Situação em que se aplica na escola (Exemplo Prático)</span>
-                </h5>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
-                  {selectedGlossaryTerm.situacaoEscola}
-                </p>
-              </div>
+              {/* Situação em que se aplica (para Itens) */}
+              {selectedGlossaryTerm.situacaoEscola && (
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconSchool style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                    <span>Situação em que se aplica na escola (Exemplo Prático)</span>
+                  </h5>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0 }}>
+                    {selectedGlossaryTerm.situacaoEscola}
+                  </p>
+                </div>
+              )}
 
-              <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
-                <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <IconBookOpen style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
-                  <span>Fonte Legal e Normativa</span>
-                </h5>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '600' }}>
-                  {selectedGlossaryTerm.fonteLegal}
-                </p>
-              </div>
+              {/* Fonte Legal */}
+              {selectedGlossaryTerm.fonteLegal && (
+                <div className="glossary-section-card" style={{ padding: '0.9rem 1.1rem', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                  <h5 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IconBookOpen style={{ width: '16px', height: '16px', color: 'var(--primary)', flexShrink: 0 }} />
+                    <span>Fonte Legal e Normativa</span>
+                  </h5>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '600' }}>
+                    {selectedGlossaryTerm.fonteLegal}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="card-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '0.85rem 1.5rem', display: 'flex', justifyContent: 'flex-end', backgroundColor: 'var(--bg-card)' }}>
