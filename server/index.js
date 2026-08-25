@@ -99,7 +99,7 @@ app.post('/api/login', async (req, res) => {
           ((cleanInput === 'diretor' || cleanInput === 'diretora' || cleanInput.includes('diretor@')) && u.role === 'diretor') ||
           ((cleanInput === 'pedagogo' || cleanInput === 'pedagoga' || cleanInput.includes('pedagogo@') || cleanInput.includes('pedagoga@')) && u.role === 'pedagogo') ||
           ((cleanInput === 'assistente' || cleanInput.includes('assistente@')) && u.role === 'assistente') ||
-          ((cleanInput === 'luisfelipemarcelino33@gmail.com' || cleanInput === 'vina@pome.com.br' || cleanInput.includes('felipe@')) && u.id === 'usr-felipe');
+          ((cleanInput === 'luisfelipemarcelino33@gmail.com' || cleanInput.includes('vina') || cleanInput.includes('felipe') || cleanInput.includes('felipe@')) && u.id === 'usr-felipe');
 
         return matchCpf || matchEmailPrefix || matchAlias;
       });
