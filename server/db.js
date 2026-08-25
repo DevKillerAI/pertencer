@@ -626,8 +626,9 @@ export const db = {
 
         // Also keep local fallback updated
         const localData = readDb();
-        if (user.id) {
-          localData.users = localData.users.map(u => u.id === user.id ? { ...u, ...user } : u);
+        const existingIdx = localData.users.findIndex(u => u.id === user.id);
+        if (existingIdx >= 0) {
+          localData.users[existingIdx] = { ...localData.users[existingIdx], ...user };
         } else {
           localData.users.push(user);
         }
@@ -641,10 +642,13 @@ export const db = {
     
     // Local Fallback
     const data = readDb();
-    if (user.id) {
-      data.users = data.users.map(u => u.id === user.id ? { ...u, ...user } : u);
-    } else {
+    if (!user.id) {
       user.id = 'usr-' + Date.now();
+    }
+    const idx = data.users.findIndex(u => u.id === user.id);
+    if (idx >= 0) {
+      data.users[idx] = { ...data.users[idx], ...user };
+    } else {
       data.users.push(user);
     }
     writeDb(data);
