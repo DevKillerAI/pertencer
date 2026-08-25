@@ -128,6 +128,32 @@
         "4º Ano A"
       ],
       "email": "pedagogo@edu.contagem.mg.gov.br"
+    },
+    {
+      "name": "Felipe Vina Marcelino",
+      "cpf": "123.456.789-00",
+      "email": "vina@edu.contagem.mg.gov.br",
+      "phone": "(31) 98888-7777",
+      "role": "diretor",
+      "schoolId": "esc-1",
+      "password": "senha",
+      "confirmPassword": "senha",
+      "lgpd_accepted": true,
+      "createdAt": "2026-08-25T03:30:21.377Z",
+      "id": "usr-1787628646435"
+    },
+    {
+      "name": "Felipe Vina Marcelino",
+      "cpf": "12345678900",
+      "email": "vina@edu.contagem.mg.gov.br",
+      "phone": "(31) 98888-7777",
+      "password": "senha",
+      "role": "diretor",
+      "schoolId": "esc-1",
+      "classes": [],
+      "lgpd_accepted": true,
+      "createdAt": "2026-08-25T03:32:57.447Z",
+      "id": "usr-1787628777447"
     }
   ],
   "occurrences": [
