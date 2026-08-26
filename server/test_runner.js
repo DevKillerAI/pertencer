@@ -25,6 +25,7 @@ server.stderr.on('data', (data) => {
 await new Promise(resolve => setTimeout(resolve, 2000));
 
 async function runTests() {
+  let registeredUser = null;
   try {
     console.log('\n--- RUNNING POME INTEGRATION TESTS ---\n');
 
@@ -35,7 +36,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Duplicate User',
-        cpf: '00000000000', // same as gestor
+        cpf: '99999999999', // same as superadmin felipe
         email: 'unique@pome.com',
         password: 'password',
         role: 'pedagogo'
@@ -54,7 +55,7 @@ async function runTests() {
       body: JSON.stringify({
         name: 'Duplicate Email User',
         cpf: '98765432100',
-        email: 'admin@edu.contagem.mg.gov.br', // same as superadmin
+        email: 'felipe@edu.contagem.mg.gov.br', // same as superadmin felipe
         password: 'password',
         role: 'pedagogo'
       })
@@ -99,7 +100,7 @@ async function runTests() {
       })
     });
     assert.strictEqual(resRegOk.status, 201);
-    const registeredUser = await resRegOk.json();
+    registeredUser = await resRegOk.json();
     console.log('✅ Test Passed: Self-registration with LGPD completed.');
 
     // 4. Test Director adding "Visto da Diretoria" (Director's notes/signature)
@@ -112,8 +113,8 @@ async function runTests() {
         schoolId: 'esc-1',
         studentName: 'Gabriel Souza Lima',
         directorNotes: 'Visto e parecer pedagógico homologado pela diretoria em 23/08.',
-        updatedById: 'usr-2',
-        updatedByName: 'Diretor Wancleber'
+        updatedById: 'usr-felipe',
+        updatedByName: 'Felipe Marcelino'
       })
     });
     assert.strictEqual(resDirVisto.status, 200);
@@ -137,8 +138,8 @@ async function runTests() {
       body: JSON.stringify({
         id: 'occ-multi-test',
         schoolId: 'esc-1',
-        createdById: 'usr-3',
-        createdByName: 'Pedagoga Maria Silva',
+        createdById: 'usr-felipe',
+        createdByName: 'Felipe Marcelino',
         date: '2026-08-22',
         students: [
           {
@@ -177,8 +178,8 @@ async function runTests() {
     assert.strictEqual(createdOcc.feelings.length, 3);
     console.log('✅ Test Passed: Multi-student occurrence with CNV and direction referral created.');
 
-    // 9. Create a draft occurrence as usr-3
-    console.log('Creating a draft occurrence as usr-3...');
+    // 9. Create a draft occurrence as registeredUser
+    console.log('Creating a draft occurrence as registered user...');
     const resCreateDraft = await fetch('http://localhost:3002/api/occurrences', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -188,8 +189,8 @@ async function runTests() {
         schoolId: 'esc-1',
         type: 'Bullying',
         status: 'rascunho',
-        createdById: 'usr-3',
-        createdByName: 'Pedagoga Maria Silva',
+        createdById: registeredUser.id,
+        createdByName: registeredUser.name,
         date: '2026-07-31',
         subject: 'Relato de teste de rascunho.'
       })
@@ -197,18 +198,18 @@ async function runTests() {
     assert.strictEqual(resCreateDraft.status, 200);
     console.log('✅ Test Passed: Draft created successfully.');
 
-    // 10. Test that usr-4 (different user) cannot see the draft of usr-3
-    console.log('Testing that usr-4 cannot see the draft of usr-3...');
-    const resGetDraftsOther = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-4');
+    // 10. Test that other user cannot see the draft
+    console.log('Testing that another user cannot see the draft of registeredUser...');
+    const resGetDraftsOther = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=other-user-999');
     assert.strictEqual(resGetDraftsOther.status, 200);
     const occurrencesOther = await resGetDraftsOther.json();
     const foundDraftOther = occurrencesOther.find(o => o.id === 'occ-draft-test');
     assert.strictEqual(foundDraftOther, undefined);
-    console.log('✅ Test Passed: User usr-4 cannot see usr-3\'s draft.');
+    console.log('✅ Test Passed: Other user cannot see registeredUser\'s draft.');
 
-    // 11. Test that usr-3 (creator) CAN see the draft
-    console.log('Testing that usr-3 can see their own draft...');
-    const resGetDraftsSelf = await fetch('http://localhost:3002/api/occurrences?schoolId=esc-1&role=pedagogo&userId=usr-3');
+    // 11. Test that creator CAN see their own draft
+    console.log('Testing that creator CAN see their own draft...');
+    const resGetDraftsSelf = await fetch(`http://localhost:3002/api/occurrences?schoolId=esc-1&role=assistente&userId=${registeredUser.id}`);
     assert.strictEqual(resGetDraftsSelf.status, 200);
     const occurrencesSelf = await resGetDraftsSelf.json();
     const foundDraftSelf = occurrencesSelf.find(o => o.id === 'occ-draft-test');
@@ -285,17 +286,17 @@ async function runTests() {
     assert.ok(backupsList.some(b => b.filename === backupResult.backup.filename));
     console.log('✅ Test Passed: Backup snapshot created and indexed successfully.');
 
-    // 18. Test Super Admin Impersonation of any user account
-    console.log('Testing Super Admin impersonation of Pedagoga Maria Silva (usr-3)...');
+    // 18. Test Super Admin Impersonation of user account
+    console.log(`Testing Super Admin impersonation of registered user (${registeredUser.name})...`);
     const resImpersonate = await fetch('http://localhost:3002/api/admin/impersonate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUserId: 'usr-3' })
+      body: JSON.stringify({ targetUserId: registeredUser.id })
     });
     assert.strictEqual(resImpersonate.status, 200);
     const targetUserSession = await resImpersonate.json();
-    assert.strictEqual(targetUserSession.id, 'usr-3');
-    assert.strictEqual(targetUserSession.role, 'pedagogo');
+    assert.strictEqual(targetUserSession.id, registeredUser.id);
+    assert.strictEqual(targetUserSession.role, 'assistente');
     assert.strictEqual(targetUserSession.password, undefined); // Password stripped for security
     console.log('✅ Test Passed: Super Admin impersonated target user successfully with credentials protected.');
 
@@ -313,8 +314,8 @@ async function runTests() {
 
     // Clean up test occurrences and registered test user
     console.log('Cleaning up test data...');
-    await fetch('http://localhost:3002/api/occurrences/occ-draft-test?role=gestor&userId=usr-1', { method: 'DELETE' });
-    await fetch('http://localhost:3002/api/occurrences/occ-multi-test?role=gestor&userId=usr-1', { method: 'DELETE' });
+    await fetch('http://localhost:3002/api/occurrences/occ-draft-test?role=superadmin&userId=usr-felipe', { method: 'DELETE' });
+    await fetch('http://localhost:3002/api/occurrences/occ-multi-test?role=superadmin&userId=usr-felipe', { method: 'DELETE' });
     if (registeredUser && registeredUser.id) {
       await fetch(`http://localhost:3002/api/users/${registeredUser.id}`, { method: 'DELETE' });
     }

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 
@@ -79,6 +80,69 @@ export const logEngine = {
 };
 
 // =========================================================================
+// CRYPTOGRAPHIC UTILITIES (PASSWORD HASHING & JWT SIGNING)
+// =========================================================================
+
+const JWT_SECRET = process.env.JWT_SECRET || 'pome-contagem-secret-key-2026-v3-secure-signature-edu-mg';
+
+export function hashPassword(plainPassword) {
+  if (!plainPassword) return '';
+  if (typeof plainPassword === 'string' && plainPassword.startsWith('pbkdf2:sha512:')) {
+    return plainPassword;
+  }
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(plainPassword, salt, 10000, 64, 'sha512').toString('hex');
+  return `pbkdf2:sha512:10000:${salt}:${hash}`;
+}
+
+export function verifyPassword(plainPassword, storedPassword) {
+  if (!plainPassword || !storedPassword) return false;
+  if (typeof storedPassword === 'string' && storedPassword.startsWith('pbkdf2:sha512:')) {
+    const parts = storedPassword.split(':');
+    if (parts.length !== 5) return false;
+    const iterations = parseInt(parts[2], 10) || 10000;
+    const salt = parts[3];
+    const originalHash = parts[4];
+    const computedHash = crypto.pbkdf2Sync(plainPassword, salt, iterations, 64, 'sha512').toString('hex');
+    try {
+      return crypto.timingSafeEqual(Buffer.from(computedHash, 'utf8'), Buffer.from(originalHash, 'utf8'));
+    } catch (_) {
+      return false;
+    }
+  }
+  // Retrocompatibilidade temporária com senhas em texto puro
+  return plainPassword === storedPassword;
+}
+
+export function generateToken(payload, expiresInSeconds = 43200) { // 12 horas de validade padrão
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  const body = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+export function verifyToken(token) {
+  try {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [header, body, signature] = parts;
+    const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+    if (!crypto.timingSafeEqual(Buffer.from(signature, 'utf8'), Buffer.from(expectedSignature, 'utf8'))) {
+      return null;
+    }
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+      return null; // Expirado
+    }
+    return payload;
+  } catch (_) {
+    return null;
+  }
+}
+
+// =========================================================================
 // ENCODING & DECODING HELPERS (METADATA PROTECTION & RESILIENCE)
 // =========================================================================
 
@@ -130,11 +194,16 @@ export function encodeUser(user) {
   if (user.lgpd_accepted) classesPayload.push('__lgpd:true');
   if (user.createdAt) classesPayload.push(`__created:${user.createdAt}`);
 
+  const rawPassword = user.password || 'senha';
+  const securedPassword = (typeof rawPassword === 'string' && rawPassword.startsWith('pbkdf2:sha512:'))
+    ? rawPassword
+    : hashPassword(rawPassword);
+
   return {
     id: user.id || ('usr-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
     name: (user.name || '').trim(),
     cpf: (user.cpf || '').replace(/\D/g, ''),
-    password: user.password || 'senha',
+    password: securedPassword,
     role: (user.role || 'pedagogo').toLowerCase(),
     schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId || null),
     classes: classesPayload
@@ -263,8 +332,8 @@ export function encodeOccurrence(occurrence) {
   const payload = {
     id: occurrence.id,
     schoolId: occurrence.schoolId || 'esc-1',
-    createdById: occurrence.createdById || 'usr-3',
-    createdByName: occurrence.createdByName || 'Pedagogo(a)',
+    createdById: occurrence.createdById || 'usr-felipe',
+    createdByName: occurrence.createdByName || 'Super Admin',
     date: occurrence.date || new Date().toISOString().split('T')[0],
     studentName: occurrence.studentName || firstStudent.studentName || 'Estudante',
     gradeCycle: occurrence.gradeCycle || firstStudent.gradeCycle || '',
@@ -293,28 +362,54 @@ const withTimeout = (promise, ms = 12000) => {
 // =========================================================================
 // CORE DATABASE API (SUPABASE EXCLUSIVE AUTHORITY)
 // =========================================================================
+// IN-MEMORY FAST CACHES (HIGH-CONCURRENCY ACCELERATION)
+// =========================================================================
+
+let schoolsCache = null;
+let schoolsCacheExpiry = 0;
+
+let usersCache = null;
+let usersCacheExpiry = 0;
+
+export const invalidateCache = (type = 'all') => {
+  if (type === 'schools' || type === 'all') {
+    schoolsCache = null;
+    schoolsCacheExpiry = 0;
+  }
+  if (type === 'users' || type === 'all') {
+    usersCache = null;
+    usersCacheExpiry = 0;
+  }
+};
 
 export const db = {
   // Full Database State (Used for Metrics and Complete Backups)
   getData: async () => {
-    const schools = await db.getSchools();
-    const users = await db.getUsers();
+    const schools = await db.getSchools(true);
+    const users = await db.getUsers(true);
     const occurrences = await db.getOccurrences();
     return { schools, users, occurrences };
   },
 
-  // Schools
-  getSchools: async () => {
+  // Schools (Cached 60s for ultra-fast reading)
+  getSchools: async (forceRefresh = false) => {
     if (!supabase) throw new Error('Supabase client not initialized');
+    const now = Date.now();
+    if (!forceRefresh && schoolsCache && now < schoolsCacheExpiry) {
+      return schoolsCache;
+    }
     const { data, error } = await withTimeout(supabase
       .from('schools')
       .select('*')
       .order('name', { ascending: true }));
     if (error) {
       logEngine.log('ERROR', `Erro ao buscar escolas no Supabase: ${error.message}`);
+      if (schoolsCache) return schoolsCache;
       throw error;
     }
-    return data || [];
+    schoolsCache = data || [];
+    schoolsCacheExpiry = now + 60000;
+    return schoolsCache;
   },
 
   saveSchool: async (school) => {
@@ -330,6 +425,7 @@ export const db = {
       logEngine.log('ERROR', `Erro ao salvar escola no Supabase: ${error.message}`);
       throw error;
     }
+    invalidateCache('schools');
     return data[0];
   },
 
@@ -343,21 +439,30 @@ export const db = {
       logEngine.log('ERROR', `Erro ao excluir escola no Supabase: ${error.message}`);
       throw error;
     }
+    invalidateCache('schools');
     return true;
   },
 
-  // Users
-  getUsers: async () => {
+  // Users (Cached 30s for fast authentication and lookup)
+  getUsers: async (forceRefresh = false) => {
     if (!supabase) throw new Error('Supabase client not initialized');
+    const now = Date.now();
+    if (!forceRefresh && usersCache && now < usersCacheExpiry) {
+      return usersCache;
+    }
     const { data, error } = await withTimeout(supabase
       .from('users')
       .select('*')
       .order('name', { ascending: true }));
     if (error) {
       logEngine.log('ERROR', `Erro ao buscar usuários no Supabase: ${error.message}`);
+      if (usersCache) return usersCache;
       throw error;
     }
-    return (data || []).map(decodeUser);
+    const decoded = (data || []).map(decodeUser);
+    usersCache = decoded;
+    usersCacheExpiry = now + 30000;
+    return decoded;
   },
 
   saveUser: async (user) => {
@@ -370,6 +475,7 @@ export const db = {
       logEngine.log('ERROR', `Erro ao salvar usuário no Supabase: ${error.message}`);
       throw error;
     }
+    invalidateCache('users');
     return decodeUser(payload);
   },
 
@@ -383,16 +489,18 @@ export const db = {
       logEngine.log('ERROR', `Erro ao excluir usuário no Supabase: ${error.message}`);
       throw error;
     }
+    invalidateCache('users');
     return true;
   },
 
-  // Occurrences
-  getOccurrences: async () => {
+  // Occurrences (Database-Level Direct Scoping)
+  getOccurrences: async (filter = {}) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    const { data, error } = await withTimeout(supabase
-      .from('occurrences')
-      .select('*')
-      .order('date', { ascending: false }));
+    let query = supabase.from('occurrences').select('*');
+    if (filter.schoolId) {
+      query = query.eq('schoolId', filter.schoolId);
+    }
+    const { data, error } = await withTimeout(query.order('date', { ascending: false }));
     if (error) {
       logEngine.log('ERROR', `Erro ao buscar ocorrências no Supabase: ${error.message}`);
       throw error;

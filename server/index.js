@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { db, supabase, isSupabaseConfigured, logEngine, backupEngine } from './db.js';
+import { db, supabase, isSupabaseConfigured, logEngine, backupEngine, hashPassword, verifyPassword, generateToken, verifyToken } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,9 +64,50 @@ async function triggerSupabaseAuthEmail(email, password, userMetadata) {
   }
 }
 
-// API Login
+// Anti-Brute-Force Rate Limiting Tracker for Login
+const failedLoginAttempts = new Map();
+
+function checkBruteForce(ip) {
+  const record = failedLoginAttempts.get(ip);
+  if (!record) return { blocked: false };
+  if (Date.now() > record.blockedUntil) {
+    failedLoginAttempts.delete(ip);
+    return { blocked: false };
+  }
+  if (record.count >= 5) {
+    const minutesLeft = Math.ceil((record.blockedUntil - Date.now()) / 60000);
+    return { blocked: true, minutesLeft };
+  }
+  return { blocked: false };
+}
+
+function recordLoginFailure(ip) {
+  const record = failedLoginAttempts.get(ip) || { count: 0, blockedUntil: 0 };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.blockedUntil = Date.now() + 15 * 60 * 1000; // Bloqueio por 15 minutos
+  }
+  failedLoginAttempts.set(ip, record);
+}
+
+function clearLoginFailures(ip) {
+  failedLoginAttempts.delete(ip);
+}
+
+// API Login (Protected with PBKDF2/SHA-512 Verification, Rate Limiting & JWT Signing)
 app.post('/api/login', async (req, res) => {
   try {
+    const clientIp = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
+    
+    // 1. Verificar proteção contra força bruta
+    const bruteForceCheck = checkBruteForce(clientIp);
+    if (bruteForceCheck.blocked) {
+      logEngine.log('WARN', `Tentativa de login bloqueada por taxa excessiva (IP: ${clientIp})`);
+      return res.status(429).json({ 
+        error: `Muitas tentativas incorretas. Por segurança, tente novamente em ${bruteForceCheck.minutesLeft} minutos.` 
+      });
+    }
+
     const { cpf, password } = req.body;
     if (!cpf || !password) {
       return res.status(400).json({ error: 'CPF/E-mail e senha são obrigatórios.' });
@@ -77,7 +118,7 @@ app.post('/api/login', async (req, res) => {
     const cleanPwd = (password || '').trim();
     const users = await db.getUsers();
     
-    // 1. Prioridade para correspondência exata de CPF ou E-mail
+    // 2. Prioridade para correspondência exata de CPF ou E-mail
     let user = users.find(u => {
       const uCpf = (u.cpf || '').replace(/\D/g, '');
       const uEmail = (u.email || '').toLowerCase();
@@ -86,45 +127,36 @@ app.post('/api/login', async (req, res) => {
       return matchCpf || matchEmail;
     });
 
-    // 2. Segunda prioridade: correspondência por prefixo de e-mail ou aliases
+    // 3. Segunda prioridade: correspondência direta para Super Admin Master (Felipe)
     if (!user) {
       user = users.find(u => {
-        const uCpf = (u.cpf || '').replace(/\D/g, '');
         const uEmail = (u.email || '').toLowerCase();
-        
-        const matchCpf = cleanCpf.length >= 3 && uCpf && (uCpf.endsWith(cleanCpf) || cleanCpf.endsWith(uCpf));
-        const matchEmailPrefix = uEmail && uEmail.split('@')[0] === cleanInput.split('@')[0];
-        
-        const matchAlias = 
-          ((cleanInput === 'gestor' || cleanInput === 'seduc' || cleanInput.includes('gestor@') || cleanInput.includes('seduc@')) && u.role === 'seduc') ||
-          ((cleanInput === 'admin' || cleanInput === 'superadmin' || cleanInput.includes('admin@')) && u.role === 'superadmin') ||
-          ((cleanInput === 'diretor' || cleanInput === 'diretora' || cleanInput.includes('diretor@')) && u.role === 'diretor') ||
-          ((cleanInput === 'pedagogo' || cleanInput === 'pedagoga' || cleanInput.includes('pedagogo@') || cleanInput.includes('pedagoga@')) && u.role === 'pedagogo') ||
-          ((cleanInput === 'assistente' || cleanInput.includes('assistente@')) && u.role === 'assistente') ||
-          ((cleanInput === 'luisfelipemarcelino33@gmail.com' || cleanInput.includes('felipe@')) && u.id === 'usr-felipe');
-
-        return matchCpf || matchEmailPrefix || matchAlias;
+        return (cleanInput === 'luisfelipemarcelino33@gmail.com' || cleanInput.includes('felipe@')) && u.id === 'usr-felipe';
       });
     }
 
     if (!user) {
+      recordLoginFailure(clientIp);
       logEngine.log('WARN', `Tentativa de login falha: usuário não encontrado para ${cleanInput}`);
       return res.status(401).json({ error: 'CPF/E-mail ou senha incorretos.' });
     }
 
-    // Validação de senha: aceita a senha cadastrada ou variações padrão institucionais
-    const isPasswordValid = 
-      user.password === cleanPwd ||
-      cleanPwd === '2018@Senha' ||
-      (user.role === 'superadmin' && ['admin', 'admin123', 'senha', '123456'].includes(cleanPwd)) ||
-      (user.role === 'seduc' && ['seduc', 'seduc123', 'gestor', 'gestor123', 'admin', 'admin123', 'senha', '123456'].includes(cleanPwd)) ||
-      (user.role === 'diretor' && ['diretor', 'diretor123', 'senha', 'senha123', 'admin', 'admin123', '123456'].includes(cleanPwd)) ||
-      (user.role === 'pedagogo' && ['pedagogo', 'pedagogo123', 'pedagoga', 'pedagoga123', 'senha', 'senha123', 'admin123', '123456'].includes(cleanPwd)) ||
-      (user.role === 'assistente' && ['assistente', 'assistente123', 'senha', 'senha123', 'admin123', '123456'].includes(cleanPwd));
+    // 4. Validação de senha segura com PBKDF2/SHA-512 e timing-safe comparison
+    const isPasswordValid = verifyPassword(cleanPwd, user.password);
 
     if (!isPasswordValid) {
+      recordLoginFailure(clientIp);
       logEngine.log('WARN', `Tentativa de login falha: senha incorreta para ${user.email || user.cpf}`);
       return res.status(401).json({ error: 'CPF/E-mail ou senha incorretos.' });
+    }
+
+    // Sucesso: limpar falhas anteriores
+    clearLoginFailures(clientIp);
+
+    // Se o usuário ainda estava com senha antiga em texto puro, atualiza silenciosamente para hash seguro
+    if (!user.password.startsWith('pbkdf2:sha512:')) {
+      user.password = hashPassword(cleanPwd);
+      db.saveUser(user).catch(() => {});
     }
 
     // Find school name if user has a schoolId
@@ -135,15 +167,60 @@ app.post('/api/login', async (req, res) => {
       if (school) schoolName = school.name;
     }
 
+    // Gerar Token JWT Assinado Digitalmente
+    const token = generateToken({
+      userId: user.id,
+      role: user.role,
+      schoolId: user.schoolId,
+      name: user.name,
+      cpf: user.cpf
+    });
+
     logEngine.log('AUDIT', `Login realizado com sucesso por ${user.name} (${user.role})`);
     
     // Exclude password in response
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ ...userWithoutPassword, schoolName });
+    res.json({ ...userWithoutPassword, schoolName, token });
   } catch (error) {
     logEngine.log('ERROR', `Erro durante login: ${error.message}`, { error: String(error) });
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// POST Forgot Password (Auto-recovery via Supabase Auth)
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: 'E-mail institucional é obrigatório.' });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    
+    const users = await db.getUsers();
+    const user = users.find(u => (u.email || '').toLowerCase() === cleanEmail);
+    if (!user) {
+      logEngine.log('WARN', `Solicitação de recuperação para e-mail não cadastrado: ${cleanEmail}`);
+      return res.json({ success: true, message: 'Se o e-mail estiver cadastrado, as instruções foram enviadas.' });
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
+        if (error) {
+          logEngine.log('WARN', `Supabase Auth recuperação aviso para ${cleanEmail}: ${error.message}`);
+        } else {
+          logEngine.log('AUDIT', `E-mail de recuperação de senha enviado com sucesso pelo Supabase para ${cleanEmail}`);
+        }
+      } catch (err) {
+        logEngine.log('WARN', `Falha ao acionar recuperação no Supabase para ${cleanEmail}: ${err.message}`);
+      }
+    }
+
+    res.json({ success: true, message: 'Instruções de redefinição enviadas para o e-mail informado.' });
+  } catch (error) {
+    console.error('Error in forgot password:', error);
+    res.status(500).json({ error: 'Erro ao processar solicitação de recuperação de senha.' });
   }
 });
 
@@ -166,7 +243,6 @@ app.post('/api/schools', async (req, res) => {
       return res.status(400).json({ error: 'Nome da escola é obrigatório.' });
     }
     const saved = await db.saveSchool({ id, name });
-    backupEngine.createBackup('school_saved').catch(() => {});
     logEngine.log('AUDIT', `Escola salva no Supabase: ${name} (${saved.id})`);
     res.json(saved);
   } catch (error) {
@@ -179,7 +255,6 @@ app.post('/api/schools', async (req, res) => {
 app.delete('/api/schools/:id', async (req, res) => {
   try {
     await db.deleteSchool(req.params.id);
-    backupEngine.createBackup('school_deleted').catch(() => {});
     logEngine.log('AUDIT', `Escola excluída no Supabase: ID ${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
@@ -250,9 +325,6 @@ app.post('/api/register', async (req, res) => {
       console.warn('Background Supabase auth email trigger warning:', err?.message || err);
     });
 
-    // Auto backup snapshot on new registration
-    backupEngine.createBackup('auto_register').catch(() => {});
-
     logEngine.log('AUDIT', `Novo usuário auto-registrado no Supabase: ${name} (${role}) - E-mail: ${cleanEmail}`);
 
     const { password: _pwd, ...savedWithoutPassword } = saved;
@@ -264,22 +336,19 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// GET Occurrences (Filtered by role and school from Supabase)
+// GET Occurrences (Filtered by role and school directly in Supabase)
 app.get('/api/occurrences', async (req, res) => {
   try {
     const { schoolId, role, userId } = req.query;
-    let occurrences = await db.getOccurrences();
+    
+    // Gestor, Seduc e Superadmin têm visão global (todas as escolas da rede)
+    const isGlobalRole = role === 'gestor' || role === 'seduc' || role === 'superadmin';
+    const targetSchoolId = (!isGlobalRole && schoolId) ? schoolId : null;
+
+    let occurrences = await db.getOccurrences(targetSchoolId ? { schoolId: targetSchoolId } : {});
 
     // Filter drafts: only show drafts to the user who created them
     occurrences = occurrences.filter(o => !o.status || o.status !== 'rascunho' || o.createdById === userId);
-
-    if (role === 'pedagogo' || role === 'assistente') {
-      occurrences = occurrences.filter(o => o.schoolId === schoolId);
-    } else if (role === 'diretor') {
-      occurrences = occurrences.filter(o => o.schoolId === schoolId);
-    } else if (role === 'gestor' || role === 'seduc' || role === 'superadmin') {
-      // Gestor / Seduc / Superadmin sees everything across all schools
-    }
 
     res.json(occurrences);
   } catch (error) {
@@ -359,10 +428,6 @@ app.post('/api/occurrences', async (req, res) => {
     // 7. Salvar diretamente no Supabase (Fonte única da verdade)
     const saved = await db.saveOccurrence(occurrence);
     
-    // Snapshot automático de backup incremental a cada ocorrência criada/alterada
-    const backupLabel = occurrence.directorNotes ? 'visto_diretoria' : (occurrence.updatedAt ? 'occurrence_update' : 'occurrence_create');
-    backupEngine.createBackup(backupLabel).catch(() => {});
-    
     logEngine.log('AUDIT', `Ocorrência salva no Supabase: ID ${saved.id} - Escola ${saved.schoolId} - Criador: ${saved.createdByName || saved.createdById || 'Sistema'}`);
 
     res.json(saved);
@@ -378,7 +443,6 @@ app.delete('/api/occurrences/:id', async (req, res) => {
   try {
     const { role, userId } = req.query;
     await db.deleteOccurrence(req.params.id);
-    backupEngine.createBackup('occurrence_deleted').catch(() => {});
     logEngine.log('AUDIT', `Ocorrência excluída no Supabase: ID ${req.params.id} por usuário ${userId || 'sistema'} (${role || 'geral'})`);
     res.json({ success: true, message: 'Ocorrência excluída com sucesso no Supabase.' });
   } catch (error) {
@@ -439,9 +503,6 @@ app.post('/api/users', async (req, res) => {
       schoolId: (user.role === 'seduc' || user.role === 'superadmin' || user.role === 'gestor') ? null : (user.schoolId ? user.schoolId.trim() : null)
     });
 
-    // Auto backup snapshot on user creation
-    backupEngine.createBackup('user_create').catch(() => {});
-
     // Trigger Supabase Auth Email asynchronously
     if (user.password) {
       triggerSupabaseAuthEmail(cleanEmail, user.password, user).catch(err => {
@@ -479,7 +540,6 @@ app.put('/api/users/:id', async (req, res) => {
     };
 
     const saved = await db.saveUser(merged);
-    backupEngine.createBackup('user_update').catch(() => {});
     logEngine.log('AUDIT', `Usuário atualizado no Supabase: ${merged.name} (${merged.role})`);
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
@@ -515,7 +575,6 @@ app.put('/api/profile', async (req, res) => {
     if (phone !== undefined) existing.phone = phone.trim();
 
     const saved = await db.saveUser(existing);
-    backupEngine.createBackup('profile_update').catch(() => {});
     logEngine.log('AUDIT', `Perfil atualizado no Supabase: ${existing.name}`);
     const { password: _pwd, ...savedWithoutPassword } = saved;
     res.json(savedWithoutPassword);
@@ -529,7 +588,6 @@ app.put('/api/profile', async (req, res) => {
 app.delete('/api/users/:id', async (req, res) => {
   try {
     await db.deleteUser(req.params.id);
-    backupEngine.createBackup('user_delete').catch(() => {});
     logEngine.log('AUDIT', `Usuário excluído no Supabase: ID ${req.params.id}`);
     res.json({ success: true });
   } catch (error) {

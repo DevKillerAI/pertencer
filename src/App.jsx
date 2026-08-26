@@ -2748,7 +2748,7 @@ function MainApp() {
              user.role === 'diretor' ? 'Relatórios da Direção' : 'Relatórios de Gestão'}
           </button>
 
-          {(user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor' || impersonatedOriginalUser) && (
+          {(user.role === 'superadmin' || impersonatedOriginalUser) && (
             <button 
               className={`btn ${activeTab === 'sysadmin' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => { setActiveTab('sysadmin'); setShowForm(false); fetchAdminData(); }}
@@ -5480,14 +5480,14 @@ function MainApp() {
           </div>
         )}
 
-        {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN / GESTÃO SEDUC) ----------------- */}
-        {activeTab === 'sysadmin' && (user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor' || impersonatedOriginalUser) && (
+        {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN EXCLUSIVO) ----------------- */}
+        {activeTab === 'sysadmin' && (user.role === 'superadmin' || impersonatedOriginalUser) && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h2>⚡ Painel de Administração & Backups do Sistema</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Gestão Master e SEDUC | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
+                  Governança Técnica Master | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
