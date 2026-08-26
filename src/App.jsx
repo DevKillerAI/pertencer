@@ -2880,7 +2880,7 @@ function MainApp() {
                     <IconDatabase /> Fazer Backup (JSON)
                   </button>
                 )}
-                {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                {(user.role === 'superadmin' || activeSuperAdminSession) && (
                   <button className="btn btn-success" onClick={() => handleExportSPSS()}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
                   </button>
@@ -4658,7 +4658,7 @@ function MainApp() {
                 <button className="btn btn-success" onClick={() => handleExportSPSS(reportFilteredOccurrences)}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconFolder /> Exportar Planilha (CSV Filtrado)</span>
                 </button>
-                {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
+                {(user.role === 'superadmin' || activeSuperAdminSession) && (
                   <button className="btn btn-secondary" onClick={() => handleExportSPSS(occurrences)}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconDatabase /> Exportar SPSS Geral</span>
                   </button>
@@ -7661,7 +7661,7 @@ function MainApp() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                {(user.role === 'superadmin' || user.role === 'seduc' || user.role === 'gestor') && (
+                {(user.role === 'superadmin' || activeSuperAdminSession) && (
                   <button 
                     type="button" 
                     className="btn btn-secondary" 

@@ -262,10 +262,10 @@ export default function LandingLoginPage({
 
               <form onSubmit={handleSubmit} className="login-form">
                 
-                {/* Campo: E-mail Institucional ou CPF */}
+                {/* Campo: CPF */}
                 <div className="login-form-group">
                   <label className="login-field-label" htmlFor="input-username">
-                    E-mail institucional ou CPF
+                    Insira seu CPF
                   </label>
                   <div className="login-input-with-icon">
                     <span className="input-leading-icon">
@@ -277,7 +277,7 @@ export default function LandingLoginPage({
                     <input
                       id="input-username"
                       type="text"
-                      placeholder="seu.email@edu.contagem.mg.gov.br"
+                      placeholder="Insira seu CPF"
                       className="login-input-field"
                       value={credentials.username}
                       onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
