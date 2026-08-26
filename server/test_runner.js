@@ -36,7 +36,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Duplicate User',
-        cpf: '99999999999', // same as superadmin felipe
+        cpf: '05966289603', // same as superadmin felipe
         email: 'unique@pome.com',
         password: 'password',
         role: 'pedagogo'

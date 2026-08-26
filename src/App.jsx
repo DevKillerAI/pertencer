@@ -2788,16 +2788,18 @@ function MainApp() {
       <main className="main-content">
         
         {/* Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <button 
             className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => { setActiveTab('dashboard'); setShowForm(false); }}
+            style={{ padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
           >
             <IconHome style={{ marginRight: '6px' }} /> Painel Principal
           </button>
           <button 
             className={`btn ${activeTab === 'occurrences' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => { setActiveTab('occurrences'); setShowForm(false); }}
+            style={{ padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
           >
             <IconSearch style={{ marginRight: '6px' }} /> Buscar Ocorrências
           </button>
@@ -2807,12 +2809,14 @@ function MainApp() {
               <button 
                 className={`btn ${activeTab === 'schools' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => { setActiveTab('schools'); setShowForm(false); }}
+                style={{ padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
               >
                 <IconSchool style={{ marginRight: '6px' }} /> Gerenciar Escolas
               </button>
               <button 
                 className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => { setActiveTab('users'); setShowForm(false); }}
+                style={{ padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
               >
                 <IconUsers style={{ marginRight: '6px' }} /> Gerenciar Usuários
               </button>
@@ -2822,6 +2826,7 @@ function MainApp() {
           <button 
             className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => { setActiveTab('reports'); setShowForm(false); }}
+            style={{ padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
           >
             <IconFolder style={{ marginRight: '6px' }} />
             {user.role === 'pedagogo' || user.role === 'assistente' ? 'Meus Relatórios' : 
@@ -2836,10 +2841,12 @@ function MainApp() {
                 backgroundColor: activeTab === 'sysadmin' ? '#7c3aed' : 'var(--bg-app)',
                 borderColor: '#7c3aed',
                 color: activeTab === 'sysadmin' ? 'white' : '#7c3aed',
-                fontWeight: '700'
+                fontWeight: '600',
+                padding: '0.45rem 0.8rem',
+                fontSize: '0.85rem'
               }}
             >
-              <IconLightning style={{ marginRight: '6px' }} /> Administração & Governança
+              <IconLightning style={{ marginRight: '6px' }} /> Administração
             </button>
           )}
         </div>
@@ -2876,46 +2883,14 @@ function MainApp() {
               </div>
             </div>
 
-            {/* Dashboard Filter Options */}
-            <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', marginRight: '4px' }}>Panorama por Dimensão:</span>
-              <button 
-                className={`btn btn-secondary ${dashboardFilter === 'all' ? 'active' : ''}`}
-                style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem', backgroundColor: dashboardFilter === 'all' ? 'var(--primary-light)' : 'transparent', color: dashboardFilter === 'all' ? 'var(--primary)' : 'inherit', fontWeight: dashboardFilter === 'all' ? '700' : 'normal' }}
-                onClick={() => setDashboardFilter('all')}
-              >
-                🌐 Todas
-              </button>
-              {Object.entries(DIMENSIONS_INFO).map(([key, info]) => {
-                const isActive = dashboardFilter === key;
-                return (
-                  <button 
-                    key={key}
-                    className={`btn btn-secondary ${isActive ? 'active' : ''}`}
-                    style={{ 
-                      padding: '0.3rem 0.65rem', 
-                      fontSize: '0.78rem', 
-                      backgroundColor: isActive ? 'var(--primary-light)' : 'transparent', 
-                      color: isActive ? 'var(--primary)' : 'inherit', 
-                      fontWeight: isActive ? '700' : 'normal',
-                      borderColor: isActive ? info.cor : 'var(--border-color)'
-                    }}
-                    onClick={() => setDashboardFilter(key)}
-                    title={key}
-                  >
-                    {info.icone} {info.numero}. {info.nome.length > 22 ? info.nome.substring(0, 20) + '...' : info.nome}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Counters Grid */}
+            {/* Counters Grid (Full Width & Proporcional) */}
             <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-icon" style={{ color: 'var(--primary)' }}><IconFolder /></div>
+              <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                <div className="metric-icon" style={{ color: 'var(--primary)', backgroundColor: 'var(--primary-light)' }}><IconFolder /></div>
                 <div className="metric-details">
-                  <h4>Total Registros</h4>
+                  <h4>Total de Registros</h4>
                   <div className="metric-value">{metrics.total}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Atendimentos cadastrados</span>
                 </div>
               </div>
               <div className="metric-card" style={{ borderLeft: '4px solid var(--success)' }}>
@@ -2923,20 +2898,109 @@ function MainApp() {
                 <div className="metric-details">
                   <h4>Visto da Direção</h4>
                   <div className="metric-value">{metrics.comVisto}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Homologados e revisados</span>
                 </div>
               </div>
-              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b', borderColor: metrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: metrics.vistoObrigatorio > 0 ? '#fffbeb' : 'inherit' }}>
+              <div className="metric-card" style={{ borderLeft: '4px solid #f59e0b', borderColor: metrics.vistoObrigatorio > 0 ? '#f59e0b' : 'var(--border-color)', backgroundColor: metrics.vistoObrigatorio > 0 ? 'rgba(245, 158, 11, 0.08)' : 'var(--bg-card)' }}>
                 <div className="metric-icon" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}><IconWarning /></div>
                 <div className="metric-details">
                   <h4 style={{ color: metrics.vistoObrigatorio > 0 ? '#92400e' : 'inherit', fontWeight: '700' }}>Visto Obrigatório</h4>
                   <div className="metric-value" style={{ color: metrics.vistoObrigatorio > 0 ? '#b45309' : 'inherit' }}>{metrics.vistoObrigatorio}</div>
+                  <span style={{ fontSize: '0.75rem', color: metrics.vistoObrigatorio > 0 ? '#b45309' : 'var(--text-muted)' }}>Requer parecer da direção</span>
                 </div>
               </div>
-              <div className="metric-card">
+              <div className="metric-card" style={{ borderLeft: '4px solid #64748b' }}>
                 <div className="metric-icon" style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)' }}><IconClock /></div>
                 <div className="metric-details">
                   <h4>Em Rascunho</h4>
                   <div className="metric-value">{metrics.rascunhos}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Privados do autor</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Panorama por Dimensões Institucionais (Executive Hub Card) */}
+            <div className="card" style={{ marginBottom: '1.75rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.15rem' }}>🧭</span>
+                  <div>
+                    <h3 style={{ fontSize: '0.95rem', margin: 0, fontWeight: '700' }}>Panorama por Dimensão Institucional</h3>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Filtragem rápida de atendimentos por eixo temático do Clima Escolar</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Filtro:</span>
+                  <span className="badge badge-primary" style={{ fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}>
+                    {dashboardFilter === 'all' ? '🌐 Todas as Dimensões' : `${DIMENSIONS_INFO[dashboardFilter]?.numero}. ${DIMENSIONS_INFO[dashboardFilter]?.nome || dashboardFilter}`}
+                  </span>
+                </div>
+              </div>
+              <div className="card-body" style={{ padding: '0.85rem 1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.6rem' }}>
+                  <button 
+                    className={`btn ${dashboardFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{
+                      padding: '0.55rem 0.85rem',
+                      fontSize: '0.825rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontWeight: dashboardFilter === 'all' ? '700' : '500',
+                      borderRadius: 'var(--radius-sm)',
+                      border: dashboardFilter === 'all' ? '1px solid var(--primary)' : '1px solid var(--border-color)'
+                    }}
+                    onClick={() => setDashboardFilter('all')}
+                  >
+                    <span>🌐 Todas as Dimensões</span>
+                    <span className="badge" style={{ backgroundColor: dashboardFilter === 'all' ? 'white' : 'var(--bg-app)', color: dashboardFilter === 'all' ? 'var(--primary)' : 'inherit', fontSize: '0.75rem' }}>
+                      {occurrences.length}
+                    </span>
+                  </button>
+                  {Object.entries(DIMENSIONS_INFO).map(([key, info]) => {
+                    const isActive = dashboardFilter === key;
+                    const count = occurrences.filter(o => {
+                      const cls = Array.isArray(o.classifications) ? o.classifications : [];
+                      return cls.some(c => (info.situacoes || []).includes(c)) || o.type === key;
+                    }).length;
+                    return (
+                      <button 
+                        key={key}
+                        className="btn"
+                        style={{ 
+                          padding: '0.55rem 0.85rem', 
+                          fontSize: '0.825rem', 
+                          backgroundColor: isActive ? 'var(--primary-light)' : 'var(--bg-card)', 
+                          color: isActive ? 'var(--primary)' : 'var(--text-primary)', 
+                          fontWeight: isActive ? '700' : '500',
+                          border: `1px solid ${isActive ? info.cor : 'var(--border-color)'}`,
+                          borderLeft: `4px solid ${info.cor}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px',
+                          textAlign: 'left',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setDashboardFilter(key)}
+                        title={`${info.numero}. ${info.nome}`}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {info.icone} {info.numero}. {info.nome}
+                        </span>
+                        <span className="badge" style={{
+                          backgroundColor: isActive ? info.cor : 'var(--bg-app)',
+                          color: isActive ? 'white' : 'var(--text-secondary)',
+                          fontSize: '0.72rem',
+                          padding: '0.15rem 0.45rem',
+                          marginLeft: '4px'
+                        }}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
