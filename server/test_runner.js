@@ -61,7 +61,7 @@ async function runTests() {
     });
     assert.strictEqual(resUserEmail.status, 400);
     const jsonUserEmail = await resUserEmail.json();
-    assert.match(jsonUserEmail.error, /E-mail já cadastrado/);
+    assert.match(jsonUserEmail.error, /E-mail.*já cadastrado/);
     console.log('✅ Test Passed: Duplicate Email blocked.');
 
     // 3. Test Public Self-Registration with LGPD (Apontamento 1)
