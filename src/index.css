@@ -215,6 +215,69 @@ button, input, select, textarea {
   letter-spacing: 0.05em;
 }
 
+/* Navbar Dark Mode High-Contrast & White Accents */
+[data-theme='dark'] .navbar {
+  background-color: #0f172a;
+  border-bottom: 1px solid #334155;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .navbar-brand {
+  background-color: transparent;
+}
+
+[data-theme='dark'] .navbar-user .user-name {
+  color: #ffffff !important;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='dark'] .navbar-user .user-role {
+  color: #e2e8f0 !important;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .navbar-user .user-role span {
+  color: #38bdf8 !important; /* Vibrant bright blue/cyan highlight */
+  font-weight: 700;
+}
+
+[data-theme='dark'] .navbar-user .btn-secondary {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+[data-theme='dark'] .navbar-user .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .navbar-user .theme-toggle {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .navbar-user .theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme='dark'] .navbar-user .help-role-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 /* Common Typography & Headings */
 h1, h2, h3, h4, h5 {
   font-family: var(--font-heading);
