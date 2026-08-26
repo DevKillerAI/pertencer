@@ -717,29 +717,19 @@ app.post('/api/admin/backups/restore', async (req, res) => {
   }
 });
 
-// POST Impersonate (Super Admin access any user account)
-app.post('/api/admin/impersonate', async (req, res) => {
+// POST Simulation Mode Audit Logger (LGPD Compliant Role Switch for Super Admin)
+app.post('/api/admin/simulation-mode', async (req, res) => {
   try {
-    const { targetUserId } = req.body;
-    if (!targetUserId) {
-      return res.status(400).json({ error: 'ID do usuário alvo é obrigatório.' });
-    }
-    const users = await db.getUsers();
-    const targetUser = users.find(u => u.id === targetUserId);
-    if (!targetUser) {
-      return res.status(404).json({ error: 'Usuário alvo não encontrado.' });
-    }
-    let schoolName = null;
-    if (targetUser.schoolId) {
-      const schools = await db.getSchools();
-      const school = schools.find(s => s.id === targetUser.schoolId);
-      if (school) schoolName = school.name;
-    }
-    const { password: _, ...userWithoutPassword } = targetUser;
-    logEngine.log('AUDIT', `Super Admin iniciou impersonação da conta de ${targetUser.name} (${targetUser.role})`, { targetUserId });
-    res.json({ ...userWithoutPassword, schoolName, isImpersonated: true });
+    const { simulatedRole, schoolId, schoolName } = req.body || {};
+    const roleLabel = (simulatedRole || 'Super Admin').toUpperCase();
+    logEngine.log('AUDIT', `Super Admin ativou modo de simulação técnica institucional: ${roleLabel} ${schoolName ? `(Escola: ${schoolName})` : ''}`, {
+      simulatedRole,
+      schoolId,
+      schoolName
+    });
+    res.json({ success: true, simulatedRole, schoolId, schoolName });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao realizar impersonação.' });
+    res.status(500).json({ error: 'Erro ao registrar simulação de papel.' });
   }
 });
 

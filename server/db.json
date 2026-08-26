@@ -45,7 +45,7 @@
     {
       "id": "usr-felipe",
       "name": "Felipe Marcelino (Super Admin)",
-      "cpf": "99999999999",
+      "cpf": "05966289603",
       "password": "pbkdf2:sha512:10000:308ab8725e56f772a922dc1edc16b79c:a9ddc5feca395f4c0ed8cd4022802f8ca7335a8ffddb19069c9ac5734779a135d557f48d7416c6a62081cf54561df079e61d71851cb079917f823795ecf5f9f7",
       "role": "superadmin",
       "schoolId": null,
@@ -114,6 +114,78 @@
           "userName": "Elisabette Leo Gonçalves Cipriano",
           "userRole": "seduc",
           "action": "Criação do atendimento"
+        }
+      ]
+    },
+    {
+      "id": "occ-1787601961328-1104",
+      "schoolId": "esc-1",
+      "createdById": "usr-felipe",
+      "createdByName": "Assistente de Mediação",
+      "date": "2026-08-24",
+      "studentName": "Ocorrencia Assistente",
+      "gradeCycle": "3 anos",
+      "className": "B",
+      "teacherName": "MArcia Campos",
+      "guardianName": "MArio Vale",
+      "contacts": "(31) 94562-365",
+      "type": "Indisciplina recorrente",
+      "subject": "Deu promeblema",
+      "referrals": "",
+      "observations": "",
+      "directorNotes": "dei o visto",
+      "subject_matter": "Educação Física",
+      "attended_people": [],
+      "students": [
+        {
+          "studentName": "Ocorrencia Assistente",
+          "sex": "Feminino",
+          "turn": "Manhã",
+          "gradeCycle": "3 anos",
+          "className": "B",
+          "teacherName": "MArcia Campos",
+          "subject_matter": "Educação Física",
+          "customSubject": "",
+          "guardian": {
+            "name": "MArio Vale",
+            "bond": "Pai",
+            "customBond": "",
+            "contact": "(31) 94562-365"
+          }
+        }
+      ],
+      "classifications": [
+        "Indisciplina recorrente",
+        "Ameaça",
+        "Incêndio ou tentativa de incêndio",
+        "Furto e/ou roubo"
+      ],
+      "feelings": [
+        "Alegria"
+      ],
+      "feelings_observations": "",
+      "direction_referrals": [
+        "Conselho tutelar"
+      ],
+      "status": "finalizado",
+      "createdAt": "2026-08-24T12:00:00.000Z",
+      "updatedAt": "2026-08-24T20:10:36.510Z",
+      "updatedById": "usr-2",
+      "updatedByName": "Diretor(a) Wancleber",
+      "editHistory": [
+        {
+          "timestamp": "2026-08-24T20:06:01.328Z",
+          "userId": "usr-5",
+          "userName": "Assistente de Mediação",
+          "userRole": "assistente",
+          "action": "Criação do atendimento"
+        },
+        {
+          "timestamp": "2026-08-24T20:10:36.510Z",
+          "userId": "usr-2",
+          "userName": "Diretor(a) Wancleber",
+          "userRole": "diretor",
+          "action": "Visto e parecer da diretoria"
         }
       ]
     },
@@ -220,78 +292,6 @@
           "userName": "Diretor(a) Wancleber",
           "userRole": "diretor",
           "action": "Criação do atendimento"
-        }
-      ]
-    },
-    {
-      "id": "occ-1787601961328-1104",
-      "schoolId": "esc-1",
-      "createdById": "usr-felipe",
-      "createdByName": "Assistente de Mediação",
-      "date": "2026-08-24",
-      "studentName": "Ocorrencia Assistente",
-      "gradeCycle": "3 anos",
-      "className": "B",
-      "teacherName": "MArcia Campos",
-      "guardianName": "MArio Vale",
-      "contacts": "(31) 94562-365",
-      "type": "Indisciplina recorrente",
-      "subject": "Deu promeblema",
-      "referrals": "",
-      "observations": "",
-      "directorNotes": "dei o visto",
-      "subject_matter": "Educação Física",
-      "attended_people": [],
-      "students": [
-        {
-          "studentName": "Ocorrencia Assistente",
-          "sex": "Feminino",
-          "turn": "Manhã",
-          "gradeCycle": "3 anos",
-          "className": "B",
-          "teacherName": "MArcia Campos",
-          "subject_matter": "Educação Física",
-          "customSubject": "",
-          "guardian": {
-            "name": "MArio Vale",
-            "bond": "Pai",
-            "customBond": "",
-            "contact": "(31) 94562-365"
-          }
-        }
-      ],
-      "classifications": [
-        "Indisciplina recorrente",
-        "Ameaça",
-        "Incêndio ou tentativa de incêndio",
-        "Furto e/ou roubo"
-      ],
-      "feelings": [
-        "Alegria"
-      ],
-      "feelings_observations": "",
-      "direction_referrals": [
-        "Conselho tutelar"
-      ],
-      "status": "finalizado",
-      "createdAt": "2026-08-24T12:00:00.000Z",
-      "updatedAt": "2026-08-24T20:10:36.510Z",
-      "updatedById": "usr-2",
-      "updatedByName": "Diretor(a) Wancleber",
-      "editHistory": [
-        {
-          "timestamp": "2026-08-24T20:06:01.328Z",
-          "userId": "usr-5",
-          "userName": "Assistente de Mediação",
-          "userRole": "assistente",
-          "action": "Criação do atendimento"
-        },
-        {
-          "timestamp": "2026-08-24T20:10:36.510Z",
-          "userId": "usr-2",
-          "userName": "Diretor(a) Wancleber",
-          "userRole": "diretor",
-          "action": "Visto e parecer da diretoria"
         }
       ]
     },

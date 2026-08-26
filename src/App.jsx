@@ -785,18 +785,19 @@ function MainApp() {
     }
   }, [notification]);
 
-  // Impersonation State (Super Admin viewing as another user)
-  const [impersonatedOriginalUser, setImpersonatedOriginalUser] = useState(() => {
-    const saved = localStorage.getItem('impersonatedOriginalUser');
+  // Role Simulation State (Super Admin acting as another municipal role)
+  const [activeSuperAdminSession, setActiveSuperAdminSession] = useState(() => {
+    const saved = localStorage.getItem('pome_root_admin');
     return saved ? JSON.parse(saved) : null;
   });
+  const [simulationSelectedSchool, setSimulationSelectedSchool] = useState('');
 
   // Admin Telemetry & Control Panel States (Super Admin)
   const [adminMetrics, setAdminMetrics] = useState(null);
   const [adminLogs, setAdminLogs] = useState([]);
   const [adminBackups, setAdminBackups] = useState([]);
   const [logFilterLevel, setLogFilterLevel] = useState('ALL');
-  const [impersonateSearch, setImpersonateSearch] = useState('');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [adminLoading, setAdminLoading] = useState(false);
   const [backupActionStatus, setBackupActionStatus] = useState('');
   
@@ -1009,7 +1010,7 @@ function MainApp() {
       if (user) {
         try {
           const promises = [fetchSchools(), fetchOccurrences(), fetchUsers()];
-          if (user.role === 'superadmin' || impersonatedOriginalUser) {
+          if (user.role === 'superadmin' || activeSuperAdminSession) {
             promises.push(fetchAdminData());
           }
           await Promise.all(promises);
@@ -1052,9 +1053,9 @@ function MainApp() {
   // Handler: Logout
   const handleLogout = () => {
     setUser(null);
-    setImpersonatedOriginalUser(null);
+    setActiveSuperAdminSession(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('impersonatedOriginalUser');
+    localStorage.removeItem('pome_root_admin');
     setActiveTab('dashboard');
     setShowForm(false);
     setSelectedOccurrence(null);
@@ -1132,50 +1133,64 @@ function MainApp() {
     }
   };
 
-  // Handler: Impersonate (Super Admin logging as any user)
-  const handleImpersonate = async (targetUser) => {
-    if (!confirm(`Deseja entrar na conta de ${targetUser.name} (${targetUser.role.toUpperCase()}) para auditoria e suporte?`)) return;
+  // Handler: Start Role Simulation (Super Admin acting as any role with full LGPD compliance)
+  const handleStartRoleSimulation = async (roleToSimulate, targetSchoolId = null) => {
+    const rootAdmin = activeSuperAdminSession || user;
+    setActiveSuperAdminSession(rootAdmin);
+    localStorage.setItem('pome_root_admin', JSON.stringify(rootAdmin));
+
+    const selectedSchoolObj = schools.find(s => s.id === targetSchoolId) || schools[0] || null;
+    const simSchoolId = (roleToSimulate === 'seduc' || roleToSimulate === 'superadmin' || roleToSimulate === 'gestor') ? null : (selectedSchoolObj?.id || null);
+    const simSchoolName = (roleToSimulate === 'seduc' || roleToSimulate === 'superadmin' || roleToSimulate === 'gestor') ? 'Rede Central SEDUC' : (selectedSchoolObj?.name || 'Escola Municipal');
+
+    const simulatedUser = {
+      ...rootAdmin,
+      role: roleToSimulate,
+      schoolId: simSchoolId,
+      schoolName: simSchoolName,
+      isSimulation: true,
+      simulatedRole: roleToSimulate
+    };
+
     try {
-      const res = await fetch('/api/admin/impersonate', {
+      await fetch('/api/admin/simulation-mode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUserId: targetUser.id })
+        body: JSON.stringify({
+          simulatedRole: roleToSimulate,
+          schoolId: simSchoolId,
+          schoolName: simSchoolName
+        })
       });
-      if (res.ok) {
-        const impersonatedUser = await res.json();
-        
-        // Preserve the original Root Super Admin (never overwrite with an impersonated user)
-        const rootSuperAdmin = impersonatedOriginalUser || user;
-        setImpersonatedOriginalUser(rootSuperAdmin);
-        localStorage.setItem('impersonatedOriginalUser', JSON.stringify(rootSuperAdmin));
-        
-        // Switch current user
-        setUser(impersonatedUser);
-        localStorage.setItem('user', JSON.stringify(impersonatedUser));
-        setActiveTab('dashboard');
-      } else {
-        alert('Erro ao iniciar impersonação de conta.');
-      }
-    } catch (err) {
-      console.error('Error during impersonation:', err);
-      alert('Erro ao conectar ao servidor.');
-    }
+    } catch (_) {}
+
+    setUser(simulatedUser);
+    localStorage.setItem('user', JSON.stringify(simulatedUser));
+    setActiveTab('dashboard');
+
+    setNotification({
+      type: 'success',
+      message: `🎭 Modo Simulação Ativo: ${roleToSimulate.toUpperCase()} (${simSchoolName}). Ações auditadas sob governança de ${rootAdmin.name}.`
+    });
   };
 
-  // Handler: Stop Impersonation (Cleanly return to Super Admin)
-  const handleStopImpersonation = () => {
-    const rootSuperAdmin = impersonatedOriginalUser || JSON.parse(localStorage.getItem('impersonatedOriginalUser') || 'null');
-    if (rootSuperAdmin) {
-      // Clear impersonation state first
-      setImpersonatedOriginalUser(null);
-      localStorage.removeItem('impersonatedOriginalUser');
-      
-      // Restore Super Admin session
-      setUser(rootSuperAdmin);
-      localStorage.setItem('user', JSON.stringify(rootSuperAdmin));
+  // Handler: Stop Role Simulation (Cleanly return to Super Admin Master)
+  const handleStopRoleSimulation = () => {
+    const rootAdmin = activeSuperAdminSession || JSON.parse(localStorage.getItem('pome_root_admin') || 'null');
+    setActiveSuperAdminSession(null);
+    localStorage.removeItem('pome_root_admin');
+
+    if (rootAdmin) {
+      setUser(rootAdmin);
+      localStorage.setItem('user', JSON.stringify(rootAdmin));
       setActiveTab('sysadmin');
       setTimeout(fetchAdminData, 100);
     }
+
+    setNotification({
+      type: 'info',
+      message: '👑 Retornado com sucesso ao Perfil Super Admin Master.'
+    });
   };
 
   // Handler: Create Manual Backup with Instant Browser File Download
@@ -1214,7 +1229,7 @@ function MainApp() {
           }
         }
         
-        if (user.role === 'superadmin' || impersonatedOriginalUser) {
+        if (user.role === 'superadmin' || activeSuperAdminSession) {
           fetchAdminData();
         }
         setTimeout(() => setBackupActionStatus(''), 4000);
@@ -1243,7 +1258,7 @@ function MainApp() {
       if (res.ok) {
         setBackupActionStatus('✅ Base de dados Supabase restaurada com sucesso!');
         await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers()]);
-        if (user.role === 'superadmin' || impersonatedOriginalUser) {
+        if (user.role === 'superadmin' || activeSuperAdminSession) {
           await fetchAdminData();
         }
         setTimeout(() => setBackupActionStatus(''), 4000);
@@ -1281,7 +1296,7 @@ function MainApp() {
           if (res.ok) {
             setBackupActionStatus('✅ Base Supabase restaurada com sucesso!');
             await Promise.all([fetchSchools(), fetchOccurrences(), fetchUsers()]);
-            if (user.role === 'superadmin' || impersonatedOriginalUser) {
+            if (user.role === 'superadmin' || activeSuperAdminSession) {
               await fetchAdminData();
             }
             setTimeout(() => setBackupActionStatus(''), 4000);
@@ -2596,23 +2611,88 @@ function MainApp() {
         </div>
       )}
 
-      {/* Impersonation Alert Banner */}
-      {impersonatedOriginalUser && (
-        <div className="impersonation-banner">
-          <div className="impersonation-banner-info">
-            <span className="impersonation-badge">⚠️ AUDITORIA MASTER ATIVA</span>
-            <span>
-              Você está navegando como <strong>{user.name}</strong> ({user.role?.toUpperCase()}{user.schoolName ? ` | ${user.schoolName}` : ''}).
+      {/* Role Simulation Executive Alert Banner */}
+      {activeSuperAdminSession && (
+        <div style={{
+          backgroundColor: '#0f172a',
+          borderBottom: '2px solid #6366f1',
+          color: '#f8fafc',
+          padding: '0.65rem 1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{
+              backgroundColor: '#6366f1',
+              color: 'white',
+              padding: '0.25rem 0.65rem',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: '800',
+              letterSpacing: '0.5px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              🎭 SIMULAÇÃO INSTITUCIONAL
+            </span>
+            <span style={{ fontSize: '0.9rem' }}>
+              Atuando como <strong>{
+                user.role === 'pedagogo' ? 'Pedagogo(a)' :
+                user.role === 'diretor' ? 'Diretor(a) Escolar' :
+                user.role === 'assistente' ? 'Assistente de Mediação' :
+                user.role === 'seduc' || user.role === 'gestor' ? 'Gestor(a) Central SEDUC' : 'Super Admin'
+              }</strong> {user.schoolName ? `• ${user.schoolName}` : ''}
+              <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: '8px' }}>
+                (Ações registradas e auditadas em nome de {activeSuperAdminSession.name})
+              </span>
             </span>
           </div>
-          <button 
-            type="button" 
-            className="btn btn-warning" 
-            onClick={handleStopImpersonation}
-            style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', fontWeight: '700', backgroundColor: '#d97706', color: 'white', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
-          >
-            ⬅️ Sair e Voltar para Super Admin
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {user.role !== 'seduc' && user.role !== 'superadmin' && user.role !== 'gestor' && (
+              <select
+                className="form-control"
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '0.825rem',
+                  height: 'auto',
+                  backgroundColor: '#1e293b',
+                  color: '#f8fafc',
+                  borderColor: '#475569',
+                  borderRadius: '6px'
+                }}
+                value={user.schoolId || (schools[0]?.id || '')}
+                onChange={(e) => handleStartRoleSimulation(user.role, e.target.value)}
+              >
+                {schools.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
+            <button 
+              type="button" 
+              onClick={handleStopRoleSimulation}
+              style={{
+                padding: '0.35rem 0.95rem',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                backgroundColor: '#f59e0b',
+                color: '#0f172a',
+                border: 'none',
+                cursor: 'pointer',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              ⬅️ Encerrar Simulação
+            </button>
+          </div>
         </div>
       )}
 
@@ -2748,7 +2828,7 @@ function MainApp() {
              user.role === 'diretor' ? 'Relatórios da Direção' : 'Relatórios de Gestão'}
           </button>
 
-          {(user.role === 'superadmin' || impersonatedOriginalUser) && (
+          {(user.role === 'superadmin' || activeSuperAdminSession) && (
             <button 
               className={`btn ${activeTab === 'sysadmin' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => { setActiveTab('sysadmin'); setShowForm(false); fetchAdminData(); }}
@@ -2759,7 +2839,7 @@ function MainApp() {
                 fontWeight: '700'
               }}
             >
-              <IconLightning style={{ marginRight: '6px' }} /> Administração & Backups
+              <IconLightning style={{ marginRight: '6px' }} /> Administração & Governança
             </button>
           )}
         </div>
@@ -5481,13 +5561,13 @@ function MainApp() {
         )}
 
         {/* ----------------- TAB: ADMINISTRAÇÃO DO SISTEMA (SUPER ADMIN EXCLUSIVO) ----------------- */}
-        {activeTab === 'sysadmin' && (user.role === 'superadmin' || impersonatedOriginalUser) && (
+        {activeTab === 'sysadmin' && (user.role === 'superadmin' || activeSuperAdminSession) && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h2>⚡ Painel de Administração & Backups do Sistema</h2>
+                <h2>⚡ Painel Executivo de Governança & Infraestrutura</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Governança Técnica Master | Telemetria, auditoria em tempo real, impersonação de contas e backups da rede
+                  Super Admin Master | Telemetria do Supabase Pro, simulador de papéis da rede municipal, cofre de backups e auditoria LGPD
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -5523,7 +5603,7 @@ function MainApp() {
                 <div className="metric-details">
                   <h4>Status Banco de Dados</h4>
                   <div className="metric-value" style={{ fontSize: '1.05rem' }}>
-                    {adminMetrics?.supabase?.configured ? '🟢 Supabase Conectado' : '🟡 Fallback Local (db.json)'}
+                    {adminMetrics?.supabase?.configured ? '🟢 Supabase Pro Conectado' : '🟡 Fallback Local (db.json)'}
                   </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Uptime: {adminMetrics ? `${Math.floor(adminMetrics.uptimeSeconds / 3600)}h ${Math.floor((adminMetrics.uptimeSeconds % 3600) / 60)}m ${adminMetrics.uptimeSeconds % 60}s` : 'Calculando...'}
@@ -5534,10 +5614,10 @@ function MainApp() {
               <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
                 <div className="metric-icon" style={{ color: '#3b82f6', backgroundColor: '#dbeafe' }}><IconUsers /></div>
                 <div className="metric-details">
-                  <h4>Usuários Cadastrados</h4>
+                  <h4>Servidores da Rede</h4>
                   <div className="metric-value">{adminMetrics?.counts?.users || usersList.length}</div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {schools.length} Escolas na rede municipal
+                    {schools.length} Escolas Municipais Ativas
                   </span>
                 </div>
               </div>
@@ -5548,7 +5628,7 @@ function MainApp() {
                   <h4>Total Ocorrências</h4>
                   <div className="metric-value">{adminMetrics?.counts?.occurrences || occurrences.length}</div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {adminMetrics?.counts?.drafts || 0} Rascunhos privados
+                    {adminMetrics?.counts?.drafts || 0} Rascunhos Protegidos
                   </span>
                 </div>
               </div>
@@ -5556,7 +5636,7 @@ function MainApp() {
               <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
                 <div className="metric-icon" style={{ color: '#8b5cf6', backgroundColor: '#ede9fe' }}><IconDatabase /></div>
                 <div className="metric-details">
-                  <h4>Central de Backups</h4>
+                  <h4>Cofre de Backups</h4>
                   <div className="metric-value">{adminMetrics?.counts?.backups || adminBackups.length}</div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {adminMetrics?.lastBackup ? `Último: ${new Date(adminMetrics.lastBackup.createdAt).toLocaleTimeString('pt-BR')}` : 'Auto snapshot ativo'}
@@ -5565,107 +5645,190 @@ function MainApp() {
               </div>
             </div>
 
-            {/* SEÇÃO 2: CENTRAL DE IMPERSONAÇÃO (TROCA RÁPIDA DE CONTA) */}
-            <div className="card" style={{ marginBottom: '1.75rem', border: '1px solid #7c3aed33' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', backgroundColor: 'var(--bg-app)' }}>
+            {/* SEÇÃO 2: CENTRAL DE SIMULAÇÃO DE FUNÇÕES & SANDBOX TÉCNICA (LGPD COMPLIANT) */}
+            <div className="card" style={{ marginBottom: '1.75rem', border: '1px solid rgba(99, 102, 241, 0.25)', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.08)' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', backgroundColor: 'var(--bg-app)', borderBottom: '1px solid rgba(99, 102, 241, 0.15)' }}>
                 <div>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#7c3aed' }}>
-                    <IconLightning /> Troca Rápida de Conta & Impersonação (Auditoria Master)
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1' }}>
+                    <IconLightning /> Simulador de Funções Institucionais & Sandbox Técnica
                   </h3>
                   <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                    Acesse o sistema diretamente pela visão de qualquer pedagogo, diretor ou assistente da rede para prestar suporte ou auditar lançamentos.
+                    Teste a experiência e permissões exatas de qualquer cargo na rede municipal com segurança jurídica integral (LGPD).
                   </p>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Buscar usuário por nome, CPF ou perfil..."
-                  className="form-control"
-                  style={{ maxWidth: '320px', fontSize: '0.85rem' }}
-                  value={impersonateSearch}
-                  onChange={(e) => setImpersonateSearch(e.target.value)}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Escola para simulação:</span>
+                  <select
+                    className="form-control"
+                    style={{ minWidth: '220px', fontSize: '0.85rem' }}
+                    value={simulationSelectedSchool || (schools[0]?.id || '')}
+                    onChange={(e) => setSimulationSelectedSchool(e.target.value)}
+                  >
+                    {schools.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="card-body" style={{ padding: 0 }}>
-                <div className="table-responsive">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Nome do Usuário</th>
-                        <th>CPF</th>
-                        <th>E-mail</th>
-                        <th>Perfil</th>
-                        <th>Escola Vinculada</th>
-                        <th style={{ textAlign: 'right' }}>Ação de Impersonação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usersList
-                        .filter(u => {
-                          const query = impersonateSearch.toLowerCase();
-                          return (
-                            u.name?.toLowerCase().includes(query) ||
-                            u.cpf?.includes(query) ||
-                            u.role?.toLowerCase().includes(query) ||
-                            u.email?.toLowerCase().includes(query)
-                          );
-                        })
-                        .map(u => {
-                          const schoolName = schools.find(s => s.id === u.schoolId)?.name || 'Rede Central';
-                          const isSelf = u.id === user.id;
-                          return (
-                            <tr key={u.id}>
-                              <td style={{ fontWeight: '600' }}>{u.name}</td>
-                              <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{u.cpf}</td>
-                              <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{u.email || '-'}</td>
-                              <td>
-                                <span className={`badge ${
-                                  u.role === 'superadmin' ? 'badge-danger' :
-                                  u.role === 'gestor' || u.role === 'seduc' ? 'badge-warning' : 
-                                  u.role === 'diretor' ? 'badge-primary' : 'badge-success'
-                                }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  {u.role.toUpperCase()}
-                                  <button
-                                    type="button"
-                                    className="help-role-badge"
-                                    style={{ width: '18px', height: '18px', fontSize: '0.65rem', marginLeft: '4px' }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setTutorialSelectedRole(u.role === 'seduc' ? 'seduc' : u.role);
-                                      setTutorialSubTab('overview');
-                                      setShowRoleTutorialModal(true);
-                                    }}
-                                  >
-                                    ❓
-                                    <span className="tooltip-role-text">
-                                      💡 Tutorial e Permissões ({ROLE_TUTORIALS_DATA[u.role]?.name || u.role})
-                                    </span>
-                                  </button>
-                                </span>
-                              </td>
-                              <td style={{ fontSize: '0.85rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {schoolName}
-                              </td>
-                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                {isSelf ? (
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Você está aqui</span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="action-icon-btn action-icon-restore"
-                                    data-tooltip="Auditar e acessar sistema como este usuário"
-                                    data-tooltip-pos="left"
-                                    title="Entrar como este usuário"
-                                    onClick={() => handleImpersonate(u)}
-                                  >
-                                    <IconUser style={{ width: '14px', height: '14px' }} />
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
+              <div className="card-body" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
+                  
+                  {/* Card: Super Admin */}
+                  <div style={{
+                    padding: '1.15rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: user.role === 'superadmin' && !activeSuperAdminSession ? 'rgba(124, 58, 237, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>👑</span>
+                        <span className="badge badge-danger">SUPER ADMIN</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>Super Admin Master</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Acesso total à governança, telemetria, criptografia de senhas, backups e conformidade LGPD.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ marginTop: '0.85rem', fontSize: '0.8rem', width: '100%', fontWeight: '700' }}
+                      disabled={user.role === 'superadmin' && !activeSuperAdminSession}
+                      onClick={() => handleStopRoleSimulation()}
+                    >
+                      {user.role === 'superadmin' && !activeSuperAdminSession ? '✓ Perfil Atual' : 'Restaurar Master'}
+                    </button>
+                  </div>
+
+                  {/* Card: Gestor SEDUC */}
+                  <div style={{
+                    padding: '1.15rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: user.role === 'seduc' || user.role === 'gestor' ? 'rgba(245, 158, 11, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🏛️</span>
+                        <span className="badge badge-warning">SEDUC CENTRAL</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>Gestor(a) SEDUC</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Visão municipal consolidada de todas as escolas da rede, mapas de calor e relatórios globais.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ marginTop: '0.85rem', fontSize: '0.8rem', width: '100%', backgroundColor: '#f59e0b', borderColor: '#f59e0b', color: '#1e293b', fontWeight: '700' }}
+                      onClick={() => handleStartRoleSimulation('seduc')}
+                    >
+                      🚀 Simular Gestor SEDUC
+                    </button>
+                  </div>
+
+                  {/* Card: Diretor */}
+                  <div style={{
+                    padding: '1.15rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: user.role === 'diretor' ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🏫</span>
+                        <span className="badge badge-primary">DIREÇÃO</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>Diretor(a) Escolar</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Homologação de ocorrências, pareceres oficiais, vistos da direção e gestão do clima da unidade.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ marginTop: '0.85rem', fontSize: '0.8rem', width: '100%', fontWeight: '700' }}
+                      onClick={() => handleStartRoleSimulation('diretor', simulationSelectedSchool || schools[0]?.id)}
+                    >
+                      🚀 Simular Diretor(a)
+                    </button>
+                  </div>
+
+                  {/* Card: Pedagogo */}
+                  <div style={{
+                    padding: '1.15rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: user.role === 'pedagogo' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>📚</span>
+                        <span className="badge badge-success">PEDAGOGIA</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>Pedagogo(a)</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Lançamento detalhado de ocorrências, intervenções CNV, encaminhamentos e rascunhos individuais.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ marginTop: '0.85rem', fontSize: '0.8rem', width: '100%', backgroundColor: '#10b981', borderColor: '#10b981', color: 'white', fontWeight: '700' }}
+                      onClick={() => handleStartRoleSimulation('pedagogo', simulationSelectedSchool || schools[0]?.id)}
+                    >
+                      🚀 Simular Pedagogo(a)
+                    </button>
+                  </div>
+
+                  {/* Card: Assistente */}
+                  <div style={{
+                    padding: '1.15rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: user.role === 'assistente' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🤝</span>
+                        <span className="badge badge-success">MEDIAÇÃO</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>Assistente de Mediação</h4>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Acolhimento preventivo de conflitos, escuta ativa e comunicação preliminar com a equipe escolar.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ marginTop: '0.85rem', fontSize: '0.8rem', width: '100%', backgroundColor: '#059669', borderColor: '#059669', color: 'white', fontWeight: '700' }}
+                      onClick={() => handleStartRoleSimulation('assistente', simulationSelectedSchool || schools[0]?.id)}
+                    >
+                      🚀 Simular Assistente
+                    </button>
+                  </div>
+
+                </div>
+
+                <div style={{ marginTop: '1rem', padding: '0.65rem 1rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(99, 102, 241, 0.06)', border: '1px solid rgba(99, 102, 241, 0.2)', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>⚖️</span>
+                  <span><strong>Conformidade Jurídica LGPD:</strong> O Simulador de Funções permite validar os fluxos operacionais da rede com total isolamento. Suas ações de auditoria técnica permanecem associadas à sua governança ({user.name}) sem assumir a identidade civil de terceiros.</span>
                 </div>
               </div>
             </div>

@@ -286,19 +286,18 @@ async function runTests() {
     assert.ok(backupsList.some(b => b.filename === backupResult.backup.filename));
     console.log('✅ Test Passed: Backup snapshot created and indexed successfully.');
 
-    // 18. Test Super Admin Impersonation of user account
-    console.log(`Testing Super Admin impersonation of registered user (${registeredUser.name})...`);
-    const resImpersonate = await fetch('http://localhost:3002/api/admin/impersonate', {
+    // 18. Test Super Admin Role Simulation Mode (LGPD Compliant)
+    console.log('Testing Super Admin Role Simulation Mode...');
+    const resSim = await fetch('http://localhost:3002/api/admin/simulation-mode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUserId: registeredUser.id })
+      body: JSON.stringify({ simulatedRole: 'pedagogo', schoolId: 'esc-1', schoolName: 'E.M. Dona Belinha' })
     });
-    assert.strictEqual(resImpersonate.status, 200);
-    const targetUserSession = await resImpersonate.json();
-    assert.strictEqual(targetUserSession.id, registeredUser.id);
-    assert.strictEqual(targetUserSession.role, 'assistente');
-    assert.strictEqual(targetUserSession.password, undefined); // Password stripped for security
-    console.log('✅ Test Passed: Super Admin impersonated target user successfully with credentials protected.');
+    assert.strictEqual(resSim.status, 200);
+    const simData = await resSim.json();
+    assert.strictEqual(simData.success, true);
+    assert.strictEqual(simData.simulatedRole, 'pedagogo');
+    console.log('✅ Test Passed: Super Admin role simulation mode activated and audited under LGPD compliance.');
 
     // 19. Test Super Admin Backup Restore
     console.log('Testing Super Admin backup restore execution...');
