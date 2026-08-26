@@ -2870,20 +2870,20 @@ function MainApp() {
                 <button className="btn btn-primary" onClick={() => { setFormData(initialFormState); setShowForm(true); setFormStep(1); }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconSchool /> Novo Atendimento</span>
                 </button>
+                {(user.role === 'superadmin' || activeSuperAdminSession) && (
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => handleCreateBackup('manual')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                    title="Gerar e baixar backup completo da base de dados do Supabase"
+                  >
+                    <IconDatabase /> Fazer Backup (JSON)
+                  </button>
+                )}
                 {(user.role === 'gestor' || user.role === 'seduc' || user.role === 'superadmin') && (
-                  <>
-                    <button 
-                      className="btn btn-secondary" 
-                      onClick={() => handleCreateBackup('manual')}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                      title="Gerar e baixar backup completo da base de dados do Supabase"
-                    >
-                      <IconDatabase /> Fazer Backup (JSON)
-                    </button>
-                    <button className="btn btn-success" onClick={() => handleExportSPSS()}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
-                    </button>
-                  </>
+                  <button className="btn btn-success" onClick={() => handleExportSPSS()}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IconFolder /> Exportar SPSS</span>
+                  </button>
                 )}
               </div>
             </div>
