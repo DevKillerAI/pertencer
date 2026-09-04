@@ -2517,40 +2517,40 @@ function MainApp() {
                 </div>
 
                 {/* Termo de Consentimento LGPD Completo */}
-                <div className="lgpd-box" style={{ marginTop: '0.25rem', backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                <div className="lgpd-box" style={{ marginTop: '0.25rem', backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <div style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.88rem' }}>
+                    <div style={{ fontWeight: '700', color: '#000000', fontSize: '0.88rem' }}>
                       📜 {LGPD_DOCUMENT.title}
                     </div>
                     <button 
                       type="button" 
                       onClick={() => setShowFullLgpdTerms(!showFullLgpdTerms)}
-                      style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                      style={{ background: 'none', border: 'none', color: '#000000', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
                     >
                       {showFullLgpdTerms ? '▲ Recolher termo' : '▼ Expandir e ler termo completo'}
                     </button>
                   </div>
                   
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', lineHeight: '1.4' }}>
-                    {LGPD_DOCUMENT.subtitle}. Este termo formaliza o consentimento nos termos dos Arts. 7º e 11 da Lei nº 13.709/2018.
+                  <p style={{ fontSize: '0.78rem', color: '#000000', margin: '0 0 0.5rem 0', lineHeight: '1.4' }}>
+                    {LGPD_DOCUMENT.subtitle}. Este termo formaliza as diretrizes e responsabilidades nos termos da Lei Federal nº 13.709/2018 (LGPD).
                   </p>
 
                   {showFullLgpdTerms && (
-                    <div className="lgpd-full-text-scroll" style={{ fontSize: '0.76rem', color: '#334155', lineHeight: '1.45', maxHeight: '240px', overflowY: 'auto', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.85rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <div className="lgpd-full-text-scroll" style={{ fontSize: '0.78rem', color: '#000000', lineHeight: '1.45', maxHeight: '240px', overflowY: 'auto', backgroundColor: '#ffffff', border: '1px solid #94a3b8', borderRadius: '6px', padding: '0.85rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                       {LGPD_DOCUMENT.sections.map((sec) => (
-                        <div key={sec.number} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.45rem' }}>
-                          <strong style={{ color: '#0f172a', display: 'block', marginBottom: '0.2rem' }}>
+                        <div key={sec.number} style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.45rem' }}>
+                          <strong style={{ color: '#000000', display: 'block', marginBottom: '0.2rem', fontWeight: '700' }}>
                             {sec.number}. {sec.title}
                           </strong>
                           {sec.content.map((p, idx) => (
-                            <p key={idx} style={{ margin: '0.2rem 0' }}>{p}</p>
+                            <p key={idx} style={{ margin: '0.2rem 0', color: '#000000' }}>{p}</p>
                           ))}
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', color: '#0f172a' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', color: '#000000' }}>
                     <input
                       type="checkbox"
                       checked={registerData.lgpd_accepted}
@@ -2558,7 +2558,7 @@ function MainApp() {
                       required
                       style={{ marginTop: '2px' }}
                     />
-                    <span>{LGPD_DOCUMENT.checkboxLabel}</span>
+                    <span style={{ color: '#000000' }}>{LGPD_DOCUMENT.checkboxLabel}</span>
                   </label>
                 </div>
 
